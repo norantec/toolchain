@@ -1,0 +1,6 @@
+export const HEADERS = {
+    LOCALE: 'X-NAUTI-LOCALE',
+    SCOPE: 'X-NAUTI-SCOPE',
+    SIGNATURE: 'X-NAUTI-SIGNATURE',
+    TRACE_ID: 'x-NAUTI-TRACE-ID',
+};

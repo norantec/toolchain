@@ -1,0 +1,8 @@
+export enum NodeInvocationStatus {
+    QUEUED = 'QUEUED',
+    STARTED = 'STARTED',
+    CLIENT_ERRORED = 'CLIENT_ERRORED',
+    FLOW_ERRORED = 'FLOW_ERRORED',
+    CANCELLED = 'CANCELLED',
+    FINISHED = 'FINISHED',
+}
