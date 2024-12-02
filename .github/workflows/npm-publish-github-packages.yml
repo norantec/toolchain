@@ -31,7 +31,7 @@ jobs:
 
       - name: Pack-up artifact
         run: |
-          zip -r artifact.zip dist .scripts
+          zip -r artifact.zip bin dist
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
