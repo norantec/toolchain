@@ -15,13 +15,7 @@ export enum CommonException {
     GENERIC = 'GENERIC',
     AUTH_NO_USERID = 'AUTH_NO_USERID',
     AUTH_NOT_LOGIN = 'AUTH_NOT_LOGIN',
-    NOTFOUND_USER = 'NOTFOUND_USER',
-    NOTFOUND_KEY = 'NOTFOUND_KEY',
-    NOTFOUND_LOG = 'NOTFOUND_LOG',
-    NOTFOUND_PLAN = 'NOTFOUND_PLAN',
-    NOTFOUND_SUBSCRIPTION = 'NOTFOUND_SUBSCRIPTION',
-    NOTFOUND_MEMBER = 'NOTFOUND_MEMBER',
-    NOTFOUND_FILE = 'NOTFOUND_FILE',
+    NOTFOUND_ENTITY = 'NOTFOUND_ENTITY',
     INVALID_SUBSCRIPTION_END_DATE = 'INVALID_SUBSCRIPTION_END_DATE',
     INVALID_SUBSCRIPTION_EXPIRATION = 'INVALID_SUBSCRIPTION_EXPIRATION',
     INVALID_PARAMS = 'INVALID_PARAMS',
@@ -43,20 +37,8 @@ export enum CommonException {
 }
 
 export interface CommonExceptionMap {
-    [CommonException.NOTFOUND_USER]: {
+    [CommonException.NOTFOUND_ENTITY]: {
         locator: string;
-    };
-    [CommonException.NOTFOUND_LOG]: {
-        locator: string;
-    };
-    [CommonException.NOTFOUND_SUBSCRIPTION]: {
-        locator: string;
-    };
-    [CommonException.NOTFOUND_PLAN]: {
-        locator: string;
-    };
-    [CommonException.NOTFOUND_FILE]: {
-        url: string;
     };
     [CommonException.INVALID_PARAMS]: {
         params: string[];
