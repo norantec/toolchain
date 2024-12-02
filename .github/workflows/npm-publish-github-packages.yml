@@ -76,7 +76,6 @@ jobs:
       - name: Check cache
         run: |
           ls -al ./dist
-          ls -al ./.scripts
 
       - name: Release with semantic-release
         env:
