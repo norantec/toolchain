@@ -6,8 +6,8 @@ import {
     REQUEST,
     HttpAdapterHost,
 } from '@nestjs/core';
-import { EventService } from 'src/modules/event/event.service';
-import { type RequestWithExtraContext } from 'src/types/request-with-extra-context.type';
+import { EventService } from '../modules/event/event.service';
+import { type RequestWithExtraContext } from '../types/request-with-extra-context.type';
 
 @Injectable()
 export class BaseController {

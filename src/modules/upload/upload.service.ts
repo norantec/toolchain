@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { STS } from 'ali-oss';
 import { v4 as uuid } from 'uuid';
-import { UploadCredentialVO } from 'src/vos/upload-credential.vo.class';
-import { StringUtil } from 'src/utilities/string-util.class';
+import { UploadCredentialVO } from '../../vos/upload-credential.vo.class';
+import { StringUtil } from '../../utilities/string-util.class';
 import { UploadModuleOptions } from './upload.interface';
 
 @Injectable()

@@ -10,7 +10,7 @@ import {
     NJRS_REQUEST,
     RequestScope,
 } from 'nj-request-scope';
-import { type RequestWithExtraContext } from 'src/types/request-with-extra-context.type';
+import { type RequestWithExtraContext } from '../../types/request-with-extra-context.type';
 
 @Injectable()
 @RequestScope()

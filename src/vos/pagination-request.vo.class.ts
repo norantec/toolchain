@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationSearchItemVO } from './pagination-search-item.vo.class';
-import { Mapping } from 'src/decorators/mapping.decorator';
-import { Correlate } from 'src/decorators/correlate.decorator';
+import { Mapping } from '../decorators/mapping.decorator';
+import { Correlate } from '../decorators/correlate.decorator';
 
 export class PaginationRequestVO {
     @ApiPropertyOptional()

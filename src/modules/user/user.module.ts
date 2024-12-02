@@ -5,7 +5,7 @@ import {
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { UserDAO } from 'src/daos/user.dao.class';
+import { UserDAO } from '../../daos/user.dao.class';
 
 @Global()
 @Module({

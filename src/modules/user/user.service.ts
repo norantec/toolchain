@@ -1,18 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import * as _ from 'lodash';
 import * as crypto from 'crypto';
-import { CommonExceptionUtil } from 'src/utilities/common-exception-util.class';
-import { UserDAO } from 'src/daos/user.dao.class';
+import { CommonExceptionUtil } from '../../utilities/common-exception-util.class';
+import { UserDAO } from '../../daos/user.dao.class';
 import {
     Includeable,
     Transaction,
     WhereOptions,
 } from 'sequelize';
-import { EntityService } from 'src/modules/entity/entity.service';
-import { StringUtil } from 'src/utilities/string-util.class';
-import { SerializableUtil } from 'src/utilities/serializable-util.class';
-import { CheckerUtil } from 'src/utilities/checker-util.class';
-import { PaginationRequestVO } from 'src/vos/pagination-request.vo.class';
+import { EntityService } from '../../modules/entity/entity.service';
+import { StringUtil } from '../../utilities/string-util.class';
+import { SerializableUtil } from '../../utilities/serializable-util.class';
+import { CheckerUtil } from '../../utilities/checker-util.class';
+import { PaginationRequestVO } from '../../vos/pagination-request.vo.class';
 
 @Injectable()
 export class UserService {

@@ -4,7 +4,7 @@ import {
     ExecutionContext,
 } from '@nestjs/common';
 import { type RequestWithExtraContext } from '../types/request-with-extra-context.type';
-import { CommonExceptionUtil } from 'src/utilities/common-exception-util.class';
+import { CommonExceptionUtil } from '../utilities/common-exception-util.class';
 
 @Injectable()
 export class AppGuard implements CanActivate {

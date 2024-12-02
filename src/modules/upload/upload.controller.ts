@@ -1,11 +1,11 @@
 import { AuthGuard } from '@nestjs/passport';
-import { BaseController } from 'src/common/base.controller';
-import { Method } from 'src/decorators/method.decorator';
-import { UseGuards } from 'src/decorators/use-guards.decorator';
+import { BaseController } from '../../common/base.controller';
+import { Method } from '../../decorators/method.decorator';
+import { UseGuards } from '../../decorators/use-guards.decorator';
 import { UploadService } from './upload.service';
-import { ApiController } from 'src/decorators/api-controller.decorator';
-import { UploadCredentialVO } from 'src/vos/upload-credential.vo.class';
-import { ResponseVO } from 'src/vos/response.vo.class';
+import { ApiController } from '../../decorators/api-controller.decorator';
+import { UploadCredentialVO } from '../../vos/upload-credential.vo.class';
+import { ResponseVO } from '../../vos/response.vo.class';
 
 @ApiController()
 @UseGuards(AuthGuard())

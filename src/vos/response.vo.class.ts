@@ -3,8 +3,8 @@ import {
     ApiPropertyOptional,
 } from '@nestjs/swagger';
 import { AutoInit } from './auto-init.vo.class';
-import { PaginationVO } from 'src/vos/pagination.vo.class';
-import { SerializableUtil } from 'src/utilities/serializable-util.class';
+import { PaginationVO } from '../vos/pagination.vo.class';
+import { SerializableUtil } from '../utilities/serializable-util.class';
 
 export class ResponseVO<T> extends AutoInit<ResponseVO<T>> {
     @ApiProperty({ isArray: true })

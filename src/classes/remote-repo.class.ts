@@ -5,16 +5,16 @@ import {
     OnModuleInit,
 } from '@nestjs/common';
 import { type Request } from 'express';
-import { RepositoryService } from 'src/modules/repository/repository.service';
+import { RepositoryService } from '../modules/repository/repository.service';
 import { minimatch } from 'minimatch';
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import { plainToInstance } from 'class-transformer';
-import { LoggerService } from 'src/modules/logger/logger.service';
-import { EventService } from 'src/modules/event/event.service';
-import { ResultVO } from 'src/vos/result.vo.class';
-import { DynamicConfigItemVO } from 'src/vos/dynamic-config-item.vo.class';
-import { CryptoUtil } from 'src/utilities/crypto-util.class';
+import { LoggerService } from '../modules/logger/logger.service';
+import { EventService } from '../modules/event/event.service';
+import { ResultVO } from '../vos/result.vo.class';
+import { DynamicConfigItemVO } from '../vos/dynamic-config-item.vo.class';
+import { CryptoUtil } from '../utilities/crypto-util.class';
 
 interface ConfigFile {
     pathname: string;

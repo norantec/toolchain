@@ -1,0 +1,90 @@
+# .github/workflows/publish.yml
+name: Publish Node.js Package
+
+on:
+  push:
+    branches:
+      - master
+      - alpha
+      - beta
+      - released
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com/'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run build
+        run: npm run build
+
+      - name: Pack-up artifact
+        run: |
+          zip -r artifact.zip dist .scripts
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        if: |
+          github.ref == 'refs/heads/alpha' ||
+          github.ref == 'refs/heads/beta' ||
+          github.ref == 'refs/heads/released'
+        with:
+          name: artifact-${{ github.run_id }}
+          path: artifact.zip
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    if: |
+      github.ref == 'refs/heads/alpha' ||
+      github.ref == 'refs/heads/beta' ||
+      github.ref == 'refs/heads/released'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com/'
+
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: artifact-${{ github.run_id }}
+
+      - name: Extract artifact
+        run: |
+          unzip artifact.zip
+
+      - name: Check cache
+        run: |
+          ls -al ./dist
+          ls -al ./.scripts
+
+      - name: Release with semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ github.ref_name }}
+        run: npm run bump -- -p common -o nauti-app -t $BRANCH_NAME -a $GITHUB_TOKEN --is-org
+
+      - name: Publish package
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

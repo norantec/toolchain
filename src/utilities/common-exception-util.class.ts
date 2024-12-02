@@ -2,6 +2,7 @@ import {
     BadRequestException,
     ForbiddenException,
     GatewayTimeoutException,
+    HttpException,
     InternalServerErrorException,
     NotFoundException,
     ServiceUnavailableException,
@@ -68,37 +69,43 @@ export type CreateExceptionFn = <T extends keyof CommonExceptionMap>(code: T, op
 export class CommonExceptionUtil {
     public static Code = CommonException;
 
-    public static create<T extends keyof CommonExceptionMap>(code: T, data: CommonExceptionMap[T]): Error {
-        let ExceptionClass: ClassType;
-
-        switch ((StringUtil.isFalsyString(code) ? '' : code).toString().split('_')[0]) {
-            case 'AUTH':
-                ExceptionClass = UnauthorizedException;
-                break;
-            case 'NOTFOUND':
-                ExceptionClass = NotFoundException;
-                break;
-            case 'INVALID':
-                ExceptionClass = BadRequestException;
-                break;
-            case 'TIMEOUT':
-                ExceptionClass = GatewayTimeoutException;
-                break;
-            case 'FORBIDDEN':
-                ExceptionClass = ForbiddenException;
-                break;
-            case 'PAYMENT':
-                ExceptionClass = ServiceUnavailableException;
-                break;
-            case 'GENERIC':
-            case 'SERVER':
-            default:
-                ExceptionClass = InternalServerErrorException;
-        }
-
-        return new ExceptionClass({
+    public static create<T extends keyof M, M = CommonExceptionMap>(
+        code: T,
+        context: M[T],
+        customExceptionHandler?: (code: T) => ClassType<HttpException>,
+    ): Error {
+        const createExceptionClass = (code: T) => {
+            let ExceptionClass: ClassType<HttpException>;
+            switch ((StringUtil.isFalsyString(code) ? '' : code).toString().split('_')[0]) {
+                case 'AUTH':
+                    ExceptionClass = UnauthorizedException;
+                    break;
+                case 'NOTFOUND':
+                    ExceptionClass = NotFoundException;
+                    break;
+                case 'INVALID':
+                    ExceptionClass = BadRequestException;
+                    break;
+                case 'TIMEOUT':
+                    ExceptionClass = GatewayTimeoutException;
+                    break;
+                case 'FORBIDDEN':
+                    ExceptionClass = ForbiddenException;
+                    break;
+                case 'PAYMENT':
+                    ExceptionClass = ServiceUnavailableException;
+                    break;
+                case 'GENERIC':
+                case 'SERVER':
+                default:
+                    ExceptionClass = customExceptionHandler?.(code) ?? InternalServerErrorException;
+            }
+            return ExceptionClass;
+        };
+        let Exception = createExceptionClass(code);
+        return new Exception({
             code,
-            data,
+            data: context,
         });
     }
 

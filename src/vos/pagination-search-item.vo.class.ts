@@ -1,6 +1,6 @@
-import { Mapping } from 'src/decorators/mapping.decorator';
+import { Mapping } from '../decorators/mapping.decorator';
 import { ApiProperty } from '@nestjs/swagger';
-import { SearchOp } from 'src/enums/search-op.enum';
+import { SearchOp } from '../enums/search-op.enum';
 
 export class PaginationSearchItemVO {
     @ApiProperty({

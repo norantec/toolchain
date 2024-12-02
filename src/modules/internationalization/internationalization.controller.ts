@@ -4,15 +4,15 @@ import {
 } from '@nestjs/common';
 import { type Request } from 'express';
 import { InternationalizationService } from './internationalization.service';
-import { Method } from 'src/decorators/method.decorator';
-import { BaseController } from 'src/common/base.controller';
-import { ApiController } from 'src/decorators/api-controller.decorator';
-import { DynamicConfigItemVO } from 'src/vos/dynamic-config-item.vo.class';
-import { ResultVO } from 'src/vos/result.vo.class';
-import { ResponseVO } from 'src/vos/response.vo.class';
-import { Mapping } from 'src/decorators/mapping.decorator';
+import { Method } from '../../decorators/method.decorator';
+import { BaseController } from '../../common/base.controller';
+import { ApiController } from '../../decorators/api-controller.decorator';
+import { DynamicConfigItemVO } from '../../vos/dynamic-config-item.vo.class';
+import { ResultVO } from '../../vos/result.vo.class';
+import { ResponseVO } from '../../vos/response.vo.class';
+import { Mapping } from '../../decorators/mapping.decorator';
 import { ApiProperty } from '@nestjs/swagger';
-import { TransformPipe } from 'src/pipes/transform.pipe';
+import { TransformPipe } from '../../pipes/transform.pipe';
 
 class InternationalizationGetRequestVO {
     @Mapping()

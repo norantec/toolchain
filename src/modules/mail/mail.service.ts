@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common';
 import * as _ from 'lodash';
 import * as Handlebars from 'handlebars';
 import * as axios from 'axios';
-import { CheckerUtil } from 'src/utilities/checker-util.class';
-import { StringUtil } from 'src/utilities/string-util.class';
-import { ResultVO } from 'src/vos/result.vo.class';
-import { CommonExceptionUtil } from 'src/utilities/common-exception-util.class';
+import { CheckerUtil } from '../../utilities/checker-util.class';
+import { StringUtil } from '../../utilities/string-util.class';
+import { ResultVO } from '../../vos/result.vo.class';
+import { CommonExceptionUtil } from '../../utilities/common-exception-util.class';
 import {
     MailModuleOptions,
     MessageConfig,

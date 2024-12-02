@@ -1,4 +1,4 @@
-import { DAO } from 'src/daos/dao.class';
+import { DAO } from '../../daos/dao.class';
 import { Injectable } from '@nestjs/common';
 import {
     CreateOptions,
@@ -11,18 +11,18 @@ import {
     WhereOptions,
 } from 'sequelize';
 import { MakeNullishOptional } from 'sequelize/types/utils';
-import { CheckerUtil } from 'src/utilities/checker-util.class';
-import { StringUtil } from 'src/utilities/string-util.class';
+import { CheckerUtil } from '../../utilities/checker-util.class';
+import { StringUtil } from '../../utilities/string-util.class';
 import * as _ from 'lodash';
-import { LocatorUtil } from 'src/utilities/locator-util.class';
-import { ClassType } from 'src/types/class-type.type';
-import { CommonExceptionUtil } from 'src/utilities/common-exception-util.class';
-import { UserDAO } from 'src/daos/user.dao.class';
+import { LocatorUtil } from '../../utilities/locator-util.class';
+import { ClassType } from '../../types/class-type.type';
+import { CommonExceptionUtil } from '../../utilities/common-exception-util.class';
+import { UserDAO } from '../../daos/user.dao.class';
 import { Sequelize } from 'sequelize-typescript';
-import { PaginationResultVO } from 'src/vos/pagination-result.vo.class';
-import { PaginationRequestVO } from 'src/vos/pagination-request.vo.class';
-import { PaginationVO } from 'src/vos/pagination.vo.class';
-import { ResponseVO } from 'src/vos/response.vo.class';
+import { PaginationResultVO } from '../../vos/pagination-result.vo.class';
+import { PaginationRequestVO } from '../../vos/pagination-request.vo.class';
+import { PaginationVO } from '../../vos/pagination.vo.class';
+import { ResponseVO } from '../../vos/response.vo.class';
 
 @Injectable()
 export class EntityService {

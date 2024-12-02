@@ -2,7 +2,7 @@ import {
     createParamDecorator,
     ExecutionContext,
 } from '@nestjs/common';
-import { UserDAO } from 'src/daos/user.dao.class';
+import { UserDAO } from '../daos/user.dao.class';
 
 export const CurrentUser = createParamDecorator((context: ExecutionContext): any => {
     const request = context.switchToHttp().getRequest();

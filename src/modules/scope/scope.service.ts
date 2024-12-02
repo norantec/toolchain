@@ -3,8 +3,8 @@ import {
     Injectable,
     Type,
 } from '@nestjs/common';
-import { METADATA_NAMES } from 'src/constants/metadata-names.constant';
-import { StringUtil } from 'src/utilities/string-util.class';
+import { METADATA_NAMES } from '../../constants/metadata-names.constant';
+import { StringUtil } from '../../utilities/string-util.class';
 
 @Injectable()
 export class ScopeService {

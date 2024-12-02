@@ -4,7 +4,7 @@ import * as os from 'os';
 import * as fs from 'fs-extra';
 import * as _ from 'lodash';
 import { z } from 'zod';
-import { StringUtil } from 'src/utilities/string-util.class';
+import { StringUtil } from '../../utilities/string-util.class';
 import { Get } from 'type-fest';
 import { ServerConfigModuleOptions } from './server-config.interface';
 

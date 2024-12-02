@@ -1,19 +1,19 @@
 import { Body } from '@nestjs/common';
-import { UseGuards } from 'src/decorators/use-guards.decorator';
+import { UseGuards } from '../../decorators/use-guards.decorator';
 import { AuthGuard } from '@nestjs/passport';
-import { Method } from 'src/decorators/method.decorator';
+import { Method } from '../../decorators/method.decorator';
 import { UserService } from './user.service';
-import { BaseController } from 'src/common/base.controller';
-import { EntityService } from 'src/modules/entity/entity.service';
-import { UserDAO } from 'src/daos/user.dao.class';
-import { SerializableUtil } from 'src/utilities/serializable-util.class';
-import { CurrentUser } from 'src/decorators/current-user.decorator';
-import { ApiController } from 'src/decorators/api-controller.decorator';
-import { TransformPipe } from 'src/pipes/transform.pipe';
-import { IsAdmin } from 'src/decorators/is-admin.decorator';
-import { ResponseVO } from 'src/vos/response.vo.class';
+import { BaseController } from '../../common/base.controller';
+import { EntityService } from '../../modules/entity/entity.service';
+import { UserDAO } from '../../daos/user.dao.class';
+import { SerializableUtil } from '../../utilities/serializable-util.class';
+import { CurrentUser } from '../../decorators/current-user.decorator';
+import { ApiController } from '../../decorators/api-controller.decorator';
+import { TransformPipe } from '../../pipes/transform.pipe';
+import { IsAdmin } from '../../decorators/is-admin.decorator';
+import { ResponseVO } from '../../vos/response.vo.class';
 import { ApiExtraModels, ApiProperty } from '@nestjs/swagger';
-import { Mapping } from 'src/decorators/mapping.decorator';
+import { Mapping } from '../../decorators/mapping.decorator';
 
 class UserUpdatePasswordRequestVO {
     @Mapping()

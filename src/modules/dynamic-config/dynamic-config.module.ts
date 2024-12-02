@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { DynamicConfigService } from './dynamic-config.service';
 import { DynamicConfigController } from './dynamic-config.controller';
-import { RemoteRepoOptions } from 'src/classes/remote-repo.class';
+import { RemoteRepoOptions } from '../../classes/remote-repo.class';
 
 export interface DynamicConfigModuleAsyncOptions {
     useFactory: (...args: any[]) => RemoteRepoOptions | Promise<RemoteRepoOptions>;

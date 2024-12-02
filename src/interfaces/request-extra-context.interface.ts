@@ -1,4 +1,4 @@
-import { UserDAO } from 'src/daos/user.dao.class';
+import { UserDAO } from '../daos/user.dao.class';
 
 export interface RequestExtraContext {
     legalScopeIdentifiers?: string[];

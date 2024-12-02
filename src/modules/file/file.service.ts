@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import * as OSS from 'ali-oss';
-import { HeaderUtil } from 'src/utilities/header-util.class';
-import { FileVO } from 'src/vos/file.vo.class';
-import { StringUtil } from 'src/utilities/string-util.class';
+import { HeaderUtil } from '../../utilities/header-util.class';
+import { FileVO } from '../../vos/file.vo.class';
+import { StringUtil } from '../../utilities/string-util.class';
 import { FileModuleOptions } from './file.interface';
 
 @Injectable()

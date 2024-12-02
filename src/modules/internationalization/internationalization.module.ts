@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InternationalizationService } from './internationalization.service';
 import { InternationalizationController } from './internationalization.controller';
-import { RemoteRepoOptions } from 'src/classes/remote-repo.class';
+import { RemoteRepoOptions } from '../../classes/remote-repo.class';
 
 export interface InternationalizationModuleAsyncOptions {
     useFactory: (...args: any[]) => RemoteRepoOptions | Promise<RemoteRepoOptions>;

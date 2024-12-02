@@ -1,15 +1,15 @@
 import 'reflect-metadata';
 import { Post } from '@nestjs/common';
 import * as _ from 'lodash';
-import { METADATA_NAMES } from 'src/constants/metadata-names.constant';
+import { METADATA_NAMES } from '../constants/metadata-names.constant';
 import {
     ApiBody,
     ApiOkResponse,
     getSchemaPath,
 } from '@nestjs/swagger';
 import { DECORATORS } from '@nestjs/swagger/dist/constants';
-import { ClassType } from 'src/types/class-type.type';
-import { ResponseVO } from 'src/vos/response.vo.class';
+import { ClassType } from '../types/class-type.type';
+import { ResponseVO } from '../vos/response.vo.class';
 
 export type AdminMode = 'both' | 'normal' | 'admin';
 type TypeDeclaration = ClassType | Array<TypeDeclaration>;

@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { LoggerService } from '../logger/logger.service';
-import { CheckerUtil } from 'src/utilities/checker-util.class';
-import { StringUtil } from 'src/utilities/string-util.class';
-import { SubEventId } from 'src/types/sub-event-id.type';
+import { CheckerUtil } from '../../utilities/checker-util.class';
+import { StringUtil } from '../../utilities/string-util.class';
+import { SubEventId } from '../../types/sub-event-id.type';
 import { AsyncEventData } from './event.interface';
 type CallbackFunction<T = any> = (data?: T) => any;
 type IdentifierGetterFunction<T = any> = (data?: T) => string;
