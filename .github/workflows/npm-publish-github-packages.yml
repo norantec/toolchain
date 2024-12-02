@@ -77,6 +77,9 @@ jobs:
         run: |
           ls -al ./dist
 
+      - name: Install dependencies
+        run: npm i --legacy-peer-deps=true
+
       - name: Release with semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
