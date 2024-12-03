@@ -7,12 +7,13 @@ import { ApiBody } from '@nestjs/swagger';
 
 export function ReflectedBody(): ParameterDecorator {
     return (target: ClassType, propertyKey: string, parameterIndex: number) => {
-        const parameterTypeStr = reflect(target).getMethod(propertyKey)?.parameterTypes?.[parameterIndex]?.toString?.();
-        const {
-            schema,
-            Clazz,
-        } = OpenApiUtil.generateSchemaAndClassName(parameterTypeStr);
-        ApiBody({ schema })(target, propertyKey, Reflect.getOwnPropertyDescriptor(target, propertyKey));
-        Body(TransformPipe(Clazz))(target, propertyKey, parameterIndex);
+        // const parameterTypeStr = reflect(target).getMethod(propertyKey)?.parameterTypes?.[parameterIndex]?.toString?.();
+        // console.log('LENCONDA:FUCK:parameterTypeStr', parameterTypeStr);
+        // const {
+        //     schema,
+        //     Clazz,
+        // } = OpenApiUtil.generateSchemaAndClassName(parameterTypeStr);
+        // ApiBody({ schema })(target, propertyKey, Reflect.getOwnPropertyDescriptor(target, propertyKey));
+        Body()(target, propertyKey, parameterIndex);
     };
 }

@@ -1,5 +1,3 @@
-import 'reflect-metadata';
-
 type LocatorDecoratorFn = ((alias?: string) => (target: any, propertyKey: string) => void) & { metadataKey: symbol; };
 
 export const Locator: LocatorDecoratorFn = (alias) => (target, propertyKey) => {

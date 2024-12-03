@@ -33,7 +33,7 @@ export class Setup {
                     }
 
                     const destinationPathname = path.resolve(process.cwd(), destinationRelativePathname);
-                    const packageJson = fs.readJsonSync(path.resolve(__dirname, '../package.json'));
+                    const packageJson = fs.readJsonSync(path.resolve(__dirname, '../../../package.json'));
                     const destinationPackagePathname = path.resolve(destinationPathname, 'node_modules/' + packageJson.name);
 
                     if (!packageJson) {
@@ -50,7 +50,9 @@ export class Setup {
                     fs.mkdirpSync(destinationPackagePathname);
 
                     for (const file of files) {
-                        const sourcePathname = path.resolve(__dirname, '..', file);
+                        const sourcePathname = path.resolve(__dirname, '../../..', file);
+
+                        console.log(sourcePathname, '->', path.resolve(destinationPackagePathname, file));
 
                         if (!fs.existsSync(sourcePathname)) {
                             continue;

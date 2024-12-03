@@ -1,6 +1,4 @@
 import { getSchemaPath } from '@nestjs/swagger';
-import { CommonExceptionUtil } from './common-exception-util.class';
-import { StringUtil } from './string-util.class';
 import {
     ReferenceObject,
     SchemaObject,
@@ -14,11 +12,11 @@ function generateBasicSchemaAndType(input: string): {
     Clazz: ClassType;
     schema: SchemaObject & Partial<ReferenceObject>;
 } {
-    if (StringUtil.isFalsyString(input) || !/^class\s\w+(?:\[\])*$/.test(input)) {
-        throw CommonExceptionUtil.create(CommonExceptionUtil.Code.INVALID_INFERRED_TYPE, {
-            type: input,
-        });
-    }
+    // if (StringUtil.isFalsyString(input) || !/^class\s\w+(?:\[\])*$/.test(input)) {
+    //     throw CommonExceptionUtil.create(CommonExceptionUtil.Code.INVALID_INFERRED_TYPE, {
+    //         type: input,
+    //     });
+    // }
     if (input.endsWith('[]')) {
         return {
             schema: {
@@ -31,11 +29,11 @@ function generateBasicSchemaAndType(input: string): {
         const className = input.replace(/^class\s/g, '');
         const Clazz = ContainerUtil.get(className);
 
-        if (!Clazz) {
-            throw CommonExceptionUtil.create(CommonExceptionUtil.Code.INVALID_UNREGISTERED_CLASS, {
-                className,
-            });
-        }
+        // if (!Clazz) {
+        //     throw CommonExceptionUtil.create(CommonExceptionUtil.Code.INVALID_UNREGISTERED_CLASS, {
+        //         className,
+        //     });
+        // }
 
         return {
             schema: {

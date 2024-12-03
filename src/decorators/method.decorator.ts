@@ -1,18 +1,17 @@
-import 'reflect-metadata';
 import { Post } from '@nestjs/common';
 import * as _ from 'lodash';
 import { METADATA_NAMES } from '../constants/metadata-names.constant';
-import { ApiOkResponse } from '@nestjs/swagger';
-import { OpenApiUtil } from '../utilities/openapi-util.class';
-import { reflect } from 'typescript-rtti';
-import { ClassType } from '../types/class-type.type';
-import { DECORATORS } from '@nestjs/swagger/dist/constants';
-import { ResponseDTO } from '../dtos/response.dto.class';
+// import { ApiOkResponse } from '@nestjs/swagger';
+// import { OpenApiUtil } from '../utilities/openapi-util.class';
+// import { reflect } from 'typescript-rtti';
+// import { ClassType } from '../types/class-type.type';
+// import { DECORATORS } from '@nestjs/swagger/dist/constants';
+// import { ResponseDTO } from '../dtos/response.dto.class';
 
 export type AdminMode = 'both' | 'normal' | 'admin';
 
 export function Method(adminMode: AdminMode = 'both'): MethodDecorator {
-    return (target: ClassType, propertyKey: string, descriptor: PropertyDescriptor) => {
+    return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
         const controllerNameSegments = _.kebabCase(target?.constructor?.name).split('-').slice(0, -1);
         let controllerName = _.camelCase(controllerNameSegments.join('-'));
         const apiName = [controllerName, propertyKey].join('.');
@@ -56,26 +55,30 @@ export function Method(adminMode: AdminMode = 'both'): MethodDecorator {
         );
         Post(scopeNames)(target, propertyKey, descriptor);
 
-        const returnTypeStr = reflect(target).getMethod(propertyKey)?.returnType?.toString?.();
-        const {
-            schema,
-            Clazz,
-        } = OpenApiUtil.generateSchemaAndClassName(returnTypeStr);
-        let existedExtraModels = Reflect.getMetadata(DECORATORS.API_EXTRA_MODELS, target?.constructor);
+        // @ts-ignore
+        // console.log('LENCONDA:FUCK:12310238', reflect(target?.constructor)?.getMethod?.('getDetail')?.returnType?.toString?.(), target === UserController, target?.prototype);
+        // console.log('LENCONDA:FUCK:12310238', Reflect.getMetadataKeys(target?.constructor, propertyKey));
 
-        if (!Array.isArray(existedExtraModels)) {
-            existedExtraModels = [];
-        }
+        // const returnTypeStr = reflect(target?.constructor as ClassType).getMethod(propertyKey)?.returnType?.toString?.();
+        // const {
+        //     schema,
+        //     Clazz,
+        // } = OpenApiUtil.generateSchemaAndClassName(returnTypeStr);
+        // let existedExtraModels = Reflect.getMetadata(DECORATORS.API_EXTRA_MODELS, target?.constructor);
 
-        Reflect.defineMetadata(
-            DECORATORS.API_EXTRA_MODELS,
-            _.uniq(existedExtraModels.concat([
-                Clazz,
-                ResponseDTO,
-            ])),
-            target?.constructor,
-        );
+        // if (!Array.isArray(existedExtraModels)) {
+        //     existedExtraModels = [];
+        // }
 
-        ApiOkResponse({ schema })(target, propertyKey, descriptor);
+        // Reflect.defineMetadata(
+        //     DECORATORS.API_EXTRA_MODELS,
+        //     _.uniq(existedExtraModels.concat([
+        //         Clazz,
+        //         ResponseDTO,
+        //     ])),
+        //     target?.constructor,
+        // );
+
+        // ApiOkResponse({ schema })(target, propertyKey, descriptor);
     };
 }

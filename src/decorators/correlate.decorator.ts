@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { Type } from 'class-transformer';
 import { ClassType } from '../types/class-type.type';
 

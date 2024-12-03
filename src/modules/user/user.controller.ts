@@ -2,7 +2,6 @@ import { UseGuards } from '../../decorators/use-guards.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { Method } from '../../decorators/method.decorator';
 import { UserService } from './user.service';
-import { BaseController } from '../../common/base.controller';
 import { EntityService } from '../../modules/entity/entity.service';
 import { UserDAO } from '../../daos/user.dao.class';
 import { CurrentUser } from '../../decorators/current-user.decorator';
@@ -10,16 +9,15 @@ import { ApiController } from '../../decorators/api-controller.decorator';
 import { IsAdmin } from '../../decorators/is-admin.decorator';
 import { ReflectedBody } from '../../decorators/reflected-body.decorator';
 import { UserUpdatePasswordRequestDTO } from '../../dtos/user-update-password-request.dto.class';
+import { reflect } from 'typescript-rtti';
 
 @UseGuards(AuthGuard())
 @ApiController()
-export class UserController extends BaseController {
+export class UserController {
     public constructor(
         private readonly userService: UserService,
         private readonly entityService: EntityService,
-    ) {
-        super();
-    }
+    ) {}
 
     @Method()
     public async getDetail(@CurrentUser() user: UserDAO) {
@@ -59,3 +57,10 @@ export class UserController extends BaseController {
         });
     }
 }
+
+console.log(reflect(UserController).getMethod('update').parameters?.[1]?.type?.toString());
+// console.log(
+//     Reflect.getMetadata('rt:p', UserController.prototype, 'getDetail'),
+//     Reflect.getMetadata('rt:f', UserController.prototype, 'getDetail'),
+//     Reflect.getMetadata('rt:t', UserController.prototype, 'getDetail')(),
+// );

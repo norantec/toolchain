@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { AppGuard } from '../guards/app.guard';
 import { UseGuards as OriginalUseGuards } from '@nestjs/common';
 import { ScopeGuard } from '../guards/scope.guard';

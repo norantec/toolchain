@@ -1,5 +1,4 @@
 /* eslint-disable prefer-object-has-own */
-import 'reflect-metadata';
 import * as _ from 'lodash';
 import { Locator } from '../decorators/locator.decorator';
 import { JSONUtil } from './json-util.class';
