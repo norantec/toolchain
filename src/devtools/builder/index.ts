@@ -101,6 +101,7 @@ export class Builder {
                         use: {
                             loader: 'ts-loader',
                             options: {
+                                transpileOnly: true,
                                 configFile: pathResolve(
                                     process.cwd(),
                                     StringUtil.isFalsyString(this.options?.tsProject)
