@@ -24,14 +24,14 @@ jobs:
           registry-url: 'https://npm.pkg.github.com/'
 
       - name: Install dependencies
-        run: npm install
+        run: npm i --legacy-peer-deps=true
 
       - name: Run build
         run: npm run build
 
       - name: Pack-up artifact
         run: |
-          zip -r artifact.zip dist .scripts
+          zip -r artifact.zip bin dist
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
