@@ -74,7 +74,6 @@ export class RemoteRepo implements OnModuleInit {
         }
 
         const ref: string = data?.ref;
-        // const configRef = this.serverConfigService.get(this.repoRefKey);
 
         this.loggerService.log(`Got ref: ${ref}, config ref: ${this.options.repoRef}`);
 
