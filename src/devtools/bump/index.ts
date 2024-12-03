@@ -1,8 +1,8 @@
 import { Octokit } from 'octokit';
 import * as semver from 'semver';
-import { StringUtil } from '../utilities/string-util.class';
+import { StringUtil } from '../../utilities/string-util.class';
 import { Command } from 'commander';
-import { ClassType } from '../types/class-type.type';
+import { ClassType } from '../../types/class-type.type';
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as _ from 'lodash';
