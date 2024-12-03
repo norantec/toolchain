@@ -66,18 +66,18 @@ export class GitHubAdapter extends Adapter implements Adapter {
                 warn: () => {},
             },
         });
-    
+
         try {
             const response = await octokit.request(`GET /${this.options.isOrg ? 'orgs' : 'users'}/{owner}/packages/npm/{package_name}/versions`, {
                 owner: this.options.owner,
                 package_name: packageName.split('/').pop(),
             });
             const versions = response.data.map((pkg) => pkg.name);
-    
+
             if (!Array.isArray(versions)) {
                 return [];
             }
-    
+
             return versions.sort((version1, version2) => semver.compare(version2, version1));
         } catch (error) {
             console.log(error);
@@ -224,11 +224,11 @@ export class Bump {
 
     private getFormalReleaseVersion(version) {
         const parsed = semver.parse(version);
-    
+
         if (!parsed) {
             return null;
         }
-    
+
         return `${parsed.major}.${parsed.minor}.${parsed.patch}`;
     }
 }
