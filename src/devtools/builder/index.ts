@@ -10,7 +10,7 @@ class CatchNotFoundPlugin {
         resolver.resolve = function (context, path, request, resolveContext, callback) {
             const self = this;
             resolve.call(self, context, path, request, resolveContext, (error, innerPath, result) => {
-                const notfoundPathname = pathResolve(__dirname, '../../preserved/@@notfound.js') + `?${request}`;
+                const notfoundPathname = pathResolve(__dirname, '../../../') + `/preserved/@@notfound.js?${request}`;
                 if (result) {
                     return callback(null, innerPath, result);
                 };
