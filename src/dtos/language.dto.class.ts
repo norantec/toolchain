@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Mapping } from '../decorators/mapping.decorator';
 
-export class LanguageVO {
+export class LanguageDTO {
     @Mapping()
     @ApiPropertyOptional()
     public code: string;

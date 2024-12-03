@@ -12,8 +12,8 @@ import * as fs from 'fs-extra';
 import { plainToInstance } from 'class-transformer';
 import { LoggerService } from '../modules/logger/logger.service';
 import { EventService } from '../modules/event/event.service';
-import { ResultVO } from '../vos/result.vo.class';
-import { DynamicConfigItemVO } from '../vos/dynamic-config-item.vo.class';
+import { ResultDTO } from '../dtos/result.dto.class';
+import { DynamicConfigItemDTO } from '../dtos/dynamic-config-item.dto.class';
 import { CryptoUtil } from '../utilities/crypto-util.class';
 
 interface ConfigFile {
@@ -80,7 +80,7 @@ export class RemoteRepo implements OnModuleInit {
 
         if (!ref || this.options.repoRef !== ref) {
             this.loggerService.error(`Repo ref does not match, config: ${this.options.repoRef}, incoming ref: ${ref}`);
-            return plainToInstance(ResultVO, {
+            return plainToInstance(ResultDTO, {
                 success: false,
                 createdAt: startTimeStr,
                 updatedAt: Date.now(),
@@ -89,7 +89,7 @@ export class RemoteRepo implements OnModuleInit {
 
         const { success } = await this.fetch();
 
-        return plainToInstance(ResultVO, {
+        return plainToInstance(ResultDTO, {
             success,
             createdAt: startTimeStr,
             updatedAt: Date.now(),
@@ -119,12 +119,12 @@ export class RemoteRepo implements OnModuleInit {
         }
 
         return files.reduce((result, file) => {
-            const configItem = new DynamicConfigItemVO();
+            const configItem = new DynamicConfigItemDTO();
             configItem.content = file.content;
             configItem.name = path.join(path.dirname(file.pathname), path.parse(file.pathname).name);
             result[configItem.name] = configItem;
             return result;
-        }, {} as Record<string, DynamicConfigItemVO>);
+        }, {} as Record<string, DynamicConfigItemDTO>);
     }
 
     public async initDevCache() {

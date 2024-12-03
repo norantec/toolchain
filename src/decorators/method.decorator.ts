@@ -2,53 +2,22 @@ import 'reflect-metadata';
 import { Post } from '@nestjs/common';
 import * as _ from 'lodash';
 import { METADATA_NAMES } from '../constants/metadata-names.constant';
-import {
-    ApiBody,
-    ApiOkResponse,
-    getSchemaPath,
-} from '@nestjs/swagger';
-import { DECORATORS } from '@nestjs/swagger/dist/constants';
+import { ApiOkResponse } from '@nestjs/swagger';
+import { OpenApiUtil } from '../utilities/openapi-util.class';
+import { reflect } from 'typescript-rtti';
 import { ClassType } from '../types/class-type.type';
-import { ResponseVO } from '../vos/response.vo.class';
+import { DECORATORS } from '@nestjs/swagger/dist/constants';
+import { ResponseDTO } from '../dtos/response.dto.class';
 
 export type AdminMode = 'both' | 'normal' | 'admin';
-type TypeDeclaration = ClassType | Array<TypeDeclaration>;
 
-export function Method(
-    inputOrArrayedInput: TypeDeclaration,
-    outputOrArrayedOutput: TypeDeclaration,
-    adminMode: AdminMode = 'both',
-    Decorator?: (...params: any[]) => MethodDecorator,
-) {
-    return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
+export function Method(adminMode: AdminMode = 'both'): MethodDecorator {
+    return (target: ClassType, propertyKey: string, descriptor: PropertyDescriptor) => {
         const controllerNameSegments = _.kebabCase(target?.constructor?.name).split('-').slice(0, -1);
         let controllerName = _.camelCase(controllerNameSegments.join('-'));
         const apiName = [controllerName, propertyKey].join('.');
         const scopeIdentifier = apiName;
         const originalScopeNameList = Reflect.getMetadata(METADATA_NAMES.SCOPE_NAMES, target.constructor);
-        const getSchemaAndType = (inputValue: TypeDeclaration) => {
-            if (Array.isArray(inputValue)) {
-                const schemaAndType = getSchemaAndType(inputValue?.[0]);
-                return {
-                    type: schemaAndType?.type,
-                    schema: {
-                        type: 'array',
-                        items: schemaAndType?.schema,
-                    },
-                };
-            } else {
-                return {
-                    type: inputValue as ClassType,
-                    schema: {
-                        $ref: getSchemaPath(inputValue),
-                    },
-                };
-            }
-        };
-        const {
-            type: output,
-            schema: outputSchema,
-        } = getSchemaAndType(outputOrArrayedOutput);
 
         let scopeNames: string[] = [];
 
@@ -85,9 +54,13 @@ export function Method(
             scopeIdentifier.split('.').slice(0, -1).join('.'),
             target?.constructor,
         );
+        Post(scopeNames)(target, propertyKey, descriptor);
 
-        (typeof Decorator === 'function' ? Decorator : Post)(scopeNames)(target, propertyKey, descriptor);
-
+        const returnTypeStr = reflect(target).getMethod(propertyKey)?.returnType?.toString?.();
+        const {
+            schema,
+            Clazz,
+        } = OpenApiUtil.generateSchemaAndClassName(returnTypeStr);
         let existedExtraModels = Reflect.getMetadata(DECORATORS.API_EXTRA_MODELS, target?.constructor);
 
         if (!Array.isArray(existedExtraModels)) {
@@ -97,37 +70,12 @@ export function Method(
         Reflect.defineMetadata(
             DECORATORS.API_EXTRA_MODELS,
             _.uniq(existedExtraModels.concat([
-                ...(output ? [output] : []),
-                ResponseVO,
+                Clazz,
+                ResponseDTO,
             ])),
             target?.constructor,
         );
 
-        if (output) {
-            ApiOkResponse({
-                schema: {
-                    allOf: [
-                        {
-                            $ref: getSchemaPath(ResponseVO),
-                        },
-                        {
-                            properties: {
-                                data: {
-                                    type: 'array',
-                                    items: outputSchema,
-                                },
-                            },
-                            required: [
-                                'data',
-                            ],
-                        },
-                    ],
-                },
-            })(target, propertyKey, descriptor);
-        }
-
-        if (inputOrArrayedInput) {
-            ApiBody({ type: () => inputOrArrayedInput })(target, propertyKey, descriptor);
-        }
+        ApiOkResponse({ schema })(target, propertyKey, descriptor);
     };
 }

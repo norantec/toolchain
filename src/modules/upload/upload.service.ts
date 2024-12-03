@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { STS } from 'ali-oss';
 import { v4 as uuid } from 'uuid';
-import { UploadCredentialVO } from '../../vos/upload-credential.vo.class';
+import { UploadCredentialDTO } from '../../dtos/upload-credential.dto.class';
 import { StringUtil } from '../../utilities/string-util.class';
 import { UploadModuleOptions } from './upload.interface';
 
 @Injectable()
 export class UploadService {
     private stsClient: STS;
-    private credential: UploadCredentialVO;
+    private credential: UploadCredentialDTO;
 
     public constructor(private readonly options: UploadModuleOptions) {
         this.stsClient = new STS({
@@ -19,7 +19,7 @@ export class UploadService {
 
     public async getCredential() {
         if (
-            (this.credential instanceof UploadCredentialVO) &&
+            (this.credential instanceof UploadCredentialDTO) &&
             !StringUtil.isFalsyString(this.credential.accessKeyId) &&
             !StringUtil.isFalsyString(this.credential.accessKeySecret) &&
             !StringUtil.isFalsyString(this.credential.securityToken) &&
@@ -30,7 +30,7 @@ export class UploadService {
 
         const id = uuid();
         const result = await this.stsClient.assumeRole(this.options?.roleArn, '', 3600);
-        const uploadCredentialVO = new UploadCredentialVO();
+        const uploadCredentialVO = new UploadCredentialDTO();
 
         uploadCredentialVO.id = id;
         uploadCredentialVO.accessKeyId = result?.credentials?.AccessKeyId;

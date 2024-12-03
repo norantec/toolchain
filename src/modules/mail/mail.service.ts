@@ -4,7 +4,7 @@ import * as Handlebars from 'handlebars';
 import * as axios from 'axios';
 import { CheckerUtil } from '../../utilities/checker-util.class';
 import { StringUtil } from '../../utilities/string-util.class';
-import { ResultVO } from '../../vos/result.vo.class';
+import { ResultDTO } from '../../dtos/result.dto.class';
 import { CommonExceptionUtil } from '../../utilities/common-exception-util.class';
 import {
     MailModuleOptions,
@@ -48,7 +48,7 @@ export class MailService {
             messageId: () => StringUtil.isFalsyString(messageId),
         });
 
-        const result = new ResultVO();
+        const result = new ResultDTO();
         result.createdAt = Date.now();
         const localeTextMap = _.merge({}, this.options?.getLocaleTextMap?.(locale));
         const messageConfig: MessageConfig = this.options?.getMessage?.(messageId);

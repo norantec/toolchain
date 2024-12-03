@@ -12,7 +12,8 @@ import { EntityService } from '../../modules/entity/entity.service';
 import { StringUtil } from '../../utilities/string-util.class';
 import { SerializableUtil } from '../../utilities/serializable-util.class';
 import { CheckerUtil } from '../../utilities/checker-util.class';
-import { PaginationRequestVO } from '../../vos/pagination-request.vo.class';
+import { PaginationRequestDTO } from '../../dtos/pagination-request.dto.class';
+import { PaginationResultDTO } from '../../dtos/pagination-result.dto.class';
 
 @Injectable()
 export class UserService {
@@ -32,8 +33,8 @@ export class UserService {
             include?: Includeable | Includeable[];
             where?: WhereOptions;
             transaction?: Transaction;
-        } & Partial<PaginationRequestVO>,
-    ) {
+        } & Partial<PaginationRequestDTO>,
+    ): Promise<PaginationResultDTO<UserDAO>> {
         return await this.entityService.withTransaction({
             outerTransaction,
             callback: async (transaction) => {

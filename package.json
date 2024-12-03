@@ -79,6 +79,7 @@
         "sequelize-typescript": "^2.1.5",
         "ts-loader": "^9.5.1",
         "type-fest": "^4.27.0",
+        "typescript-rtti": "^0.9.6",
         "uuid": "^9.0.0",
         "winston": "^3.8.2",
         "yup": "^1.2.0",

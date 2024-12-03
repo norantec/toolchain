@@ -7,12 +7,9 @@ import { InternationalizationService } from './internationalization.service';
 import { Method } from '../../decorators/method.decorator';
 import { BaseController } from '../../common/base.controller';
 import { ApiController } from '../../decorators/api-controller.decorator';
-import { DynamicConfigItemVO } from '../../vos/dynamic-config-item.vo.class';
-import { ResultVO } from '../../vos/result.vo.class';
-import { ResponseVO } from '../../vos/response.vo.class';
 import { Mapping } from '../../decorators/mapping.decorator';
 import { ApiProperty } from '@nestjs/swagger';
-import { TransformPipe } from '../../pipes/transform.pipe';
+import { ReflectedBody } from '../../decorators/reflected-body.decorator';
 
 class InternationalizationGetRequestVO {
     @Mapping()
@@ -26,20 +23,16 @@ export class InternationalizationController extends BaseController {
         super();
     }
 
-    @Method(null, null, 'normal')
+    @Method('normal')
     public async onUpdate(
         @Body() data: any,
         @Req() request: Request,
-    ): Promise<ResponseVO<ResultVO>> {
-        return new ResponseVO({
-            data: await this.internationalizationService.onUpdate(data, request),
-        });
+    ) {
+        return await this.internationalizationService.onUpdate(data, request);
     }
 
-    @Method(InternationalizationGetRequestVO, DynamicConfigItemVO, 'normal')
-    public async get(@Body(TransformPipe(InternationalizationGetRequestVO)) body: InternationalizationGetRequestVO): Promise<ResponseVO<DynamicConfigItemVO>> {
-        return new ResponseVO({
-            data: Object.values(await this.internationalizationService.get(body?.patterns, false)),
-        });
+    @Method('normal')
+    public async get(@ReflectedBody() body: InternationalizationGetRequestVO) {
+        return Object.values(await this.internationalizationService.get(body?.patterns, false));
     }
 }

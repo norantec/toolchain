@@ -19,10 +19,8 @@ import { ClassType } from '../../types/class-type.type';
 import { CommonExceptionUtil } from '../../utilities/common-exception-util.class';
 import { UserDAO } from '../../daos/user.dao.class';
 import { Sequelize } from 'sequelize-typescript';
-import { PaginationResultVO } from '../../vos/pagination-result.vo.class';
-import { PaginationRequestVO } from '../../vos/pagination-request.vo.class';
-import { PaginationVO } from '../../vos/pagination.vo.class';
-import { ResponseVO } from '../../vos/response.vo.class';
+import { PaginationResultDTO } from '../../dtos/pagination-result.dto.class';
+import { PaginationRequestDTO } from '../../dtos/pagination-request.dto.class';
 
 @Injectable()
 export class EntityService {
@@ -231,8 +229,8 @@ export class EntityService {
             subQuery?: boolean;
             transaction?: Transaction;
             where?: WhereOptions;
-        } & Partial<PaginationRequestVO>,
-    ): Promise<PaginationResultVO<A>> {
+        } & Partial<PaginationRequestDTO>,
+    ): Promise<PaginationResultDTO<A>> {
         CheckerUtil.check({
             DAOClass: () => !DAOClass,
         });
@@ -377,7 +375,7 @@ export class EntityService {
                     order: orders as any,
                 });
 
-                const paginationResultVO = new PaginationResultVO<A>();
+                const paginationResultVO = new PaginationResultDTO<A>();
                 paginationResultVO.data = daoList;
                 paginationResultVO.hasNext = typeof paginationLimit === 'number' ? daoList.length === paginationLimit : false;
 
@@ -535,17 +533,6 @@ export class EntityService {
             where: {
                 [idField]: idList,
             } as any,
-        });
-    }
-
-    public transformPaginationResultToResponse<T>(paginationResultVO: PaginationResultVO<T>): ResponseVO<T> {
-        const paginationVO = new PaginationVO();
-        paginationVO.hasNext = paginationResultVO.hasNext;
-        paginationVO.previousCursor = paginationResultVO.previousCursor;
-        paginationVO.nextCursor = paginationResultVO.nextCursor;
-        return new ResponseVO<T>({
-            data: paginationResultVO.data,
-            pagination: paginationVO,
         });
     }
 }

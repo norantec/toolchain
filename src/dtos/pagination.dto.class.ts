@@ -7,7 +7,7 @@ export interface Pagination {
     previousCursor?: string;
 }
 
-export class PaginationVO implements Pagination {
+export class PaginationDTO implements Pagination {
     @Mapping()
     @ApiPropertyOptional()
     public hasNext: boolean;

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as OSS from 'ali-oss';
 import { HeaderUtil } from '../../utilities/header-util.class';
-import { FileVO } from '../../vos/file.vo.class';
+import { FileDTO } from '../../dtos/file.dto.class';
 import { StringUtil } from '../../utilities/string-util.class';
 import { FileModuleOptions } from './file.interface';
 
@@ -47,7 +47,7 @@ export class FileService {
                     const size = Number(parsedHeaders.getValue('content-length'));
                     const mimeType = parsedHeaders.getValue('content-type');
                     const time = new Date(parsedHeaders.getValue('last-modified')).getTime();
-                    const resultDTO = new FileVO();
+                    const resultDTO = new FileDTO();
 
                     resultDTO.progress = 1;
                     resultDTO.createdAt = time;

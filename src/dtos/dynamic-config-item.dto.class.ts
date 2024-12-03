@@ -6,7 +6,7 @@ export interface DynamicConfig {
     [key: string]: string | number | boolean | null | DynamicConfig | Array<string | number | boolean | null | DynamicConfig>;
 };
 
-export class DynamicConfigItemVO {
+export class DynamicConfigItemDTO {
     @Mapping()
     @ApiPropertyOptional()
     public name: string;
