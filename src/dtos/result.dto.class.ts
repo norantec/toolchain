@@ -3,7 +3,7 @@ import { GROUP } from '../constants/group.constant';
 import { Mapping } from '../decorators/mapping.decorator';
 import { IsOptional } from 'class-validator';
 
-export class ResultVO {
+export class ResultDTO {
     @Mapping()
     @ApiPropertyOptional()
     public id: string;

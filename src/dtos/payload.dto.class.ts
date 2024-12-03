@@ -3,34 +3,17 @@ import { GROUP } from '../constants/group.constant';
 import { Mapping } from '../decorators/mapping.decorator';
 import { IsOptional } from 'class-validator';
 
-export class FileVO {
+export class PayloadDTO {
     @Mapping()
     @ApiPropertyOptional()
-    public size: number;
+    public id: string;
 
     @Mapping()
     @ApiPropertyOptional()
-    public progress: number;
-
-    @Mapping()
-    @ApiPropertyOptional()
-    public url: string;
-
-    @Mapping()
-    @ApiPropertyOptional()
-    public name: string;
-
-    @Mapping()
-    @ApiPropertyOptional()
-    public mimeType: string;
+    public content: string;
 
     @Mapping({ groups: [GROUP.RESPONSE_ONLY] })
     @ApiPropertyOptional()
     @IsOptional({ groups: [GROUP.REQUEST_ONLY] })
     public createdAt: number;
-
-    @Mapping({ groups: [GROUP.RESPONSE_ONLY] })
-    @ApiPropertyOptional()
-    @IsOptional({ groups: [GROUP.REQUEST_ONLY] })
-    public updatedAt: number;
 }

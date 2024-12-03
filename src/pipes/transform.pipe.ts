@@ -23,22 +23,19 @@ function createTransformPipe<T>(itemType: Type<T>): Type<PipeTransform> {
         }
 
         public transform(values: T[], metadata: ArgumentMetadata): Promise<any[]> {
-            if (!Array.isArray(values)) {
+            const transformValue = async (value: any): Promise<any> => {
+                if (Array.isArray(value)) {
+                    return Promise.all(value.map(transformValue));
+                }
                 return super.transform(
-                    values,
+                    value,
                     {
                         ...metadata,
                         metatype: itemType,
                     },
                 );
-            }
-            return Promise.all(values.map((value) => super.transform(
-                value,
-                {
-                    ...metadata,
-                    metatype: itemType,
-                },
-            )));
+            };
+            return transformValue(values);
         }
     }
     return mixin(MixinTransformArrayDTOPipe);

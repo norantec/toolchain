@@ -1,19 +1,19 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { PaginationSearchItemVO } from './pagination-search-item.vo.class';
+import { PaginationSearchItemDTO } from './pagination-search-item.dto.class';
 import { Mapping } from '../decorators/mapping.decorator';
 import { Correlate } from '../decorators/correlate.decorator';
 
-export class PaginationRequestVO {
+export class PaginationRequestDTO {
     @ApiPropertyOptional()
     @Mapping()
     public lastCursor: string;
 
     @ApiPropertyOptional({
-        type: () => [[PaginationSearchItemVO]],
+        type: () => [[PaginationSearchItemDTO]],
     })
     @Mapping()
-    @Correlate(() => PaginationSearchItemVO)
-    public search: PaginationSearchItemVO[][];
+    @Correlate(() => PaginationSearchItemDTO)
+    public search: PaginationSearchItemDTO[][];
 
     @ApiPropertyOptional()
     @Mapping()

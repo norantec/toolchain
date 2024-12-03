@@ -5,7 +5,7 @@ import { PaymentDuration } from '../enums/payment-duration.enum';
 import { PlanRestrictionType } from '../enums/plan-restriction-type.enum';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
-export class PlanVO {
+export class PlanDTO {
     @Mapping()
     @ApiPropertyOptional()
     public productId: string;

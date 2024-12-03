@@ -7,12 +7,9 @@ import { DynamicConfigService } from './dynamic-config.service';
 import { Method } from '../../decorators/method.decorator';
 import { BaseController } from '../../common/base.controller';
 import { ApiController } from '../../decorators/api-controller.decorator';
-import { ResultVO } from '../../vos/result.vo.class';
-import { DynamicConfigItemVO } from '../../vos/dynamic-config-item.vo.class';
-import { ResponseVO } from '../../vos/response.vo.class';
 import { Mapping } from '../../decorators/mapping.decorator';
 import { ApiProperty } from '@nestjs/swagger';
-import { TransformPipe } from '../../pipes/transform.pipe';
+import { ReflectedBody } from '../../decorators/reflected-body.decorator';
 
 class DynamicConfigGetRequestVO {
     @Mapping()
@@ -26,20 +23,16 @@ export class DynamicConfigController extends BaseController {
         super();
     }
 
-    @Method(null, null, 'normal')
+    @Method('normal')
     public async onUpdate(
         @Body() data: any,
         @Req() request: Request,
-    ): Promise<ResponseVO<ResultVO>> {
-        return new ResponseVO({
-            data: await this.dynamicConfigService.onUpdate(data, request),
-        });
+    ) {
+        return await this.dynamicConfigService.onUpdate(data, request);
     }
 
-    @Method(DynamicConfigGetRequestVO, DynamicConfigItemVO, 'normal')
-    public async get(@Body(TransformPipe(DynamicConfigGetRequestVO)) body: DynamicConfigGetRequestVO): Promise<ResponseVO<DynamicConfigItemVO>> {
-        return new ResponseVO({
-            data: Object.values(await this.dynamicConfigService.get(body?.patterns, true)),
-        });
+    @Method('normal')
+    public async get(@ReflectedBody() body: DynamicConfigGetRequestVO) {
+        return Object.values(await this.dynamicConfigService.get(body?.patterns, true));
     }
 }

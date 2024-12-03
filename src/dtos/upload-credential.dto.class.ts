@@ -1,24 +1,28 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { GROUP } from '../constants/group.constant';
 import { Mapping } from '../decorators/mapping.decorator';
 import { IsOptional } from 'class-validator';
+import { GROUP } from '../constants/group.constant';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
-export class AuthExchangeVO {
+export class UploadCredentialDTO {
     @Mapping()
     @ApiPropertyOptional()
     public id: string;
 
     @Mapping()
     @ApiPropertyOptional()
-    public accessToken: string;
+    public accessKeyId: string;
 
     @Mapping()
     @ApiPropertyOptional()
-    public refreshToken: string;
+    public accessKeySecret: string;
 
     @Mapping()
     @ApiPropertyOptional()
-    public expirationTimestamp: number;
+    public securityToken: string;
+
+    @Mapping()
+    @ApiPropertyOptional()
+    public expirationTime: number;
 
     @Mapping({ groups: [GROUP.RESPONSE_ONLY] })
     @ApiPropertyOptional()
