@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-this-alias */
 import * as webpack from 'webpack';
-import * as path from 'path';
+import { resolve as pathResolve } from 'path';
 import { StringUtil } from '../../utilities/string-util.class';
 import { Command } from 'commander';
 
@@ -59,7 +59,7 @@ export class Builder {
                             return result;
                         }
                         const [key, pathname] = value.split(':');
-                        result[key] = path.resolve(process.cwd(), pathname);
+                        result[key] = pathResolve(process.cwd(), pathname);
                         return result;
                     }, {})
                     : {};
@@ -82,13 +82,13 @@ export class Builder {
             mode: 'production',
             output: {
                 filename: StringUtil.isFalsyString(this.options?.outputFilename) ? '[name].js' : this.options.outputFilename,
-                path: path.resolve(process.cwd(), StringUtil.isFalsyString(this.options?.outputPath) ? 'bundle' : this.options.outputPath),
+                path: pathResolve(process.cwd(), StringUtil.isFalsyString(this.options?.outputPath) ? 'bundle' : this.options.outputPath),
                 libraryTarget: 'commonjs',
             },
             resolve: {
                 extensions: ['.js', '.cjs', '.mjs', '.ts', '.tsx'],
                 alias: {
-                    src: path.resolve(__dirname, './src'),
+                    src: pathResolve(__dirname, './src'),
                 },
                 plugins: [
                     new CatchNotFoundPlugin(),
@@ -101,7 +101,7 @@ export class Builder {
                         use: {
                             loader: 'ts-loader',
                             options: {
-                                configFile: path.resolve(
+                                configFile: pathResolve(
                                     process.cwd(),
                                     StringUtil.isFalsyString(this.options?.tsProject)
                                         ? 'tsconfig.build.json'
@@ -116,6 +116,6 @@ export class Builder {
             plugins: [
                 new webpack.ProgressPlugin(),
             ],
-        });
+        }).run(() => {});
     }
 }
