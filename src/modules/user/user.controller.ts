@@ -4,12 +4,11 @@ import { Method } from '../../decorators/method.decorator';
 import { UserService } from './user.service';
 import { EntityService } from '../../modules/entity/entity.service';
 import { UserDAO } from '../../daos/user.dao.class';
-import { CurrentUser } from '../../decorators/current-user.decorator';
+import { CurrentUserId } from '../../decorators/current-user-id.decorator';
 import { ApiController } from '../../decorators/api-controller.decorator';
 import { IsAdmin } from '../../decorators/is-admin.decorator';
 import { ReflectedBody } from '../../decorators/reflected-body.decorator';
 import { UserUpdatePasswordRequestDTO } from '../../dtos/user-update-password-request.dto.class';
-// import { reflect } from 'typescript-rtti';
 
 @UseGuards(AuthGuard())
 @ApiController()
@@ -20,22 +19,22 @@ export class UserController {
     ) {}
 
     @Method('normal')
-    public async getDetail(@CurrentUser() user: UserDAO) {
+    public async getDetail(@CurrentUserId() sessionUserId: string) {
         return await this.entityService.getDetail({
             DAOClass: UserDAO,
-            locator: JSON.stringify({ id: user?.id }),
-            sessionUserId: user?.id,
+            locator: JSON.stringify({ id: sessionUserId }),
+            sessionUserId,
         });
     }
 
     @Method('normal')
     public async update(
-        @CurrentUser() user: UserDAO,
+        @CurrentUserId() sessionUserId: string,
         @ReflectedBody() data: UserDAO,
         @IsAdmin() isAdmin: boolean,
     ) {
         return await this.userService.createOrUpdate({
-            sessionUserId: user?.id,
+            sessionUserId,
             data,
             checkPermissions: !isAdmin,
             allowUpdate: true,
@@ -44,12 +43,12 @@ export class UserController {
 
     @Method('normal')
     public async updatePassword(
-        @CurrentUser() user: UserDAO,
+        @CurrentUserId() sessionUserId: string,
         @ReflectedBody() body: UserUpdatePasswordRequestDTO,
         @IsAdmin() isAdmin: boolean,
     ) {
         return await this.userService.updatePassword({
-            sessionUserId: user?.id,
+            sessionUserId,
             checkPermissions: !isAdmin,
             password: body?.password,
             originalPassword: body?.originalPassword,
@@ -57,10 +56,3 @@ export class UserController {
         });
     }
 }
-
-// console.log(reflect(UserController).getMethod('update').parameters?.[1]?.type?.toString());
-// console.log(
-//     Reflect.getMetadata('rt:p', UserController.prototype, 'getDetail'),
-//     Reflect.getMetadata('rt:f', UserController.prototype, 'getDetail'),
-//     Reflect.getMetadata('rt:t', UserController.prototype, 'getDetail')(),
-// );

@@ -5,6 +5,7 @@ import { ServerMapping } from '../decorators/server-mapping.decorator';
 import { Model } from 'sequelize-typescript';
 import { Locator } from '../decorators/locator.decorator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export class DAO extends Model {
     @ServerMapping(({
@@ -26,28 +27,18 @@ export class DAO extends Model {
     public locator: string;
 
     @ServerMapping(({ CreatedAt }) => CreatedAt)
-    @ServerMapping(({
-        Column,
-        DataType,
-    }) => Column({
-        field: 'created_at',
-        type: DataType.BIGINT,
-    }))
+    @ServerMapping(({ Column }) => Column({ field: 'created_at' }))
     @Mapping({ groups: [GROUP.RESPONSE_ONLY] })
     @IsOptional({ groups: [GROUP.REQUEST_ONLY] })
     @ApiPropertyOptional()
-    public createdAt: number;
+    @Type(() => Date)
+    public createdAt: Date;
 
     @ServerMapping(({ UpdatedAt }) => UpdatedAt)
-    @ServerMapping(({
-        Column,
-        DataType,
-    }) => Column({
-        field: 'updated_at',
-        type: DataType.BIGINT,
-    }))
+    @ServerMapping(({ Column }) => Column({ field: 'updated_at' }))
     @Mapping({ groups: [GROUP.RESPONSE_ONLY] })
     @IsOptional({ groups: [GROUP.REQUEST_ONLY] })
     @ApiPropertyOptional()
-    public updatedAt: number;
+    @Type(() => Date)
+    public updatedAt: Date;
 }

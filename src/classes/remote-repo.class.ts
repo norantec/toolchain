@@ -1,5 +1,6 @@
 import {
     ForbiddenException,
+    forwardRef,
     Inject,
     Injectable,
     OnModuleInit,
@@ -10,7 +11,7 @@ import { minimatch } from 'minimatch';
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import { plainToInstance } from 'class-transformer';
-import { LoggerService } from '../modules/logger/logger.service';
+// import { LoggerService } from '../modules/logger/logger.service';
 import { EventService } from '../modules/event/event.service';
 import { ResultDTO } from '../dtos/result.dto.class';
 import { DynamicConfigItemDTO } from '../dtos/dynamic-config-item.dto.class';
@@ -34,13 +35,13 @@ export interface RemoteRepoOptions {
 export class RemoteRepo implements OnModuleInit {
     private configFiles: ConfigFile[] = [];
 
-    @Inject(LoggerService)
-    private readonly loggerService: LoggerService;
+    // @Inject(LoggerService)
+    // private readonly loggerService: LoggerService;
 
-    @Inject(RepositoryService)
+    @Inject(forwardRef(() => RepositoryService))
     private readonly repositoryService: RepositoryService;
 
-    @Inject(EventService)
+    @Inject(forwardRef(() => EventService))
     private readonly eventService: EventService;
 
     public constructor(private readonly options: RemoteRepoOptions) {
@@ -66,19 +67,19 @@ export class RemoteRepo implements OnModuleInit {
         request: Request,
     ) {
         const startTimeStr = new Date().toISOString();
-        this.loggerService.log('Got `push` event from webhook');
+        // this.loggerService.log('Got `push` event from webhook');
 
         if (!this.verifySignature(request)) {
-            this.loggerService.error('Signature not match, returning...');
+            // this.loggerService.error('Signature not match, returning...');
             throw new ForbiddenException();
         }
 
         const ref: string = data?.ref;
 
-        this.loggerService.log(`Got ref: ${ref}, config ref: ${this.options.repoRef}`);
+        // this.loggerService.log(`Got ref: ${ref}, config ref: ${this.options.repoRef}`);
 
         if (!ref || this.options.repoRef !== ref) {
-            this.loggerService.error(`Repo ref does not match, config: ${this.options.repoRef}, incoming ref: ${ref}`);
+            // this.loggerService.error(`Repo ref does not match, config: ${this.options.repoRef}, incoming ref: ${ref}`);
             return plainToInstance(ResultDTO, {
                 success: false,
                 createdAt: startTimeStr,
@@ -176,7 +177,7 @@ export class RemoteRepo implements OnModuleInit {
                 success: true,
             };
         } catch (e) {
-            this.loggerService.error(e?.stack);
+            // this.loggerService.error(e?.stack);
             return {
                 success: false,
             };

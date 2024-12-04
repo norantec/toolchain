@@ -2,6 +2,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { GROUP } from '../constants/group.constant';
 import { Mapping } from '../decorators/mapping.decorator';
 import { IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class AuthCodeDTO {
     @Mapping()
@@ -10,7 +11,8 @@ export class AuthCodeDTO {
 
     @Mapping()
     @ApiPropertyOptional()
-    public nextUnlockTimestamp: number;
+    @Type(() => Date)
+    public nextUnlockTime: Date;
 
     @Mapping({ groups: [GROUP.RESPONSE_ONLY] })
     @IsOptional({ groups: [GROUP.REQUEST_ONLY] })

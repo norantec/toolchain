@@ -18,3 +18,8 @@ export interface MailModuleOptions {
     getLocaleTextMap: (locale: string) => Record<string, any>;
     getMessage: (messageId: string) => MessageConfig;
 }
+
+export interface MailModuleAsyncOptions {
+    useFactory: (...args: any[]) => MailModuleOptions | Promise<MailModuleOptions>;
+    inject?: any[];
+}

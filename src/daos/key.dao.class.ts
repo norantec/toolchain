@@ -7,6 +7,7 @@ import { Locator } from '../decorators/locator.decorator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { StringUtil } from '../utilities/string-util.class';
 import { minimatch } from 'minimatch';
+import { Type } from 'class-transformer';
 
 @ServerMapping(({ Table }) => Table({
     modelName: 't__keys',
@@ -23,12 +24,13 @@ export class KeyDAO extends DAO {
         DataType,
     }) => Column({
         field: 'expiration_time',
-        type: DataType.BIGINT,
+        type: DataType.DATE,
         defaultValue: null,
     }))
     @Mapping()
+    @Type(() => Date)
     @ApiPropertyOptional()
-    public expirationTime: number;
+    public expirationTime: Date;
 
     @ServerMapping(({ Column }) => Column({ defaultValue: false }))
     @Mapping()

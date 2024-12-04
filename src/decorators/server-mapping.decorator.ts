@@ -33,18 +33,8 @@ function Table<M extends Model = Model>(options: TableOptions<M>) {
             'created_at',
         ],
     });
-    newOptions.timestamps = true;
-    newOptions.updatedAt = false;
 
-    return SequelizeTable({
-        ...newOptions,
-        hooks: {
-            beforeSave(instance) {
-                instance?.set?.('createdAt', new Date(instance?.get?.('createdAt')).getTime());
-                instance?.set?.('updatedAt', new Date(instance?.get?.('updatedAt')).getTime());
-            },
-        },
-    });
+    return SequelizeTable(newOptions);
 }
 
 function BelongsTo(associatedClassGetter: ModelClassGetter<{}, {}>, options?: BelongsToOptions): Function {

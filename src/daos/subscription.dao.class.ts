@@ -28,10 +28,10 @@ export class SubscriptionDAO extends DAO {
     }) => Column({
         allowNull: false,
         field: 'expiration_time',
-        type: DataType.BIGINT,
+        type: DataType.DATE,
     }))
     @ApiPropertyOptional()
-    public expirationTime: number;
+    public expirationTime: Date;
 
     /**
      * @unit USD Cent

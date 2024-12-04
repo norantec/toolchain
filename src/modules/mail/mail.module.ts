@@ -3,10 +3,39 @@ import {
     Module,
 } from '@nestjs/common';
 import { MailService } from './mail.service';
+import {
+    MailModuleAsyncOptions,
+    MailModuleOptions,
+} from './mail.interface';
 
 @Global()
-@Module({
-    providers: [MailService],
-    exports: [MailService],
-})
-export class MailModule {}
+@Module({})
+export class MailModule {
+    public static forRoot(options: MailModuleOptions) {
+        return {
+            module: MailModule,
+            providers: [
+                {
+                    provide: MailService,
+                    useFactory: () => new MailService(options),
+                },
+            ],
+        };
+    }
+
+    public static forRootAsync(asyncOptions: MailModuleAsyncOptions) {
+        return {
+            module: MailModule,
+            providers: [
+                {
+                    provide: MailService,
+                    useFactory: async (...args) => {
+                        const options = await asyncOptions.useFactory(...args);
+                        return new MailService(options);
+                    },
+                    inject: asyncOptions.inject,
+                },
+            ],
+        };
+    }
+}

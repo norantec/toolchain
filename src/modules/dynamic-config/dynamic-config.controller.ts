@@ -6,16 +6,8 @@ import { type Request } from 'express';
 import { DynamicConfigService } from './dynamic-config.service';
 import { Method } from '../../decorators/method.decorator';
 import { ApiController } from '../../decorators/api-controller.decorator';
-import { Mapping } from '../../decorators/mapping.decorator';
-import { ApiProperty } from '@nestjs/swagger';
 import { ReflectedBody } from '../../decorators/reflected-body.decorator';
-
-class DynamicConfigGetRequestVO {
-    @Mapping()
-    @ApiProperty({ isArray: true })
-    public patterns: string[];
-}
-
+import { DynamicConfigGetRequestDTO } from '../../dtos/dynamic-config-get-request.dto.class';
 @ApiController()
 export class DynamicConfigController {
     public constructor(private readonly dynamicConfigService: DynamicConfigService) {}
@@ -29,7 +21,7 @@ export class DynamicConfigController {
     }
 
     @Method('normal')
-    public async get(@ReflectedBody() body: DynamicConfigGetRequestVO) {
+    public async get(@ReflectedBody() body: DynamicConfigGetRequestDTO) {
         return Object.values(await this.dynamicConfigService.get(body?.patterns, true));
     }
 }

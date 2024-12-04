@@ -7,6 +7,7 @@ import { Locator } from '../decorators/locator.decorator';
 import { SubscriptionDAO } from './subscription.dao.class';
 import { KeyDAO } from './key.dao.class';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 @ServerMapping(({ Table }) => Table({
     modelName: 't__users',
@@ -68,9 +69,6 @@ export class UserDAO extends DAO {
     @Mapping({ groups: [] })
     public password: string;
 
-    @Mapping({ groups: [] })
-    public tokenExpirationTimestamp: number;
-
     @ServerMapping(({ Column }) => Column)
     @IsOptional()
     @Mapping()
@@ -100,4 +98,8 @@ export class UserDAO extends DAO {
         type: () => KeyDAO,
     })
     public keys: KeyDAO[];
+
+    @Mapping({ groups: [] })
+    @Type(() => Date)
+    public tokenExpirationTime: Date;
 }

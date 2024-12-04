@@ -36,24 +36,24 @@ export class ServerConfigService<T extends z.ZodObject<any>> {
         }
 
         const value = _.get(this.config, path);
-
-        if (
-            value !== null &&
-            ![
-                'string',
-                'boolean',
-                'number',
-                'bigint',
-                'symbol',
-            ].includes(typeof value)
-        ) {
-            this.options.onError?.(new Error(`Invalid config value: ${value}`));
-        }
+        // if (
+        //     value !== null &&
+        //     ![
+        //         'string',
+        //         'boolean',
+        //         'number',
+        //         'bigint',
+        //         'symbol',
+        //     ].includes(typeof value)
+        // ) {
+        //     this.options.onError?.(new Error(`Invalid config value: ${value}`));
+        // }
 
         return value;
     }
 
     private async load() {
+        console.log('LENCONDA:FUCK:3s', this.options.onLog);
         if (this.loaded) {
             return;
         }
@@ -75,6 +75,7 @@ export class ServerConfigService<T extends z.ZodObject<any>> {
                     userConfig,
                     JSON.parse(fs.readFileSync(filePath).toString()),
                 );
+                console.log('LENCONDA:FUCK:2', this.options.onLog);
                 this.options.onLog?.(`Loaded config file: ${filePath}`);
             } catch (e) {
                 this.options.onError?.(new Error(`Loading config file error: ${e?.message}`));
@@ -85,8 +86,9 @@ export class ServerConfigService<T extends z.ZodObject<any>> {
         try {
             this.config = this.options.schema.parse(userConfig) as z.infer<T>;
         } catch (e) {
-            this.options.onError?.(new Error(`cast error: ${e} ${e?.stack}`));
-            process.exit(1);
+            console.log('LENCONDA:FUCK:1', e);
+            this.options.onError?.(e);
+            return {};
         }
 
         this.loaded = true;

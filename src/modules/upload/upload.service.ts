@@ -23,7 +23,7 @@ export class UploadService {
             !StringUtil.isFalsyString(this.credential.accessKeyId) &&
             !StringUtil.isFalsyString(this.credential.accessKeySecret) &&
             !StringUtil.isFalsyString(this.credential.securityToken) &&
-            this.credential?.expirationTime - Date.now() >= 60000
+            this.credential?.expirationTime?.getTime?.() - Date.now() >= 60000
         ) {
             return this.credential;
         }
@@ -36,7 +36,7 @@ export class UploadService {
         uploadCredentialVO.accessKeyId = result?.credentials?.AccessKeyId;
         uploadCredentialVO.accessKeySecret = result?.credentials?.AccessKeySecret;
         uploadCredentialVO.securityToken = result?.credentials?.SecurityToken;
-        uploadCredentialVO.expirationTime = new Date(result?.credentials?.Expiration).getTime();
+        uploadCredentialVO.expirationTime = new Date(result?.credentials?.Expiration);
         uploadCredentialVO.createdAt = Date.now();
         uploadCredentialVO.updatedAt = Date.now();
 

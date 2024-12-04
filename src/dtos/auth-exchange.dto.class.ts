@@ -2,6 +2,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { GROUP } from '../constants/group.constant';
 import { Mapping } from '../decorators/mapping.decorator';
 import { IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class AuthExchangeDTO {
     @Mapping()
@@ -18,7 +19,8 @@ export class AuthExchangeDTO {
 
     @Mapping()
     @ApiPropertyOptional()
-    public expirationTimestamp: number;
+    @Type(() => Date)
+    public expirationTime: Date;
 
     @Mapping({ groups: [GROUP.RESPONSE_ONLY] })
     @ApiPropertyOptional()

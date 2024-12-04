@@ -2,6 +2,7 @@ import { Mapping } from '../decorators/mapping.decorator';
 import { IsOptional } from 'class-validator';
 import { GROUP } from '../constants/group.constant';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export class UploadCredentialDTO {
     @Mapping()
@@ -22,7 +23,8 @@ export class UploadCredentialDTO {
 
     @Mapping()
     @ApiPropertyOptional()
-    public expirationTime: number;
+    @Type(() => Date)
+    public expirationTime: Date;
 
     @Mapping({ groups: [GROUP.RESPONSE_ONLY] })
     @ApiPropertyOptional()

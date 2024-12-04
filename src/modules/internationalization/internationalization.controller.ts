@@ -6,15 +6,8 @@ import { type Request } from 'express';
 import { InternationalizationService } from './internationalization.service';
 import { Method } from '../../decorators/method.decorator';
 import { ApiController } from '../../decorators/api-controller.decorator';
-import { Mapping } from '../../decorators/mapping.decorator';
-import { ApiProperty } from '@nestjs/swagger';
 import { ReflectedBody } from '../../decorators/reflected-body.decorator';
-
-class InternationalizationGetRequestVO {
-    @Mapping()
-    @ApiProperty({ isArray: true })
-    public patterns: string[];
-}
+import { InternationalizationGetRequestDTO } from '../../dtos/internationalization-get-request.dto.class';
 
 @ApiController()
 export class InternationalizationController {
@@ -29,7 +22,7 @@ export class InternationalizationController {
     }
 
     @Method('normal')
-    public async get(@ReflectedBody() body: InternationalizationGetRequestVO) {
+    public async get(@ReflectedBody() body: InternationalizationGetRequestDTO) {
         return Object.values(await this.internationalizationService.get(body?.patterns, false));
     }
 }

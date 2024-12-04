@@ -110,6 +110,11 @@ export class LocatorUtil {
             notAllowedFields,
         };
     }
+
+    public static validate(ClassType: ClassType<any>, locator: string) {
+        const parseResult = LocatorUtil.parse(ClassType, locator, false);
+        return parseResult.notAllowedFields.length === 0 && parseResult.result !== null;
+    }
 }
 
 // import { InvocationDTO } from '../../dist/dtos/invocation.dto.class';

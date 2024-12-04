@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { LoggerService } from '../logger/logger.service';
+// import { LoggerService } from '../logger/logger.service';
 import { CheckerUtil } from '../../utilities/checker-util.class';
 import { StringUtil } from '../../utilities/string-util.class';
 import { SubEventId } from '../../types/sub-event-id.type';
@@ -14,9 +14,9 @@ export class EventService {
     private readonly acceptedEventsMap = new Map<string, Set<string>>();
     private readonly callbackIdentifierGetterMap = new Map<CallbackFunction, IdentifierGetterFunction>();
 
-    public constructor(
-        private readonly loggerService: LoggerService,
-    ) {}
+    // public constructor(
+    //     private readonly loggerService: LoggerService,
+    // ) {}
 
     public on<T>(eventId: string, callback: CallbackFunction<T>, identifierGetter?: IdentifierGetterFunction<T>): string {
         if (typeof identifierGetter === 'function') {
@@ -35,7 +35,7 @@ export class EventService {
         }
 
         this.eventHub?.get(eventId).set(uuid, callback);
-        this.loggerService.log(`Event '${eventId}' was successfully attached`);
+        // this.loggerService.log(`Event '${eventId}' was successfully attached`);
 
         return uuid;
     }
