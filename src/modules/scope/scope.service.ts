@@ -1,22 +1,21 @@
-import {
-    Injectable,
-    Type,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { METADATA_NAMES } from '../../constants/metadata-names.constant';
 import { StringUtil } from '../../utilities/string-util.class';
+import { NestUtil } from '../../utilities/nest-util.class';
+import { ClassType } from '../../types/class-type.type';
 
 @Injectable()
 export class ScopeService {
     public constructor(private readonly onLog?: (message: string) => void) {}
 
-    public getAll(moduleClass: Type) {
-        let importedModules: Type[] = Reflect.getMetadata('imports', moduleClass);
+    public getAll(Clazz: ClassType) {
+        let importedModules: ClassType[] = Reflect.getMetadata('imports', Clazz);
 
         if (!Array.isArray(importedModules)) {
             importedModules = [];
         }
 
-        const scopes = this.getControllerClasses(moduleClass).reduce((result: string[], controllerClass) => {
+        const scopes = NestUtil.getControllerClasses(Clazz).reduce((result: string[], controllerClass) => {
             const currentControllerScopeNames = Reflect.getMetadata(METADATA_NAMES.SCOPE_NAMES, controllerClass);
             if (!Array.isArray(currentControllerScopeNames)) {
                 return result;
@@ -37,21 +36,5 @@ export class ScopeService {
         }
 
         return filteredScopeNames;
-    }
-
-    private getControllerClasses(moduleClass: Type) {
-        let importedModules: Type[] = Reflect.getMetadata('imports', moduleClass);
-
-        if (!Array.isArray(importedModules)) {
-            importedModules = [];
-        }
-
-        return importedModules.reduce((result: Type[], ImportedModule) => {
-            const controllerClasses = Reflect.getMetadata('controllers', ImportedModule);
-            if (!Array.isArray(controllerClasses)) {
-                return result;
-            }
-            return result.concat(controllerClasses);
-        }, [] as Type[]);
     }
 }

@@ -9,7 +9,7 @@ import { ApiController } from '../../decorators/api-controller.decorator';
 import { IsAdmin } from '../../decorators/is-admin.decorator';
 import { ReflectedBody } from '../../decorators/reflected-body.decorator';
 import { UserUpdatePasswordRequestDTO } from '../../dtos/user-update-password-request.dto.class';
-import { reflect } from 'typescript-rtti';
+// import { reflect } from 'typescript-rtti';
 
 @UseGuards(AuthGuard())
 @ApiController()
@@ -19,7 +19,7 @@ export class UserController {
         private readonly entityService: EntityService,
     ) {}
 
-    @Method()
+    @Method('normal')
     public async getDetail(@CurrentUser() user: UserDAO) {
         return await this.entityService.getDetail({
             DAOClass: UserDAO,
@@ -28,7 +28,7 @@ export class UserController {
         });
     }
 
-    @Method()
+    @Method('normal')
     public async update(
         @CurrentUser() user: UserDAO,
         @ReflectedBody() data: UserDAO,
@@ -42,7 +42,7 @@ export class UserController {
         });
     }
 
-    @Method()
+    @Method('normal')
     public async updatePassword(
         @CurrentUser() user: UserDAO,
         @ReflectedBody() body: UserUpdatePasswordRequestDTO,
@@ -58,7 +58,7 @@ export class UserController {
     }
 }
 
-console.log(reflect(UserController).getMethod('update').parameters?.[1]?.type?.toString());
+// console.log(reflect(UserController).getMethod('update').parameters?.[1]?.type?.toString());
 // console.log(
 //     Reflect.getMetadata('rt:p', UserController.prototype, 'getDetail'),
 //     Reflect.getMetadata('rt:f', UserController.prototype, 'getDetail'),

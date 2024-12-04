@@ -5,7 +5,6 @@ import {
 import { type Request } from 'express';
 import { DynamicConfigService } from './dynamic-config.service';
 import { Method } from '../../decorators/method.decorator';
-import { BaseController } from '../../common/base.controller';
 import { ApiController } from '../../decorators/api-controller.decorator';
 import { Mapping } from '../../decorators/mapping.decorator';
 import { ApiProperty } from '@nestjs/swagger';
@@ -18,10 +17,8 @@ class DynamicConfigGetRequestVO {
 }
 
 @ApiController()
-export class DynamicConfigController extends BaseController {
-    public constructor(private readonly dynamicConfigService: DynamicConfigService) {
-        super();
-    }
+export class DynamicConfigController {
+    public constructor(private readonly dynamicConfigService: DynamicConfigService) {}
 
     @Method('normal')
     public async onUpdate(

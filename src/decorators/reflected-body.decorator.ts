@@ -1,19 +1,11 @@
 import { ClassType } from '../types/class-type.type';
-import { reflect } from 'typescript-rtti';
-import { OpenApiUtil } from '../utilities/openapi-util.class';
 import { Body } from '@nestjs/common';
-import { TransformPipe } from '../pipes/transform.pipe';
-import { ApiBody } from '@nestjs/swagger';
 
 export function ReflectedBody(): ParameterDecorator {
     return (target: ClassType, propertyKey: string, parameterIndex: number) => {
-        // const parameterTypeStr = reflect(target).getMethod(propertyKey)?.parameterTypes?.[parameterIndex]?.toString?.();
-        // console.log('LENCONDA:FUCK:parameterTypeStr', parameterTypeStr);
-        // const {
-        //     schema,
-        //     Clazz,
-        // } = OpenApiUtil.generateSchemaAndClassName(parameterTypeStr);
-        // ApiBody({ schema })(target, propertyKey, Reflect.getOwnPropertyDescriptor(target, propertyKey));
+        Reflect.defineMetadata(ReflectedBody.metadataKey, parameterIndex, target?.constructor, propertyKey);
         Body()(target, propertyKey, parameterIndex);
     };
 }
+
+ReflectedBody.metadataKey = Symbol('');

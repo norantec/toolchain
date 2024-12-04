@@ -5,9 +5,13 @@ import * as fs from 'fs-extra';
 import * as _ from 'lodash';
 import { z } from 'zod';
 import { StringUtil } from '../../utilities/string-util.class';
-import { Get, Paths } from 'type-fest';
+import {
+    Get,
+    Paths,
+} from 'type-fest';
 
 export interface ServerConfigServiceOptions<T extends z.ZodObject<any>> {
+    pathnameList: string[];
     schema: T;
     onError?: (error: Error) => void;
     onLog?: (message: string) => void;
@@ -15,11 +19,10 @@ export interface ServerConfigServiceOptions<T extends z.ZodObject<any>> {
 
 @Injectable()
 export class ServerConfigService<T extends z.ZodObject<any>> {
-    public static getConfigPathnameList: () => string[] = () => [];
     private config: z.infer<T>;
     private loaded = false;
 
-    public constructor(private readonly options?: ServerConfigServiceOptions<T>) {
+    public constructor(private readonly options: ServerConfigServiceOptions<T>) {
         this.load();
     }
 
@@ -55,7 +58,7 @@ export class ServerConfigService<T extends z.ZodObject<any>> {
             return;
         }
 
-        const pathnameList = ServerConfigService.getConfigPathnameList();
+        const pathnameList = this.options?.pathnameList;
 
         if (pathnameList.length === 0) {
             return;

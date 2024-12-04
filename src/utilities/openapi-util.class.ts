@@ -1,5 +1,6 @@
 import { getSchemaPath } from '@nestjs/swagger';
 import {
+    OpenAPIObject,
     ReferenceObject,
     SchemaObject,
 } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
@@ -7,6 +8,12 @@ import { ResponseDTO } from '../dtos/response.dto.class';
 import { PaginationResultDTO } from '../dtos/pagination-result.dto.class';
 import { ContainerUtil } from './container-util.class';
 import { ClassType } from '../types/class-type.type';
+import { NestUtil } from './nest-util.class';
+import { reflect } from 'typescript-rtti';
+import { METADATA_NAMES } from '../constants/metadata-names.constant';
+import { StringUtil } from './string-util.class';
+import { ReflectedBody } from '../decorators/reflected-body.decorator';
+import * as _ from 'lodash';
 
 function generateBasicSchemaAndType(input: string): {
     Clazz: ClassType;
@@ -51,7 +58,7 @@ export class OpenApiUtil {
      */
     public static generateSchemaAndClassName(rawInput: string): ReturnType<typeof generateBasicSchemaAndType> {
         let input = rawInput;
-        input = /^class\sZoneAwarePromise\<(.+)\>/.exec(input)?.[1] ?? input;
+        input = /^class\sPromise\<(.+)\>/.exec(input)?.[1] ?? input;
         input = new RegExp(`^class ${PaginationResultDTO.name}<(.+)>`).exec(input)?.[1] ?? input;
         const basicSchemaAndType = generateBasicSchemaAndType(input);
         return {
@@ -66,5 +73,64 @@ export class OpenApiUtil {
             },
             Clazz: basicSchemaAndType.Clazz,
         };
+    }
+
+    public static generateDocument(document: OpenAPIObject, Clazz: ClassType) {
+        const controllerClazzList = NestUtil.getControllerClasses(Clazz);
+        controllerClazzList.forEach((controllerClazz) => {
+            const controllerReflection = reflect(controllerClazz);
+            const methodNameList = Object
+                .getOwnPropertyNames(controllerClazz.prototype)
+                .filter((name) => name !== 'constructor')
+                .filter((methodName) => controllerReflection?.getMethod?.(methodName)?.isPublic);
+            const controllerPrefix = Reflect.getMetadata(METADATA_NAMES.CONTROLLER_PREFIX, controllerClazz);
+
+            methodNameList.forEach((methodName) => {
+                let scopeNames = Reflect.getMetadata(METADATA_NAMES.METHOD_SCOPE_NAMES, controllerClazz, methodName);
+
+                if (!Array.isArray(scopeNames)) {
+                    return;
+                }
+
+                scopeNames = scopeNames.filter((scopeName) => !StringUtil.isFalsyString(scopeName));
+
+                if (scopeNames.length === 0) {
+                    return;
+                }
+
+                const reflectedBodyIndex = Reflect.getMetadata(ReflectedBody.metadataKey, controllerClazz, methodName);
+                const { schema: responseSchema } = OpenApiUtil.generateSchemaAndClassName(controllerReflection.getMethod?.(methodName)?.returnType?.toString());
+                let requestSchema: SchemaObject & Partial<ReferenceObject>;
+
+                if (reflectedBodyIndex >= 0) {
+                    requestSchema = OpenApiUtil.generateSchemaAndClassName(controllerReflection.getMethod?.(methodName)?.parameterTypes?.[reflectedBodyIndex]?.toString?.()).schema;
+                }
+
+                scopeNames.forEach((scopeName) => {
+                    const actualPathname = `${controllerPrefix}/${scopeName}`;
+
+                    if (requestSchema) {
+                        _.set(document, `paths.${actualPathname}.requestBody`, {
+                            content: {
+                                'application/json': {
+                                    schema: requestSchema,
+                                },
+                            },
+                        });
+                    }
+
+                    _.set(document, `paths.${actualPathname}.responses`, {
+                        '200': {
+                            description: 'Success',
+                            content: {
+                                'application/json': {
+                                    schema: responseSchema,
+                                },
+                            },
+                        },
+                    });
+                });
+            });
+        });
     }
 }

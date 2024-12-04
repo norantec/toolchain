@@ -5,7 +5,6 @@ import {
 import { type Request } from 'express';
 import { InternationalizationService } from './internationalization.service';
 import { Method } from '../../decorators/method.decorator';
-import { BaseController } from '../../common/base.controller';
 import { ApiController } from '../../decorators/api-controller.decorator';
 import { Mapping } from '../../decorators/mapping.decorator';
 import { ApiProperty } from '@nestjs/swagger';
@@ -18,10 +17,8 @@ class InternationalizationGetRequestVO {
 }
 
 @ApiController()
-export class InternationalizationController extends BaseController {
-    public constructor(private readonly internationalizationService: InternationalizationService) {
-        super();
-    }
+export class InternationalizationController {
+    public constructor(private readonly internationalizationService: InternationalizationService) {}
 
     @Method('normal')
     public async onUpdate(

@@ -1,12 +1,6 @@
 import { Post } from '@nestjs/common';
 import * as _ from 'lodash';
 import { METADATA_NAMES } from '../constants/metadata-names.constant';
-// import { ApiOkResponse } from '@nestjs/swagger';
-// import { OpenApiUtil } from '../utilities/openapi-util.class';
-// import { reflect } from 'typescript-rtti';
-// import { ClassType } from '../types/class-type.type';
-// import { DECORATORS } from '@nestjs/swagger/dist/constants';
-// import { ResponseDTO } from '../dtos/response.dto.class';
 
 export type AdminMode = 'both' | 'normal' | 'admin';
 
@@ -49,36 +43,11 @@ export function Method(adminMode: AdminMode = 'both'): MethodDecorator {
             target.constructor,
         );
         Reflect.defineMetadata(
-            METADATA_NAMES.SCOPE_NAME,
-            scopeIdentifier.split('.').slice(0, -1).join('.'),
-            target?.constructor,
+            METADATA_NAMES.METHOD_SCOPE_NAMES,
+            scopeNames,
+            target.constructor,
+            propertyKey,
         );
         Post(scopeNames)(target, propertyKey, descriptor);
-
-        // @ts-ignore
-        // console.log('LENCONDA:FUCK:12310238', reflect(target?.constructor)?.getMethod?.('getDetail')?.returnType?.toString?.(), target === UserController, target?.prototype);
-        // console.log('LENCONDA:FUCK:12310238', Reflect.getMetadataKeys(target?.constructor, propertyKey));
-
-        // const returnTypeStr = reflect(target?.constructor as ClassType).getMethod(propertyKey)?.returnType?.toString?.();
-        // const {
-        //     schema,
-        //     Clazz,
-        // } = OpenApiUtil.generateSchemaAndClassName(returnTypeStr);
-        // let existedExtraModels = Reflect.getMetadata(DECORATORS.API_EXTRA_MODELS, target?.constructor);
-
-        // if (!Array.isArray(existedExtraModels)) {
-        //     existedExtraModels = [];
-        // }
-
-        // Reflect.defineMetadata(
-        //     DECORATORS.API_EXTRA_MODELS,
-        //     _.uniq(existedExtraModels.concat([
-        //         Clazz,
-        //         ResponseDTO,
-        //     ])),
-        //     target?.constructor,
-        // );
-
-        // ApiOkResponse({ schema })(target, propertyKey, descriptor);
     };
 }
