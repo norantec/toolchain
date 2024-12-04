@@ -11,10 +11,10 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
     modelName: 't__subscriptions',
     indexes: [
         {
-            name: 'unique_collection',
+            name: 'unique_target',
             unique: true,
             fields: [
-                'collection_id',
+                'target',
             ],
         },
     ],
@@ -43,6 +43,14 @@ export class SubscriptionDAO extends DAO {
     }))
     @ApiPropertyOptional()
     public paidAmount: string;
+
+    @Mapping()
+    @ServerMapping(({ Column }) => Column({
+        field: 'target',
+        allowNull: false,
+    }))
+    @ApiPropertyOptional()
+    public target: string;
 
     /**
      * @unit USD Cent
