@@ -1,12 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import {
+    Inject,
+    Injectable,
+} from '@nestjs/common';
 import { METADATA_NAMES } from '../../constants/metadata-names.constant';
 import { StringUtil } from '../../utilities/string-util.class';
 import { NestUtil } from '../../utilities/nest-util.class';
 import { ClassType } from '../../types/class-type.type';
+import { LoggerService } from '../logger/logger.service';
 
 @Injectable()
 export class ScopeService {
-    public constructor(private readonly onLog?: (message: string) => void) {}
+    @Inject(LoggerService)
+    private readonly loggerService: LoggerService;
 
     public getAll(Clazz: ClassType) {
         let importedModules: ClassType[] = Reflect.getMetadata('imports', Clazz);
@@ -23,7 +28,7 @@ export class ScopeService {
             return result.concat(currentControllerScopeNames.filter((item) => !StringUtil.isFalsyString(item)));
         }, []);
 
-        this.onLog?.(`Got scopes: ${scopes.join(', ')}`);
+        this.loggerService.log(`Got scopes: ${scopes.join(', ')}`);
 
         if (!Array.isArray(scopes)) {
             return [];

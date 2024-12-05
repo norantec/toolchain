@@ -1,9 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import {
+    Inject,
+    Injectable,
+} from '@nestjs/common';
 import { Octokit } from 'octokit';
 import axios from 'axios';
 import AdmZip = require('adm-zip');
 import { relative } from 'path';
 import { RepositoryModuleOptions } from './repository.interface';
+import { LoggerService } from '../logger/logger.service';
 
 interface RepositoryConfig {
     owner: string;
@@ -12,6 +16,9 @@ interface RepositoryConfig {
 
 @Injectable()
 export class RepositoryService {
+    @Inject(LoggerService)
+    private readonly loggerService: LoggerService;
+
     private readonly client = new Octokit({
         auth: this?.options?.accessToken,
     });
@@ -100,7 +107,8 @@ export class RepositoryService {
                 });
                 return result.data?.commit?.sha;
             } catch (e) {
-                this.options.onError?.(e);
+                this.loggerService.error(e?.message);
+                this.loggerService.error(e?.stack);
             }
         };
 
@@ -133,7 +141,8 @@ export class RepositoryService {
                         };
                     });
             } catch (e) {
-                this.options.onError?.(e);
+                this.loggerService.error(e?.message);
+                this.loggerService.error(e?.stack);
             }
         };
 
