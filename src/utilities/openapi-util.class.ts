@@ -27,9 +27,9 @@ function generateBasicSchemaAndType(input: string): {
         String: 'string',
         Boolean: 'boolean',
         Number: 'number',
-        BigInt: 'bigint',
+        BigInt: 'number',
         Null: 'null',
-        Undefined: 'undefined',
+        Undefined: 'null',
     };
 
     if (StringUtil.isFalsyString(input) || !/^class\s\w+(?:\[\])*$/.test(input)) {
