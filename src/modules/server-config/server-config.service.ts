@@ -53,7 +53,6 @@ export class ServerConfigService<T extends z.ZodObject<any>> {
     }
 
     private async load() {
-        console.log('LENCONDA:FUCK:3s', this.options.onLog);
         if (this.loaded) {
             return;
         }
@@ -75,7 +74,6 @@ export class ServerConfigService<T extends z.ZodObject<any>> {
                     userConfig,
                     JSON.parse(fs.readFileSync(filePath).toString()),
                 );
-                console.log('LENCONDA:FUCK:2', this.options.onLog);
                 this.options.onLog?.(`Loaded config file: ${filePath}`);
             } catch (e) {
                 this.options.onError?.(new Error(`Loading config file error: ${e?.message}`));
@@ -86,7 +84,6 @@ export class ServerConfigService<T extends z.ZodObject<any>> {
         try {
             this.config = this.options.schema.parse(userConfig) as z.infer<T>;
         } catch (e) {
-            console.log('LENCONDA:FUCK:1', e);
             this.options.onError?.(e);
             return {};
         }

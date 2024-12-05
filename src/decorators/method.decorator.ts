@@ -1,6 +1,7 @@
 import { Post } from '@nestjs/common';
 import * as _ from 'lodash';
 import { METADATA_NAMES } from '../constants/metadata-names.constant';
+import { ApiOkResponse } from '@nestjs/swagger';
 
 export type AdminMode = 'both' | 'normal' | 'admin';
 
@@ -48,6 +49,7 @@ export function Method(adminMode: AdminMode = 'both'): MethodDecorator {
             target.constructor,
             propertyKey,
         );
+        ApiOkResponse({ description: 'Success' })(target, propertyKey, descriptor);
         Post(scopeNames)(target, propertyKey, descriptor);
     };
 }

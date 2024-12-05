@@ -13,8 +13,11 @@ import { METADATA_NAMES } from '../constants/metadata-names.constant';
 import { StringUtil } from './string-util.class';
 import { ReflectedBody } from '../decorators/reflected-body.decorator';
 import * as _ from 'lodash';
-import { Models } from '../decorators/models.decorator';
 import { CommonExceptionUtil } from './common-exception-util.class';
+import { ApiController } from '../decorators/api-controller.decorator';
+import { Model } from 'sequelize-typescript';
+import { ApiProperty } from '@nestjs/swagger';
+import { DECORATORS } from '@nestjs/swagger/dist/constants';
 
 function generateBasicSchemaAndType(input: string): {
     Clazz: ClassType;
@@ -36,7 +39,8 @@ function generateBasicSchemaAndType(input: string): {
         };
     } else {
         const className = input.replace(/^class\s/g, '');
-        const Clazz = Models.get(className);
+        console.log('LENCONDA:1', className);
+        const Clazz = ApiController.getModel(className);
 
         if (!Clazz) {
             throw CommonExceptionUtil.create(CommonExceptionUtil.Code.INVALID_UNREGISTERED_CLASS, {
@@ -133,5 +137,28 @@ export class OpenApiUtil {
                 });
             });
         });
+    }
+
+    public static generateSchemaDTOFromModel(Clazz: ClassType<Model>) {
+        if (!Clazz) {
+            return;
+        }
+
+        class SchemaDTO {}
+
+        Object.getOwnPropertyNames(Clazz.prototype).forEach((propertyKey) => {
+            const swaggerApiModelProperties = Reflect.getMetadata(DECORATORS.API_MODEL_PROPERTIES, Clazz.prototype, propertyKey);
+
+            if (!swaggerApiModelProperties) {
+                return;
+            }
+
+            ApiProperty(swaggerApiModelProperties)(
+                SchemaDTO.prototype,
+                propertyKey,
+            );
+        });
+
+        return SchemaDTO;
     }
 }

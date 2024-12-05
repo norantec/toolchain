@@ -41,4 +41,8 @@ export class DAO extends Model {
     @ApiPropertyOptional()
     @Type(() => Date)
     public updatedAt: Date;
+
+    public serialize() {
+        return this.toJSON();
+    }
 }
