@@ -26,7 +26,6 @@ import { PayloadDTO } from '../dtos/payload.dto.class';
 import { PlanDTO } from '../dtos/plan.dto.class';
 import { ResponseDTO } from '../dtos/response.dto.class';
 import { ResultDTO } from '../dtos/result.dto.class';
-import { UploadCredentialDTO } from '../dtos/upload-credential.dto.class';
 import { UserUpdatePasswordRequestDTO } from '../dtos/user-update-password-request.dto.class';
 import { ClassType } from '../types/class-type.type';
 import { ApiExtraModels } from '@nestjs/swagger';
@@ -64,7 +63,6 @@ export const ApiController = (prefix?: string): ClassDecorator => {
         [PlanDTO.name, PlanDTO],
         [ResponseDTO.name, ResponseDTO],
         [ResultDTO.name, ResultDTO],
-        [UploadCredentialDTO.name, UploadCredentialDTO],
         [UserUpdatePasswordRequestDTO.name, UserUpdatePasswordRequestDTO],
     ].forEach(([key, model]) => {
         container.set(key, model);

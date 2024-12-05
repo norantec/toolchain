@@ -4,6 +4,7 @@ export interface FileModuleOptions {
     bucket: string;
     region: string;
     staticPrefix: string;
+    pathPrefix?: string;
 }
 
 export interface FileModuleAsyncOptions {

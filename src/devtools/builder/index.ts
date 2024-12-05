@@ -39,6 +39,7 @@ export interface BuildOptions {
     outputFilename?: string;
     outputPath?: string;
     tsProject?: string;
+    workDir?: string;
 }
 
 export class Builder {
@@ -48,23 +49,26 @@ export class Builder {
             .option('--output-filename <string>', 'Output filename')
             .option('--output-path <string>', 'Output path')
             .option('--ts-project <string>', 'TypeScript project file pathname')
+            .option('--work-dir <string>', 'Work directory')
             .action(async (inputOptions) => {
                 const {
                     entries: rawEntries,
                     ...options
                 } = inputOptions;
+                const workDir = StringUtil.isFalsyString(options.workDir) ? process.cwd() : pathResolve(process.cwd(), options.workDir);
                 const entry = Array.isArray(rawEntries)
                     ? rawEntries.reduce((result, value) => {
                         if (StringUtil.isFalsyString(value)) {
                             return result;
                         }
                         const [key, pathname] = value.split(':');
-                        result[key] = pathResolve(process.cwd(), pathname);
+                        result[key] = pathResolve(workDir, pathname);
                         return result;
                     }, {})
                     : {};
                 new Builder({
                     ...options,
+                    workDir,
                     entry,
                 }).run();
             });
@@ -82,13 +86,13 @@ export class Builder {
             mode: 'production',
             output: {
                 filename: StringUtil.isFalsyString(this.options?.outputFilename) ? '[name].js' : this.options.outputFilename,
-                path: pathResolve(process.cwd(), StringUtil.isFalsyString(this.options?.outputPath) ? 'bundle' : this.options.outputPath),
+                path: pathResolve(this.options.workDir, StringUtil.isFalsyString(this.options?.outputPath) ? 'bundle' : this.options.outputPath),
                 libraryTarget: 'commonjs',
             },
             resolve: {
                 extensions: ['.js', '.cjs', '.mjs', '.ts', '.tsx'],
                 alias: {
-                    src: pathResolve(__dirname, './src'),
+                    src: pathResolve(this.options.workDir, './src'),
                 },
                 plugins: [
                     new CatchNotFoundPlugin(),
@@ -99,13 +103,14 @@ export class Builder {
                     {
                         test: /\.ts$/,
                         use: {
-                            loader: 'ts-loader',
+                            loader: require.resolve('ts-loader'),
                             options: {
                                 transpileOnly: true,
+                                compiler: require.resolve('ttypescript'),
                                 configFile: pathResolve(
-                                    process.cwd(),
+                                    this.options.workDir,
                                     StringUtil.isFalsyString(this.options?.tsProject)
-                                        ? 'tsconfig.build.json'
+                                        ? 'tsconfig.json'
                                         : this.options.tsProject,
                                 ),
                             },

@@ -4,6 +4,8 @@ import { HeaderUtil } from '../../utilities/header-util.class';
 import { FileDTO } from '../../dtos/file.dto.class';
 import { StringUtil } from '../../utilities/string-util.class';
 import { FileModuleOptions } from './file.interface';
+import { Request } from 'express';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class FileService {
@@ -13,7 +15,7 @@ export class FileService {
         this.ossClient = new OSS(this.options);
     }
 
-    public async getMetadataList(
+    public async list(
         {
             nameList: inputNameList,
         }: {
@@ -60,5 +62,51 @@ export class FileService {
                     return resultDTO;
                 });
         });
+    }
+
+    public async upload(request: Request) {
+        // const readable = new Readable();
+        // const extension = await new Promise((resolve, reject) => {
+        //     request.on('data', (chunk) => {
+        //         const mimeType = chunk.toString().match(/^data:([^;]+);/)?.[1];
+        //         const extension = mimeTypes.extension(mimeType);
+        //         if (!extension) {
+        //             reject(new Error('Cannot infer file extension from mime type'));
+        //             return;
+        //         }
+        //         readable.push(Buffer.from(chunk.toString().replace(/^data:[^,]+,/, ''), 'base64'));
+        //         resolve(extension);
+        //     });
+        // });
+
+        const result = await this.ossClient.putStream(
+            `${this.options.pathPrefix}/${uuidv4()}`,
+            request,
+        );
+
+        // await new Promise((resolve, reject) => {
+        //     request.on('data', (chunk) => {
+        //         readable.push(chunk);
+        //     });
+        //     request.on('error', () => {
+        //         readable.push(null);
+        //         reject(new Error('Request error'));
+        //     });
+        //     request.on('end', () => {
+        //         readable.push(null);
+        //         resolve(null);
+        //     });
+        // });
+
+        const fileDTO = new FileDTO();
+        fileDTO.progress = 1;
+        fileDTO.createdAt = result.res.headers['last-modified'];
+        fileDTO.updatedAt = result.res.headers['last-modified'];
+        fileDTO.name = result.name;
+        fileDTO.mimeType = result.res.headers['content-type'];
+        fileDTO.size = Number(result.res.headers['content-length']);
+        fileDTO.url = `${this.options.staticPrefix}/${result.name}`;
+
+        return fileDTO;
     }
 }
