@@ -93,6 +93,7 @@ export class Builder {
                 extensions: ['.js', '.cjs', '.mjs', '.ts', '.tsx'],
                 alias: {
                     src: pathResolve(this.options.workDir, './src'),
+                    UNKNOWN: false,
                 },
                 plugins: [
                     new CatchNotFoundPlugin(),
@@ -106,13 +107,6 @@ export class Builder {
                             loader: require.resolve('ts-loader'),
                             options: {
                                 transpileOnly: true,
-                                compiler: require.resolve('ttypescript'),
-                                configFile: pathResolve(
-                                    this.options.workDir,
-                                    StringUtil.isFalsyString(this.options?.tsProject)
-                                        ? 'tsconfig.json'
-                                        : this.options.tsProject,
-                                ),
                             },
                         },
                         exclude: /node_modules/,
