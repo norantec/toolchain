@@ -177,9 +177,8 @@ export class RemoteRepo implements OnModuleInit {
                 success: true,
             };
         } catch (e) {
-            console.log(e?.message);
-            console.error(e?.stack);
-            this.loggerService.error(`LENCONDA:FUCK ${e?.stack}`);
+            this.loggerService.error(e?.message);
+            this.loggerService.error(e?.stack);
             return {
                 success: false,
             };
