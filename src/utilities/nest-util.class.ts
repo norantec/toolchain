@@ -1,4 +1,5 @@
 import { ClassType } from '../types/class-type.type';
+import * as _ from 'lodash';
 
 export class NestUtil {
     public static getControllerClasses(Clazz: ClassType) {
@@ -9,10 +10,16 @@ export class NestUtil {
         }
 
         return importedModules.reduce((result: ClassType[], ImportedModule) => {
-            const controllerClasses = Reflect.getMetadata('controllers', ImportedModule);
+            let controllerClasses = Reflect.getMetadata('controllers', ImportedModule);
+
+            if (!Array.isArray(controllerClasses)) {
+                controllerClasses = _.get(ImportedModule, 'controllers');
+            }
+
             if (!Array.isArray(controllerClasses)) {
                 return result;
             }
+
             return result.concat(controllerClasses);
         }, [] as ClassType[]);
     }

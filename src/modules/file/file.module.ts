@@ -1,5 +1,6 @@
 import {
     DynamicModule,
+    Global,
     Module,
 } from '@nestjs/common';
 import { FileController } from './file.controller';
@@ -9,6 +10,7 @@ import {
     FileModuleOptions,
 } from './file.interface';
 
+@Global()
 @Module({})
 export class FileModule {
     public static forRoot(options: FileModuleOptions): DynamicModule {
