@@ -39,7 +39,6 @@ function generateBasicSchemaAndType(input: string): {
         };
     } else {
         const className = input.replace(/^class\s/g, '');
-        console.log('LENCONDA:1', className);
         const Clazz = ApiController.getModel(className);
 
         if (!Clazz) {

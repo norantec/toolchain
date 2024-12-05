@@ -44,6 +44,7 @@ export class AuthModule {
                 ApiKeyStrategy,
                 JwtStrategy,
                 AuthService,
+                PassportModule,
             ],
             controllers: [AuthController],
         };
@@ -90,6 +91,7 @@ export class AuthModule {
                 ApiKeyStrategy,
                 JwtStrategy,
                 AuthService,
+                PassportModule,
             ],
             controllers: [AuthController],
         };

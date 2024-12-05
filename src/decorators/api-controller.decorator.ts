@@ -32,6 +32,7 @@ import { UserUpdatePasswordRequestDTO } from '../dtos/user-update-password-reque
 import { ClassType } from '../types/class-type.type';
 import { ApiExtraModels } from '@nestjs/swagger';
 import { OpenApiUtil } from '../utilities/openapi-util.class';
+import { DAOUtil } from '../utilities/dao-util.class';
 
 const container = new Map<string, ClassType>();
 
@@ -39,10 +40,10 @@ export const ApiController = (prefix?: string): ClassDecorator => {
     const finalPrefix = StringUtil.isFalsyString(prefix) ? '/api/v1' : prefix;
 
     [
-        [Reflect.getMetadata('sequelize:modelName', KeyDAO.prototype), OpenApiUtil.generateSchemaDTOFromModel(KeyDAO)],
-        [Reflect.getMetadata('sequelize:modelName', SubscriptionSnapshotDAO.prototype), OpenApiUtil.generateSchemaDTOFromModel(SubscriptionSnapshotDAO)],
-        [Reflect.getMetadata('sequelize:modelName', SubscriptionDAO.prototype), OpenApiUtil.generateSchemaDTOFromModel(SubscriptionDAO)],
-        [Reflect.getMetadata('sequelize:modelName', UserDAO.prototype), OpenApiUtil.generateSchemaDTOFromModel(UserDAO)],
+        [DAOUtil.getOriginalName(KeyDAO), OpenApiUtil.generateSchemaDTOFromModel(KeyDAO)],
+        [DAOUtil.getOriginalName(SubscriptionSnapshotDAO), OpenApiUtil.generateSchemaDTOFromModel(SubscriptionSnapshotDAO)],
+        [DAOUtil.getOriginalName(SubscriptionDAO), OpenApiUtil.generateSchemaDTOFromModel(SubscriptionDAO)],
+        [DAOUtil.getOriginalName(UserDAO), OpenApiUtil.generateSchemaDTOFromModel(UserDAO)],
         [AuthCodeDTO.name, AuthCodeDTO],
         [AuthExchangeAccessTokenByCodeRequestDTO.name, AuthExchangeAccessTokenByCodeRequestDTO],
         [AuthExchangeAccessTokenByPasswordRequestDTO.name, AuthExchangeAccessTokenByPasswordRequestDTO],
@@ -68,7 +69,6 @@ export const ApiController = (prefix?: string): ClassDecorator => {
         [UploadCredentialDTO.name, UploadCredentialDTO],
         [UserUpdatePasswordRequestDTO.name, UserUpdatePasswordRequestDTO],
     ].forEach(([key, model]) => {
-        console.log('LENCONDA:3', key, model);
         container.set(key, model);
     });
 
