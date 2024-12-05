@@ -1,8 +1,5 @@
 import {
     ForbiddenException,
-    forwardRef,
-    Inject,
-    Injectable,
     OnModuleInit,
 } from '@nestjs/common';
 import { type Request } from 'express';
@@ -11,10 +8,10 @@ import { minimatch } from 'minimatch';
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import { plainToInstance } from 'class-transformer';
-// import { LoggerService } from '../modules/logger/logger.service';
 import { EventService } from '../modules/event/event.service';
 import { ResultDTO } from '../dtos/result.dto.class';
 import { DynamicConfigItemDTO } from '../dtos/dynamic-config-item.dto.class';
+import { LoggerService } from '../modules/logger/logger.service';
 import { CryptoUtil } from '../utilities/crypto-util.class';
 
 interface ConfigFile {
@@ -31,20 +28,15 @@ export interface RemoteRepoOptions {
     webhookSecretHeaderName: string;
 }
 
-@Injectable()
 export class RemoteRepo implements OnModuleInit {
     private configFiles: ConfigFile[] = [];
 
-    // @Inject(LoggerService)
-    // private readonly loggerService: LoggerService;
-
-    @Inject(forwardRef(() => RepositoryService))
-    private readonly repositoryService: RepositoryService;
-
-    @Inject(forwardRef(() => EventService))
-    private readonly eventService: EventService;
-
-    public constructor(private readonly options: RemoteRepoOptions) {
+    public constructor(
+        private readonly options: RemoteRepoOptions,
+        protected loggerService: LoggerService,
+        protected repositoryService: RepositoryService,
+        protected eventService: EventService,
+    ) {
         if (
             process.env.NODE_ENV === 'development' &&
             fs.existsSync(this.options.devCacheFilePathname)
@@ -67,19 +59,19 @@ export class RemoteRepo implements OnModuleInit {
         request: Request,
     ) {
         const startTimeStr = new Date().toISOString();
-        // this.loggerService.log('Got `push` event from webhook');
+        this.loggerService.log('Got `push` event from webhook');
 
         if (!this.verifySignature(request)) {
-            // this.loggerService.error('Signature not match, returning...');
+            this.loggerService.error('Signature not match, returning...');
             throw new ForbiddenException();
         }
 
         const ref: string = data?.ref;
 
-        // this.loggerService.log(`Got ref: ${ref}, config ref: ${this.options.repoRef}`);
+        this.loggerService.log(`Got ref: ${ref}, config ref: ${this.options.repoRef}`);
 
         if (!ref || this.options.repoRef !== ref) {
-            // this.loggerService.error(`Repo ref does not match, config: ${this.options.repoRef}, incoming ref: ${ref}`);
+            this.loggerService.error(`Repo ref does not match, config: ${this.options.repoRef}, incoming ref: ${ref}`);
             return plainToInstance(ResultDTO, {
                 success: false,
                 createdAt: startTimeStr,
@@ -139,6 +131,14 @@ export class RemoteRepo implements OnModuleInit {
         await this.fetch();
     }
 
+    // protected init(
+    //     loggerService: LoggerService,
+    //     repositoryService: RepositoryService,
+    //     eventService: EventService,
+    // ) {
+
+    // }
+
     private async fetch() {
         try {
             const repositoryId = this.options.repoId;
@@ -177,7 +177,9 @@ export class RemoteRepo implements OnModuleInit {
                 success: true,
             };
         } catch (e) {
-            // this.loggerService.error(e?.stack);
+            console.log(e?.message);
+            console.error(e?.stack);
+            this.loggerService.error(`LENCONDA:FUCK ${e?.stack}`);
             return {
                 success: false,
             };

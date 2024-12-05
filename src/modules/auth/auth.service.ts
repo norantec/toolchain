@@ -1,7 +1,4 @@
-import {forwardRef, 
-    Inject,
-    Injectable,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
 import * as moment from 'moment';
 import { v4 as uuid } from 'uuid';
@@ -10,7 +7,7 @@ import { UserDAO } from '../../daos/user.dao.class';
 import { AuthCodeDTO } from '../../dtos/auth-code.dto.class';
 import { MailService } from '../mail/mail.service';
 import { EntityService } from '../entity/entity.service';
-// import { LoggerService } from '../logger/logger.service';
+import { LoggerService } from '../logger/logger.service';
 import { CheckerUtil } from '../../utilities/checker-util.class';
 import { StringUtil } from '../../utilities/string-util.class';
 import { CommonExceptionUtil } from '../../utilities/common-exception-util.class';
@@ -28,16 +25,12 @@ interface AuthCodeItem {
 export class AuthService {
     private readonly authCodeMap = new Map<string, AuthCodeItem>();
 
-    @Inject(forwardRef(() => MailService))
-    private readonly mailService: MailService;
-
-    @Inject(forwardRef(() => EntityService))
-    private readonly entityService: EntityService;
-
-    // @Inject(LoggerService)
-    // private readonly loggerService: LoggerService;
-
-    public constructor(private readonly options: AuthModuleOptions) {}
+    public constructor(
+        private readonly options: AuthModuleOptions,
+        private readonly mailService: MailService,
+        private readonly entityService: EntityService,
+        private readonly loggerService: LoggerService,
+    ) {}
 
     public async requestAuthCode(
         {
@@ -121,8 +114,8 @@ export class AuthService {
             }).then((dao) => dao.get('id'));
             return this.signJwt({ userId });
         } catch (e) {
-            // this.loggerService.error(e?.message);
-            // this.loggerService.error(e?.stack);
+            this.loggerService.error(e?.message);
+            this.loggerService.error(e?.stack);
             throw CommonExceptionUtil.create(CommonExceptionUtil.Code.GENERIC, {});
         }
     }

@@ -3,7 +3,6 @@ import { Response } from 'express';
 import * as EventEmitter from 'events';
 import { CheckerUtil } from '../../utilities/checker-util.class';
 import { StringUtil } from '../../utilities/string-util.class';
-import { SerializableUtil } from '../../utilities/serializable-util.class';
 import { StreamingModuleOptions } from './streaming.interface';
 import { CryptoUtil } from '../../utilities/crypto-util.class';
 
@@ -42,7 +41,7 @@ export class StreamingService {
             if (StringUtil.isFalsyString(message)) {
                 return;
             }
-            response.write(`data: ${this.encrypt(JSON.stringify(SerializableUtil.instanceToPlain(message)))}\n\n`);
+            response.write(`data: ${this.encrypt(message)}\n\n`);
         };
 
         this.emitter.on(PUSH_DATA, handler);

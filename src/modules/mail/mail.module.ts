@@ -20,6 +20,7 @@ export class MailModule {
                     useFactory: () => new MailService(options),
                 },
             ],
+            exports: [MailService],
         };
     }
 
@@ -36,6 +37,7 @@ export class MailModule {
                     inject: asyncOptions.inject,
                 },
             ],
+            exports: [MailService],
         };
     }
 }

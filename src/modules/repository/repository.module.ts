@@ -8,6 +8,8 @@ import {
     RepositoryModuleAsyncOptions,
     RepositoryModuleOptions,
 } from './repository.interface';
+import { LoggerService } from '../logger/logger.service';
+import * as _ from 'lodash';
 
 @Global()
 @Module({})
@@ -18,7 +20,8 @@ export class RepositoryModule {
             providers: [
                 {
                     provide: RepositoryService,
-                    useFactory: () => new RepositoryService(options),
+                    useFactory: (loggerService: LoggerService) => new RepositoryService(options, loggerService),
+                    inject: [LoggerService],
                 },
             ],
             exports: [RepositoryService],
@@ -32,10 +35,12 @@ export class RepositoryModule {
                 {
                     provide: RepositoryService,
                     useFactory: async (...args: any[]) => {
-                        const options = await asyncOptions.useFactory(...args);
-                        return new RepositoryService(options);
+                        const options = await asyncOptions.useFactory(...args.slice(0, -1));
+                        return new RepositoryService(options, _.last(args));
                     },
-                    inject: asyncOptions.inject || [],
+                    inject: (Array.isArray(asyncOptions.inject) ? asyncOptions.inject : []).concat([
+                        LoggerService,
+                    ]),
                 },
             ],
             exports: [RepositoryService],

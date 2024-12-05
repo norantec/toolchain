@@ -147,7 +147,7 @@ export class OpenApiUtil {
                         });
                     }
 
-                    _.set(document, `paths.["${actualPathname}"].post.responses.201.content`, {
+                    _.set(document, `paths.["${actualPathname}"].post.responses.200.content`, {
                         'application/json': {
                             schema: responseSchema,
                         },

@@ -1,23 +1,17 @@
 import { HeaderAPIKeyStrategy } from 'passport-headerapikey';
 import { PassportStrategy } from '@nestjs/passport';
-import {
-    Injectable,
-    Inject,
-    forwardRef,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ContextService } from '../context/context.service';
 import { KeyService } from '../key/key.service';
 import { AuthModuleOptions } from './auth.interface';
 
 @Injectable()
 export class ApiKeyStrategy extends PassportStrategy(HeaderAPIKeyStrategy, 'api-key') {
-    @Inject(forwardRef(() => KeyService))
-    private readonly keyService: KeyService;
-
-    @Inject(forwardRef(() => ContextService))
-    private readonly contextService: ContextService;
-
-    public constructor(options: AuthModuleOptions) {
+    public constructor(
+        options: AuthModuleOptions,
+        private readonly keyService: KeyService,
+        private readonly contextService: ContextService,
+    ) {
         super(
             {
                 header: 'Authorization',

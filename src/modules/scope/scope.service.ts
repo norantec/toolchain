@@ -1,7 +1,4 @@
-import {
-    Inject,
-    Injectable,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { METADATA_NAMES } from '../../constants/metadata-names.constant';
 import { StringUtil } from '../../utilities/string-util.class';
 import { NestUtil } from '../../utilities/nest-util.class';
@@ -10,8 +7,7 @@ import { LoggerService } from '../logger/logger.service';
 
 @Injectable()
 export class ScopeService {
-    @Inject(LoggerService)
-    private readonly loggerService: LoggerService;
+    public constructor(private readonly loggerService: LoggerService) {}
 
     public getAll(Clazz: ClassType) {
         let importedModules: ClassType[] = Reflect.getMetadata('imports', Clazz);

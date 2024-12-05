@@ -6,6 +6,10 @@ import {
 import { DynamicConfigService } from './dynamic-config.service';
 import { DynamicConfigController } from './dynamic-config.controller';
 import { RemoteRepoOptions } from '../../classes/remote-repo.class';
+import { LoggerService } from '../logger/logger.service';
+import { RepositoryService } from '../repository/repository.service';
+import { EventService } from '../event/event.service';
+import * as _ from 'lodash';
 
 export interface DynamicConfigModuleAsyncOptions {
     useFactory: (...args: any[]) => RemoteRepoOptions | Promise<RemoteRepoOptions>;
@@ -21,10 +25,24 @@ export class DynamicConfigModule {
             providers: [
                 {
                     provide: DynamicConfigService,
-                    useFactory: () => new DynamicConfigService(options),
+                    useFactory: (
+                        loggerService: LoggerService,
+                        repositoryService: RepositoryService,
+                        eventService: EventService,
+                    ) => new DynamicConfigService(
+                        options,
+                        loggerService,
+                        repositoryService,
+                        eventService,
+                    ),
+                    inject: [
+                        LoggerService,
+                        RepositoryService,
+                        EventService,
+                    ],
                 },
             ],
-            controllers: [DynamicConfigController], 
+            controllers: [DynamicConfigController],
             exports: [DynamicConfigService],
         };
     }
@@ -36,13 +54,22 @@ export class DynamicConfigModule {
                 {
                     provide: DynamicConfigService,
                     useFactory: async (...args: any[]) => {
-                        const options = await asyncOptions.useFactory(...args);
-                        return new DynamicConfigService(options);
+                        const options = await asyncOptions.useFactory(...args.slice(0, -3));
+                        return new DynamicConfigService(
+                            options,
+                            _.last(args.slice(0, -2)),
+                            _.last(args.slice(0, -1)),
+                            _.last(args),
+                        );
                     },
-                    inject: asyncOptions.inject || [],
+                    inject: (Array.isArray(asyncOptions.inject) ? asyncOptions.inject : []).concat([
+                        LoggerService,
+                        RepositoryService,
+                        EventService,
+                    ]),
                 },
             ],
-            controllers: [DynamicConfigController], 
+            controllers: [DynamicConfigController],
             exports: [DynamicConfigService],
         };
     }

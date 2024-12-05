@@ -1,6 +1,4 @@
 import {
-    forwardRef,
-    Inject,
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common';
@@ -41,10 +39,10 @@ interface JwtPayload extends JsonObject {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(BaseStrategy) {
-    @Inject(forwardRef(() => EntityService))
-    private readonly entityService: EntityService;
-
-    public constructor(options: AuthModuleOptions) {
+    public constructor(
+        options: AuthModuleOptions,
+        private readonly entityService: EntityService,
+    ) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             audience: options?.jwt?.audience,

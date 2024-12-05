@@ -1,7 +1,4 @@
-import {
-    Inject,
-    Injectable,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Octokit } from 'octokit';
 import axios from 'axios';
 import AdmZip = require('adm-zip');
@@ -16,9 +13,6 @@ interface RepositoryConfig {
 
 @Injectable()
 export class RepositoryService {
-    @Inject(LoggerService)
-    private readonly loggerService: LoggerService;
-
     private readonly client = new Octokit({
         auth: this?.options?.accessToken,
     });
@@ -27,7 +21,10 @@ export class RepositoryService {
         email: this.options?.authorEmail,
     };
 
-    public constructor(private readonly options: RepositoryModuleOptions) {}
+    public constructor(
+        private readonly options: RepositoryModuleOptions,
+        private readonly loggerService: LoggerService,
+    ) {}
 
     public create(config: RepositoryConfig) {
         const ensureRepository = async () => {
