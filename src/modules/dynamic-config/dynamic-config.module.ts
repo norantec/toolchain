@@ -5,21 +5,21 @@ import {
 } from '@nestjs/common';
 import { DynamicConfigService } from './dynamic-config.service';
 import { DynamicConfigController } from './dynamic-config.controller';
-import { RemoteRepoOptions } from '../../classes/remote-repo.class';
+import { RemoteRepositoryOptions } from '../remote-repository/remote-repository.service';
 import { LoggerService } from '../logger/logger.service';
 import { RepositoryService } from '../repository/repository.service';
 import { EventService } from '../event/event.service';
 import * as _ from 'lodash';
 
 export interface DynamicConfigModuleAsyncOptions {
-    useFactory: (...args: any[]) => RemoteRepoOptions | Promise<RemoteRepoOptions>;
+    useFactory: (...args: any[]) => RemoteRepositoryOptions | Promise<RemoteRepositoryOptions>;
     inject?: any[];
 }
 
 @Global()
 @Module({})
 export class DynamicConfigModule {
-    public static forRoot(options: RemoteRepoOptions): DynamicModule {
+    public static forRoot(options: RemoteRepositoryOptions): DynamicModule {
         return {
             module: DynamicConfigModule,
             providers: [

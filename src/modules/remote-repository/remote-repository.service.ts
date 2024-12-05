@@ -3,23 +3,23 @@ import {
     OnModuleInit,
 } from '@nestjs/common';
 import { type Request } from 'express';
-import { RepositoryService } from '../modules/repository/repository.service';
+import { RepositoryService } from '../repository/repository.service';
 import { minimatch } from 'minimatch';
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import { plainToInstance } from 'class-transformer';
-import { EventService } from '../modules/event/event.service';
-import { ResultDTO } from '../dtos/result.dto.class';
-import { DynamicConfigItemDTO } from '../dtos/dynamic-config-item.dto.class';
-import { LoggerService } from '../modules/logger/logger.service';
-import { CryptoUtil } from '../utilities/crypto-util.class';
+import { EventService } from '../event/event.service';
+import { ResultDTO } from '../../dtos/result.dto.class';
+import { DynamicConfigItemDTO } from '../../dtos/dynamic-config-item.dto.class';
+import { LoggerService } from '../logger/logger.service';
+import { CryptoUtil } from '../../utilities/crypto-util.class';
 
 interface ConfigFile {
     pathname: string;
     content: Record<string, any>;
 }
 
-export interface RemoteRepoOptions {
+export interface RemoteRepositoryOptions {
     eventName: string;
     devCacheFilePathname: string;
     repoId: string;
@@ -28,11 +28,11 @@ export interface RemoteRepoOptions {
     webhookSecretHeaderName: string;
 }
 
-export class RemoteRepo implements OnModuleInit {
+export class RemoteRepositoryService implements OnModuleInit {
     private configFiles: ConfigFile[] = [];
 
     public constructor(
-        private readonly options: RemoteRepoOptions,
+        private readonly options: RemoteRepositoryOptions,
         protected loggerService: LoggerService,
         protected repositoryService: RepositoryService,
         protected eventService: EventService,

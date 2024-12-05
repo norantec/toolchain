@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import {
-    RemoteRepo,
-    RemoteRepoOptions,
-} from '../../classes/remote-repo.class';
+    RemoteRepositoryService,
+    RemoteRepositoryOptions,
+} from '../remote-repository/remote-repository.service';
 import { LoggerService } from '../logger/logger.service';
 import { RepositoryService } from '../repository/repository.service';
 import { EventService } from '../event/event.service';
 
 @Injectable()
-export class InternationalizationService extends RemoteRepo {
+export class InternationalizationService extends RemoteRepositoryService {
     public constructor(
-        options: RemoteRepoOptions,
+        options: RemoteRepositoryOptions,
         loggerService: LoggerService,
         repositoryService: RepositoryService,
         eventService: EventService,

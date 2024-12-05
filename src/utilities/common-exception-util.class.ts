@@ -74,8 +74,17 @@ export interface CommonExceptionMap {
 
 export type CreateExceptionFn = <T extends keyof CommonExceptionMap>(code: T, options: CommonExceptionMap[T]) => Error;
 
+class Exception<T extends keyof M, M> {
+    public constructor(private readonly customExceptionHandler?: (code: T) => typeof HttpException) {}
+
+    public create(code: T, context: M[T]) {
+        return CommonExceptionUtil.create<T, M>(code, context, this.customExceptionHandler?.bind(this));
+    }
+};
+
 export class CommonExceptionUtil {
     public static Code = CommonException;
+    public static Exception = Exception;
 
     public static create<T extends keyof M, M = CommonExceptionMap>(
         code: T,
