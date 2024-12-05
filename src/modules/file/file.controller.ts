@@ -4,7 +4,7 @@ import { FileService } from './file.service';
 import { ScopeGuard } from '../../guards/scope.guard';
 import { ApiController } from '../../decorators/api-controller.decorator';
 import { ReflectedBody } from '../../decorators/reflected-body.decorator';
-import { FileGetMetadataListRequestDTO } from '../../dtos/file-get-metadata-list-request.dto.class';
+// import { FileGetMetadataListRequestDTO } from '../../dtos/file-get-metadata-list-request.dto.class';
 
 @UseGuards(ScopeGuard)
 @ApiController()
@@ -13,10 +13,10 @@ export class FileController {
 
     @Method('normal')
     public async getMetadataList(
-        @ReflectedBody() body: FileGetMetadataListRequestDTO,
+        @ReflectedBody() nameList: string[],
     ) {
         return await this.fileService.getMetadataList({
-            nameList: body?.nameList,
+            nameList,
         });
     }
 }

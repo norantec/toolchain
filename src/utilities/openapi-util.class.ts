@@ -23,6 +23,15 @@ function generateBasicSchemaAndType(input: string): {
     Clazz: ClassType;
     schema: SchemaObject & Partial<ReferenceObject>;
 } {
+    const blacklist = {
+        String: 'string',
+        Boolean: 'boolean',
+        Number: 'number',
+        BigInt: 'bigint',
+        Null: 'null',
+        Undefined: 'undefined',
+    };
+
     if (StringUtil.isFalsyString(input) || !/^class\s\w+(?:\[\])*$/.test(input)) {
         throw CommonExceptionUtil.create(CommonExceptionUtil.Code.INVALID_INFERRED_TYPE, {
             type: input,
@@ -39,6 +48,16 @@ function generateBasicSchemaAndType(input: string): {
         };
     } else {
         const className = input.replace(/^class\s/g, '');
+
+        if (Object.keys(blacklist).includes(className)) {
+            return {
+                schema: {
+                    type: blacklist[className],
+                },
+                Clazz: null,
+            };
+        }
+
         const Clazz = ApiController.getModel(className);
 
         if (!Clazz) {
