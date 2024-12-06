@@ -75,14 +75,7 @@ export class AuthModule {
     public static forRootAsync(asyncOptions: AuthModuleAsyncOptions) {
         return {
             module: AuthModule,
-            imports: [
-                PassportModule.register({
-                    defaultStrategy: [
-                        'api-key',
-                        'jwt',
-                    ],
-                }),
-            ],
+            imports: [passportModuleInstance],
             providers: [
                 {
                     provide: JwtStrategy,
