@@ -10,7 +10,7 @@ import * as fs from 'fs-extra';
 import { plainToInstance } from 'class-transformer';
 import { EventService } from '../event/event.service';
 import { ResultDTO } from '../../dtos/result.dto.class';
-import { DynamicConfigItemDTO } from '../../dtos/dynamic-config-item.dto.class';
+import { RemoteRepositoryContentDTO } from '../../dtos/remote-repository-content.dto.class';
 import { LoggerService } from '../logger/logger.service';
 import { CryptoUtil } from '../../utilities/crypto-util.class';
 
@@ -22,8 +22,10 @@ interface ConfigFile {
 export interface RemoteRepositoryOptions {
     eventName: string;
     devCacheFilePathname: string;
-    repoId: string;
-    repoRef: string;
+    repo: {
+        id: string;
+        ref: string;
+    };
     webhookSecretValue: string;
     webhookSecretHeaderName: string;
 }
@@ -68,10 +70,10 @@ export class RemoteRepositoryService implements OnModuleInit {
 
         const ref: string = data?.ref;
 
-        this.loggerService.log(`Got ref: ${ref}, config ref: ${this.options.repoRef}`);
+        this.loggerService.log(`Got ref: ${ref}, config ref: ${this.options?.repo?.ref}`);
 
-        if (!ref || this.options.repoRef !== ref) {
-            this.loggerService.error(`Repo ref does not match, config: ${this.options.repoRef}, incoming ref: ${ref}`);
+        if (!ref || this.options?.repo?.ref !== ref) {
+            this.loggerService.error(`Repo ref does not match, config: ${this.options?.repo?.ref}, incoming ref: ${ref}`);
             return plainToInstance(ResultDTO, {
                 success: false,
                 createdAt: startTimeStr,
@@ -94,12 +96,12 @@ export class RemoteRepositoryService implements OnModuleInit {
         }
 
         const configJson = this.configFiles.find((file) => file.pathname === 'config.json');
-        const files = this.configFiles.filter((dynamicConfig) => {
+        const files = this.configFiles.filter((item) => {
             return patterns.some((pattern) => {
-                return minimatch(dynamicConfig.pathname, pattern + '.json') && (
+                return minimatch(item.pathname, pattern + '.json') && (
                     strictMode
-                        ? configJson?.content?.dynamicConfig?.publicFilePatterns?.some?.((publicFilePattern) => {
-                            return minimatch(dynamicConfig.pathname, publicFilePattern + '.json');
+                        ? configJson?.content?.item?.publicFilePatterns?.some?.((publicFilePattern) => {
+                            return minimatch(item.pathname, publicFilePattern + '.json');
                         })
                         : true
                 );
@@ -111,12 +113,12 @@ export class RemoteRepositoryService implements OnModuleInit {
         }
 
         return files.reduce((result, file) => {
-            const configItem = new DynamicConfigItemDTO();
+            const configItem = new RemoteRepositoryContentDTO();
             configItem.content = file.content;
             configItem.name = path.join(path.dirname(file.pathname), path.parse(file.pathname).name);
             result[configItem.name] = configItem;
             return result;
-        }, {} as Record<string, DynamicConfigItemDTO>);
+        }, {} as Record<string, RemoteRepositoryContentDTO>);
     }
 
     public async initDevCache() {
@@ -131,20 +133,12 @@ export class RemoteRepositoryService implements OnModuleInit {
         await this.fetch();
     }
 
-    // protected init(
-    //     loggerService: LoggerService,
-    //     repositoryService: RepositoryService,
-    //     eventService: EventService,
-    // ) {
-
-    // }
-
     private async fetch() {
         try {
-            const repositoryId = this.options.repoId;
+            const repositoryId = this.options?.repo?.id;
             const repositoryClient = this.repositoryService.createFromId(repositoryId);
-            const dynamicConfigFiles = await repositoryClient
-                .fetchRepositoryContent(this.options.repoRef)
+            const remoteRepositoryFiles = await repositoryClient
+                .fetchRepositoryContent(this.options?.repo?.ref)
                 .then((files) => {
                     return files
                         .map((file) => {
@@ -164,7 +158,7 @@ export class RemoteRepositoryService implements OnModuleInit {
                         });
                 });
 
-            this.configFiles = dynamicConfigFiles;
+            this.configFiles = remoteRepositoryFiles;
             this.eventService.fire(this.options.eventName, {});
 
             if (process.env.NODE_ENV === 'development') {

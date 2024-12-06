@@ -15,6 +15,13 @@ import * as _ from 'lodash';
 import { MailService } from '../mail/mail.service';
 import { LoggerService } from '../logger/logger.service';
 
+const passportModule = PassportModule.register({
+    defaultStrategy: [
+        'api-key',
+        'jwt',
+    ],
+});
+
 @Module({})
 export class AuthModule {
     public static forRoot(options: AuthModuleOptions) {
@@ -22,12 +29,7 @@ export class AuthModule {
             global: true,
             module: AuthModule,
             imports: [
-                PassportModule.register({
-                    defaultStrategy: [
-                        'api-key',
-                        'jwt',
-                    ],
-                }),
+                passportModule,
             ],
             providers: [
                 {
@@ -63,7 +65,7 @@ export class AuthModule {
                 JwtStrategy,
                 ApiKeyStrategy,
                 AuthService,
-                PassportModule,
+                passportModule,
             ],
             controllers: [AuthController],
         };
@@ -74,12 +76,7 @@ export class AuthModule {
             global: true,
             module: AuthModule,
             imports: [
-                PassportModule.register({
-                    defaultStrategy: [
-                        'api-key',
-                        'jwt',
-                    ],
-                }),
+                passportModule,
             ],
             providers: [
                 {
@@ -129,7 +126,7 @@ export class AuthModule {
                 JwtStrategy,
                 ApiKeyStrategy,
                 AuthService,
-                PassportModule,
+                passportModule,
             ],
             controllers: [AuthController],
         };

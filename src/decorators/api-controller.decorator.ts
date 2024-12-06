@@ -12,7 +12,7 @@ import { AuthExchangeDTO } from '../dtos/auth-exchange.dto.class';
 import { AuthRequestCodeRequestDTO } from '../dtos/auth-request-code-request.dto.class';
 import { AuthResetPasswordRequestDTO } from '../dtos/auth-reset-password-request.dto.class';
 import { DynamicConfigGetRequestDTO } from '../dtos/dynamic-config-get-request.dto.class';
-import { DynamicConfigItemDTO } from '../dtos/dynamic-config-item.dto.class';
+import { RemoteRepositoryContentDTO } from '../dtos/remote-repository-content.dto.class';
 import { FileDTO } from '../dtos/file.dto.class';
 import { InternationalizationGetRequestDTO } from '../dtos/internationalization-get-request.dto.class';
 import { KeyCreateOrUpdateRequestDTO } from '../dtos/key-create-or-update-request.dto.class';
@@ -49,7 +49,7 @@ export const ApiController = (prefix?: string): ClassDecorator => {
         [AuthRequestCodeRequestDTO.name, AuthRequestCodeRequestDTO],
         [AuthResetPasswordRequestDTO.name, AuthResetPasswordRequestDTO],
         [DynamicConfigGetRequestDTO.name, DynamicConfigGetRequestDTO],
-        [DynamicConfigItemDTO.name, DynamicConfigItemDTO],
+        [RemoteRepositoryContentDTO.name, RemoteRepositoryContentDTO],
         [FileDTO.name, FileDTO],
         [InternationalizationGetRequestDTO.name, InternationalizationGetRequestDTO],
         [KeyCreateOrUpdateRequestDTO.name, KeyCreateOrUpdateRequestDTO],

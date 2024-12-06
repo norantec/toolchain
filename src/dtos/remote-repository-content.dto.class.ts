@@ -2,11 +2,11 @@ import { Transform } from 'class-transformer';
 import { Mapping } from '../decorators/mapping.decorator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
-export interface DynamicConfig {
-    [key: string]: string | number | boolean | null | DynamicConfig | Array<string | number | boolean | null | DynamicConfig>;
+export interface RemoteRepositoryContent {
+    [key: string]: string | number | boolean | null | RemoteRepositoryContent | Array<string | number | boolean | null | RemoteRepositoryContent>;
 };
 
-export class DynamicConfigItemDTO {
+export class RemoteRepositoryContentDTO {
     @Mapping()
     @ApiPropertyOptional()
     public name: string;
@@ -31,5 +31,5 @@ export class DynamicConfigItemDTO {
     }, {
         toPlainOnly: true,
     })
-    public content: DynamicConfig;
+    public content: RemoteRepositoryContent;
 }
