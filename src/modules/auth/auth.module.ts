@@ -63,10 +63,7 @@ export class AuthModule {
                 },
             ],
             exports: [
-                ApiKeyStrategy,
-                JwtStrategy,
                 AuthService,
-                passportModuleInstance,
             ],
             controllers: [AuthController],
         };
@@ -121,10 +118,7 @@ export class AuthModule {
                 },
             ],
             exports: [
-                ApiKeyStrategy,
-                JwtStrategy,
                 AuthService,
-                passportModuleInstance,
             ],
             controllers: [AuthController],
         };
