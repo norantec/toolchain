@@ -1,7 +1,4 @@
-import {
-    Global,
-    Module,
-} from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { ApiKeyStrategy } from './api-key.strategy';
 import { JwtStrategy } from './jwt.strategy';
@@ -25,11 +22,11 @@ const passportModuleInstance = PassportModule.register({
     ],
 });
 
-@Global()
 @Module({})
 export class AuthModule {
     public static forRoot(options: AuthModuleOptions) {
         return {
+            global: true,
             module: AuthModule,
             imports: [passportModuleInstance],
             providers: [
@@ -71,6 +68,7 @@ export class AuthModule {
 
     public static forRootAsync(asyncOptions: AuthModuleAsyncOptions) {
         return {
+            global: true,
             module: AuthModule,
             imports: [passportModuleInstance],
             providers: [
