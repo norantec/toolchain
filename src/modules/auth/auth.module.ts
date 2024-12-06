@@ -131,7 +131,7 @@ export class AuthModule {
                 ApiKeyStrategy,
                 JwtStrategy,
                 AuthService,
-                PassportModule,
+                passportModuleInstance,
             ],
             controllers: [AuthController],
         };
