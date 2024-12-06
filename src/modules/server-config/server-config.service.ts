@@ -3,14 +3,14 @@ import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs-extra';
 import * as _ from 'lodash';
-import { z } from 'zod';
+import * as yup from 'yup';
 import { StringUtil } from '../../utilities/string-util.class';
 import {
     Get,
     Paths,
 } from 'type-fest';
 
-export interface ServerConfigServiceOptions<T extends z.ZodObject<any>> {
+export interface ServerConfigServiceOptions<T extends yup.ObjectSchema<any>> {
     pathnameList: string[];
     schema: T;
     onError?: (error: Error) => void;
@@ -18,15 +18,15 @@ export interface ServerConfigServiceOptions<T extends z.ZodObject<any>> {
 }
 
 @Injectable()
-export class ServerConfigService<T extends z.ZodObject<any>> {
-    private config: z.infer<T>;
+export class ServerConfigService<T extends yup.ObjectSchema<any>> {
+    private config: yup.InferType<T>;
     private loaded = false;
 
     public constructor(private readonly options: ServerConfigServiceOptions<T>) {
         this.load();
     }
 
-    public get<Path extends string & Paths<z.infer<T>>>(path: Path): Get<z.infer<T>, Path> {
+    public get<Path extends string & Paths<yup.InferType<T>>>(path: Path): Get<yup.InferType<T>, Path> {
         if (StringUtil.isFalsyString(path)) {
             return null;
         }
@@ -63,7 +63,7 @@ export class ServerConfigService<T extends z.ZodObject<any>> {
             return;
         }
 
-        let userConfig: z.infer<T> = {};
+        let userConfig: yup.InferType<T> = {};
 
         pathnameList.forEach((pathname) => {
             const filePath = path.resolve(pathname?.startsWith?.('~' + path.sep) ? os.homedir() : process.cwd(), pathname);
@@ -82,7 +82,7 @@ export class ServerConfigService<T extends z.ZodObject<any>> {
         });
 
         try {
-            this.config = this.options.schema.parse(userConfig) as z.infer<T>;
+            this.config = this.options.schema.cast(userConfig) as yup.InferType<T>;
         } catch (e) {
             this.options.onError?.(e);
             return {};
