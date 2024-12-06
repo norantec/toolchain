@@ -15,20 +15,20 @@ import * as _ from 'lodash';
 import { MailService } from '../mail/mail.service';
 import { LoggerService } from '../logger/logger.service';
 
-const passportModuleInstance = PassportModule.register({
-    defaultStrategy: [
-        'api-key',
-        'jwt',
-    ],
-});
-
 @Module({})
 export class AuthModule {
     public static forRoot(options: AuthModuleOptions) {
         return {
             global: true,
             module: AuthModule,
-            imports: [passportModuleInstance],
+            imports: [
+                PassportModule.register({
+                    defaultStrategy: [
+                        'api-key',
+                        'jwt',
+                    ],
+                }),
+            ],
             providers: [
                 {
                     provide: JwtStrategy,
@@ -60,7 +60,10 @@ export class AuthModule {
                 },
             ],
             exports: [
+                JwtStrategy,
+                ApiKeyStrategy,
                 AuthService,
+                PassportModule,
             ],
             controllers: [AuthController],
         };
@@ -70,7 +73,14 @@ export class AuthModule {
         return {
             global: true,
             module: AuthModule,
-            imports: [passportModuleInstance],
+            imports: [
+                PassportModule.register({
+                    defaultStrategy: [
+                        'api-key',
+                        'jwt',
+                    ],
+                }),
+            ],
             providers: [
                 {
                     provide: JwtStrategy,
@@ -116,7 +126,10 @@ export class AuthModule {
                 },
             ],
             exports: [
+                JwtStrategy,
+                ApiKeyStrategy,
                 AuthService,
+                PassportModule,
             ],
             controllers: [AuthController],
         };
