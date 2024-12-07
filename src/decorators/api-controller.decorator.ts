@@ -35,6 +35,7 @@ import { ApiExtraModels } from '@nestjs/swagger';
 import { OpenApiUtil } from '../utilities/openapi-util.class';
 import { DAOUtil } from '../utilities/dao-util.class';
 import { AuthGuard } from '@nestjs/passport';
+import { SystemGuard } from '../guards/system.guard';
 
 const container = new Map<string, ClassType>();
 
@@ -80,14 +81,16 @@ export const ApiController = (options?: ApiControllerOptions): ClassDecorator =>
         Reflect.defineMetadata(METADATA_NAMES.CONTROLLER_PREFIX, finalPrefix, target);
         ApiExtraModels(...Array.from(container.values()))(target);
         Controller(finalPrefix)(target);
-        if (options?.authStrategies !== false) {
-            UseGuards(
-                AuthGuard(
-                    ...(Array.isArray(options?.authStrategies) ? options.authStrategies : [])
-                        .filter((value) => !StringUtil.isFalsyString(value)),
-                ),
-            )(target);
-        }
+        UseGuards(
+            SystemGuard,
+            ...(
+                options?.authStrategies !== false
+                    ? [
+                        AuthGuard(options?.authStrategies),
+                    ]
+                    : []
+            ),
+        )(target);
     };
 };
 

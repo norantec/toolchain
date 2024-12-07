@@ -26,6 +26,7 @@ export class ApiKeyStrategy extends PassportStrategy(HeaderAPIKeyStrategy, 'api-
                     id,
                     secret,
                 ] = (value ?? '').split(':');
+                console.log('LENCONDA:FUCK', id, secret);
                 try {
                     const user = await this.keyService.validate({
                         id,

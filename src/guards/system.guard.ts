@@ -4,20 +4,22 @@ import { RequestWithExtraContext } from '../types/request-with-extra-context.typ
 import { CommonExceptionUtil } from '../utilities/common-exception-util.class';
 import { v4 as uuidv4 } from 'uuid';
 import { Response } from 'express';
-import * as _ from 'lodash';
+import { HEADERS } from '../constants/headers.constant';
 
 export class SystemGuard implements CanActivate {
     public async canActivate(context: ExecutionContext): Promise<boolean> {
         const traceId = uuidv4();
         const request: RequestWithExtraContext = context.switchToHttp().getRequest();
         const response: Response = context.switchToHttp().getResponse();
-        const scopeIdentifier = request?.scopeIdentifier;
         const userDTO = request?.user;
         const legalScopeIdentifiers = request?.legalScopeIdentifiers;
+        const scopeIdentifier = /^\/api\/v\d+\/(.*)/.exec(request?.path)?.[1];
 
-        request.scopeIdentifier = _.last(request?.url?.split('/'));
+        console.log('LENCONDA:FUCK', scopeIdentifier);
+
+        request.scopeIdentifier = scopeIdentifier;
         request.requestTraceId = traceId;
-        response.setHeader('X-Trace-Id', traceId);
+        response.setHeader(HEADERS.TRACE_ID, traceId);
 
         if (
             userDTO?.keys?.length > 0 && (

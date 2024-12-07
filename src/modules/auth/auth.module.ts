@@ -1,7 +1,13 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
-import { ApiKeyStrategy, ApiKeyStrategyOptions } from './api-key.strategy';
-import { JwtStrategy, JwtStrategyOptions } from './jwt.strategy';
+import {
+    ApiKeyStrategy,
+    ApiKeyStrategyOptions,
+} from './api-key.strategy';
+import {
+    JwtStrategy,
+    JwtStrategyOptions,
+} from './jwt.strategy';
 import { AuthService } from './auth.service';
 import {
     AuthModuleAsyncOptions,
@@ -33,7 +39,7 @@ export class AuthModule {
             ],
             providers: [
                 ...(
-                    options?.jwt !== false
+                    options?.jwt !== null
                         ? [
                             {
                                 provide: JwtStrategy,
@@ -47,7 +53,7 @@ export class AuthModule {
                         : []
                 ),
                 ...(
-                    options?.apiKey !== false
+                    options?.apiKey !== null
                         ? [
                             {
                                 provide: ApiKeyStrategy,

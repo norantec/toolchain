@@ -2,10 +2,10 @@ import { ApiKeyStrategyOptions } from './api-key.strategy';
 import { JwtStrategyOptions } from './jwt.strategy';
 
 export interface AuthModuleOptions {
-    apiKey: ApiKeyStrategyOptions | false;
+    apiKey: ApiKeyStrategyOptions;
     codeExpirationMinutes: number;
     codeResendDelay: number;
-    jwt: JwtStrategyOptions | false;
+    jwt: JwtStrategyOptions;
     providers?: Array<{
         provide: any;
         useFactory: (options?: AuthModuleOptions, ...args: any[]) => any;
@@ -13,19 +13,14 @@ export interface AuthModuleOptions {
     }>;
 }
 
-interface AuthModuleAsyncOptionsReturn extends Omit<AuthModuleOptions, 'jwt' | 'apiKey' | 'providers'> {
-    jwt: JwtStrategyOptions;
-    apiKey: ApiKeyStrategyOptions;
-}
-
 export interface AuthModuleAsyncOptions {
-    useFactory: (...args: any[]) => AuthModuleAsyncOptionsReturn | Promise<AuthModuleAsyncOptionsReturn>;
+    useFactory: (...args: any[]) => AuthModuleOptions | Promise<AuthModuleOptions>;
     disableJwt?: boolean;
     disableApiKey?: boolean;
     inject?: any[];
     providers?: Array<{
         provide: any;
-        useFactory: (options?: AuthModuleAsyncOptionsReturn, ...args: any[]) => any;
+        useFactory: (options?: AuthModuleOptions, ...args: any[]) => any;
         inject?: any[];
     }>;
 }
