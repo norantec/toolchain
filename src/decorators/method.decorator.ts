@@ -1,11 +1,16 @@
-import { Post } from '@nestjs/common';
+import {
+    Post,
+    UseGuards,
+} from '@nestjs/common';
 import * as _ from 'lodash';
 import { METADATA_NAMES } from '../constants/metadata-names.constant';
 import { ApiOkResponse } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
+import { StringUtil } from '../utilities/string-util.class';
 
 export type AdminMode = 'both' | 'normal' | 'admin';
 
-export function Method(adminMode: AdminMode = 'both'): MethodDecorator {
+export function Method(adminMode: AdminMode = 'both', authStrategies?: string[] | false): MethodDecorator {
     return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
         const controllerNameSegments = _.kebabCase(target?.constructor?.name).split('-').slice(0, -1);
         let controllerName = _.camelCase(controllerNameSegments.join('-'));
@@ -51,5 +56,9 @@ export function Method(adminMode: AdminMode = 'both'): MethodDecorator {
         );
         ApiOkResponse({ description: 'Success' })(target, propertyKey, descriptor);
         Post(scopeNames)(target, propertyKey, descriptor);
+
+        if (authStrategies !== false) {
+            UseGuards(AuthGuard(...(Array.isArray(authStrategies) ? authStrategies : []).filter((value) => !StringUtil.isFalsyString(value))))(target);
+        }
     };
 }

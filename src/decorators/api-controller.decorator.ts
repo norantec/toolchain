@@ -1,4 +1,7 @@
-import { Controller } from '@nestjs/common';
+import {
+    Controller,
+    UseGuards,
+} from '@nestjs/common';
 import { StringUtil } from '../utilities/string-util.class';
 import { METADATA_NAMES } from '../constants/metadata-names.constant';
 import { UserDAO } from '../daos/user.dao.class';
@@ -31,12 +34,16 @@ import { ClassType } from '../types/class-type.type';
 import { ApiExtraModels } from '@nestjs/swagger';
 import { OpenApiUtil } from '../utilities/openapi-util.class';
 import { DAOUtil } from '../utilities/dao-util.class';
+import { AuthGuard } from '@nestjs/passport';
 
 const container = new Map<string, ClassType>();
 
-export const ApiController = (prefix?: string): ClassDecorator => {
-    const finalPrefix = StringUtil.isFalsyString(prefix) ? '/api/v1' : prefix;
+export interface ApiControllerOptions {
+    authStrategies?: string[] | false;
+    version?: number;
+}
 
+export const ApiController = (options?: ApiControllerOptions): ClassDecorator => {
     [
         [DAOUtil.getOriginalName(KeyDAO), OpenApiUtil.generateSchemaDTOFromModel(KeyDAO)],
         [DAOUtil.getOriginalName(SubscriptionSnapshotDAO), OpenApiUtil.generateSchemaDTOFromModel(SubscriptionSnapshotDAO)],
@@ -69,9 +76,18 @@ export const ApiController = (prefix?: string): ClassDecorator => {
     });
 
     return (target) => {
+        const finalPrefix = `/api/v${(options?.version >= 1 ? options?.version : 1)}`;
         Reflect.defineMetadata(METADATA_NAMES.CONTROLLER_PREFIX, finalPrefix, target);
         ApiExtraModels(...Array.from(container.values()))(target);
         Controller(finalPrefix)(target);
+        if (options?.authStrategies !== false) {
+            UseGuards(
+                AuthGuard(
+                    ...(Array.isArray(options?.authStrategies) ? options.authStrategies : [])
+                        .filter((value) => !StringUtil.isFalsyString(value)),
+                ),
+            )(target);
+        }
     };
 };
 

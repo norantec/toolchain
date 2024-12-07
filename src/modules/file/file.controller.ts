@@ -1,12 +1,9 @@
-import { UseGuards } from '@nestjs/common';
 import { Method } from '../../decorators/method.decorator';
 import { FileService } from './file.service';
-import { ScopeGuard } from '../../guards/scope.guard';
 import { ApiController } from '../../decorators/api-controller.decorator';
 import { ReflectedBody } from '../../decorators/reflected-body.decorator';
 
-@UseGuards(ScopeGuard)
-@ApiController()
+@ApiController({ authStrategies: false })
 export class FileController {
     public constructor(private readonly fileService: FileService) {}
 

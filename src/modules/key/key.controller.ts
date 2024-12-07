@@ -1,15 +1,12 @@
-import { AuthGuard } from '@nestjs/passport';
 import { KeyService } from './key.service';
 import { ReflectedBody } from '../../decorators/reflected-body.decorator';
 import { IsAdmin } from '../../decorators/is-admin.decorator';
 import { ApiController } from '../../decorators/api-controller.decorator';
 import { Method } from '../../decorators/method.decorator';
 import { CurrentUserId } from '../../decorators/current-user-id.decorator';
-import { UseGuards } from '../../decorators/use-guards.decorator';
 import { KeyListRequestDTO } from '../../dtos/key-list-request.dto.class';
 import { KeyCreateOrUpdateRequestDTO } from '../../dtos/key-create-or-update-request.dto.class';
 
-@UseGuards(AuthGuard())
 @ApiController()
 export class KeyController {
     public constructor(

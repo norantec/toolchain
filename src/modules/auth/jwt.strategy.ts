@@ -8,7 +8,6 @@ import {
     ExtractJwt,
 } from 'passport-jwt';
 import { EntityService } from '../entity/entity.service';
-import { AuthModuleOptions } from './auth.interface';
 import { StringUtil } from '../../utilities/string-util.class';
 import { UserDAO } from '../../daos/user.dao.class';
 
@@ -37,18 +36,26 @@ interface JwtPayload extends JsonObject {
     permissions?: string[];
 }
 
+export interface JwtStrategyOptions {
+    audience: string;
+    expirationDays: number;
+    issuer: string;
+    secret: string;
+    ignoreExpiration?: boolean;
+}
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(BaseStrategy) {
     public constructor(
-        options: AuthModuleOptions,
+        options: JwtStrategyOptions,
         private readonly entityService: EntityService,
     ) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-            audience: options?.jwt?.audience,
-            issuer: options?.jwt?.issuer,
-            ignoreExpiration: options?.jwt?.ignoreExpiration,
-            secretOrKey: options?.jwt?.secret,
+            audience: options?.audience,
+            issuer: options?.issuer,
+            ignoreExpiration: options?.ignoreExpiration,
+            secretOrKey: options?.secret,
         });
     }
 

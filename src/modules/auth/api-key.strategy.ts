@@ -3,19 +3,22 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
 import { ContextService } from '../context/context.service';
 import { KeyService } from '../key/key.service';
-import { AuthModuleOptions } from './auth.interface';
+
+export interface ApiKeyStrategyOptions {
+    prefix: string;
+}
 
 @Injectable()
 export class ApiKeyStrategy extends PassportStrategy(HeaderAPIKeyStrategy, 'api-key') {
     public constructor(
-        options: AuthModuleOptions,
+        options: ApiKeyStrategyOptions,
         private readonly keyService: KeyService,
         private readonly contextService: ContextService,
     ) {
         super(
             {
                 header: 'Authorization',
-                prefix: `${options?.apiKey?.prefix} `,
+                prefix: `${options?.prefix ?? 'API-KEY'} `,
             },
             true,
             async (value, done) => {

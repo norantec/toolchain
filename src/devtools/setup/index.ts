@@ -46,13 +46,17 @@ export class Setup {
                         ...(packageJson?.files || []),
                     ]);
 
-                    fs.removeSync(destinationPackagePathname);
-                    fs.mkdirpSync(destinationPackagePathname);
+                    if (!fs.existsSync(destinationPackagePathname)) {
+                        fs.mkdirpSync(destinationPackagePathname);
+                    }
 
                     for (const file of files) {
                         const sourcePathname = path.resolve(file);
+                        const destinationPathname = path.resolve(destinationPackagePathname, file);
 
-                        console.log(sourcePathname, '->', path.resolve(destinationPackagePathname, file));
+                        fs.removeSync(destinationPathname);
+
+                        console.log(sourcePathname, '->', destinationPathname);
 
                         if (!fs.existsSync(sourcePathname)) {
                             continue;

@@ -1,5 +1,3 @@
-import { UseGuards } from '../../decorators/use-guards.decorator';
-import { AuthGuard } from '@nestjs/passport';
 import { Method } from '../../decorators/method.decorator';
 import { UserService } from './user.service';
 import { EntityService } from '../../modules/entity/entity.service';
@@ -10,7 +8,6 @@ import { IsAdmin } from '../../decorators/is-admin.decorator';
 import { ReflectedBody } from '../../decorators/reflected-body.decorator';
 import { UserUpdatePasswordRequestDTO } from '../../dtos/user-update-password-request.dto.class';
 
-@UseGuards(AuthGuard())
 @ApiController()
 export class UserController {
     public constructor(
