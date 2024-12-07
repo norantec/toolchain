@@ -5,7 +5,7 @@
     "main": "index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "build:cjs": "rimraf dist && ttsc -b",
+        "build:cjs": "rimraf dist && tspc -b",
         "build": "npm run build:cjs",
         "setup:exec": "node bin/nttc.js setup",
         "setup": "npm run build && node bin/nttc.js setup"
