@@ -38,7 +38,7 @@ export class Server {
     }
 
     public start() {
-        const ttscProcess = spawn('ttsc', ['--watch'], {
+        const tspcProcess = spawn('tspc', ['--watch'], {
             shell: true,
             stdio: 'inherit',
         });
@@ -50,23 +50,23 @@ export class Server {
             shell: true,
             stdio: 'inherit',
         });
-        ttscProcess.on('exit', (code) => {
-            console.log(`ttsc exitted with code: ${code}`);
+        tspcProcess.on('exit', (code) => {
+            console.log(`tspc exitted with code: ${code}`);
             nodemonProcess.kill();
             process.exit(code);
         });
         nodemonProcess.on('exit', (code) => {
             console.log(`nodemon exitted with code: ${code}`);
-            ttscProcess.kill();
+            tspcProcess.kill();
             process.exit(code);
         });
         process.on('SIGTERM', () => {
-            ttscProcess.kill();
+            tspcProcess.kill();
             nodemonProcess.kill();
         });
 
         process.on('SIGINT', () => {
-            ttscProcess.kill();
+            tspcProcess.kill();
             nodemonProcess.kill();
         });
     }
