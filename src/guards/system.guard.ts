@@ -14,9 +14,6 @@ export class SystemGuard implements CanActivate {
         const userDTO = request?.user;
         const legalScopeIdentifiers = request?.legalScopeIdentifiers;
         const scopeIdentifier = /^\/api\/v\d+\/(.*)/.exec(request?.path)?.[1];
-
-        console.log('LENCONDA:FUCK', scopeIdentifier);
-
         request.scopeIdentifier = scopeIdentifier;
         request.requestTraceId = traceId;
         response.setHeader(HEADERS.TRACE_ID, traceId);

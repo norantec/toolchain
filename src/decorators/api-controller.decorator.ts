@@ -37,7 +37,34 @@ import { DAOUtil } from '../utilities/dao-util.class';
 import { AuthGuard } from '@nestjs/passport';
 import { SystemGuard } from '../guards/system.guard';
 
-const container = new Map<string, ClassType>();
+const container = [
+    [DAOUtil.getOriginalName(KeyDAO), OpenApiUtil.generateSchemaDTOFromModel(KeyDAO)],
+    [DAOUtil.getOriginalName(SubscriptionSnapshotDAO), OpenApiUtil.generateSchemaDTOFromModel(SubscriptionSnapshotDAO)],
+    [DAOUtil.getOriginalName(SubscriptionDAO), OpenApiUtil.generateSchemaDTOFromModel(SubscriptionDAO)],
+    [DAOUtil.getOriginalName(UserDAO), OpenApiUtil.generateSchemaDTOFromModel(UserDAO)],
+    [AuthCodeDTO.name, AuthCodeDTO],
+    [AuthExchangeAccessTokenByCodeRequestDTO.name, AuthExchangeAccessTokenByCodeRequestDTO],
+    [AuthExchangeAccessTokenByPasswordRequestDTO.name, AuthExchangeAccessTokenByPasswordRequestDTO],
+    [AuthExchangeDTO.name, AuthExchangeDTO],
+    [AuthRequestCodeRequestDTO.name, AuthRequestCodeRequestDTO],
+    [AuthResetPasswordRequestDTO.name, AuthResetPasswordRequestDTO],
+    [DynamicConfigGetRequestDTO.name, DynamicConfigGetRequestDTO],
+    [RemoteRepositoryContentDTO.name, RemoteRepositoryContentDTO],
+    [FileDTO.name, FileDTO],
+    [InternationalizationGetRequestDTO.name, InternationalizationGetRequestDTO],
+    [KeyCreateOrUpdateRequestDTO.name, KeyCreateOrUpdateRequestDTO],
+    [KeyListRequestDTO.name, KeyListRequestDTO],
+    [LanguageDTO.name, LanguageDTO],
+    [PaginationRequestDTO.name, PaginationRequestDTO],
+    [PaginationResultDTO.name, PaginationResultDTO],
+    [PaginationSearchItemDTO.name, PaginationSearchItemDTO],
+    [PaginationDTO.name, PaginationDTO],
+    [PayloadDTO.name, PayloadDTO],
+    [PlanDTO.name, PlanDTO],
+    [ResponseDTO.name, ResponseDTO],
+    [ResultDTO.name, ResultDTO],
+    [UserUpdatePasswordRequestDTO.name, UserUpdatePasswordRequestDTO],
+];
 
 export interface ApiControllerOptions {
     authStrategies?: string[] | false;
@@ -45,41 +72,10 @@ export interface ApiControllerOptions {
 }
 
 export const ApiController = (options?: ApiControllerOptions): ClassDecorator => {
-    [
-        [DAOUtil.getOriginalName(KeyDAO), OpenApiUtil.generateSchemaDTOFromModel(KeyDAO)],
-        [DAOUtil.getOriginalName(SubscriptionSnapshotDAO), OpenApiUtil.generateSchemaDTOFromModel(SubscriptionSnapshotDAO)],
-        [DAOUtil.getOriginalName(SubscriptionDAO), OpenApiUtil.generateSchemaDTOFromModel(SubscriptionDAO)],
-        [DAOUtil.getOriginalName(UserDAO), OpenApiUtil.generateSchemaDTOFromModel(UserDAO)],
-        [AuthCodeDTO.name, AuthCodeDTO],
-        [AuthExchangeAccessTokenByCodeRequestDTO.name, AuthExchangeAccessTokenByCodeRequestDTO],
-        [AuthExchangeAccessTokenByPasswordRequestDTO.name, AuthExchangeAccessTokenByPasswordRequestDTO],
-        [AuthExchangeDTO.name, AuthExchangeDTO],
-        [AuthRequestCodeRequestDTO.name, AuthRequestCodeRequestDTO],
-        [AuthResetPasswordRequestDTO.name, AuthResetPasswordRequestDTO],
-        [DynamicConfigGetRequestDTO.name, DynamicConfigGetRequestDTO],
-        [RemoteRepositoryContentDTO.name, RemoteRepositoryContentDTO],
-        [FileDTO.name, FileDTO],
-        [InternationalizationGetRequestDTO.name, InternationalizationGetRequestDTO],
-        [KeyCreateOrUpdateRequestDTO.name, KeyCreateOrUpdateRequestDTO],
-        [KeyListRequestDTO.name, KeyListRequestDTO],
-        [LanguageDTO.name, LanguageDTO],
-        [PaginationRequestDTO.name, PaginationRequestDTO],
-        [PaginationResultDTO.name, PaginationResultDTO],
-        [PaginationSearchItemDTO.name, PaginationSearchItemDTO],
-        [PaginationDTO.name, PaginationDTO],
-        [PayloadDTO.name, PayloadDTO],
-        [PlanDTO.name, PlanDTO],
-        [ResponseDTO.name, ResponseDTO],
-        [ResultDTO.name, ResultDTO],
-        [UserUpdatePasswordRequestDTO.name, UserUpdatePasswordRequestDTO],
-    ].forEach(([key, model]) => {
-        container.set(key, model);
-    });
-
     return (target) => {
         const finalPrefix = `/api/v${(options?.version >= 1 ? options?.version : 1)}`;
         Reflect.defineMetadata(METADATA_NAMES.CONTROLLER_PREFIX, finalPrefix, target);
-        ApiExtraModels(...Array.from(container.values()))(target);
+        ApiExtraModels(...container.map(([, value]) => value))(target);
         Controller(finalPrefix)(target);
         UseGuards(
             SystemGuard,
@@ -98,9 +94,9 @@ ApiController.registerModel = (model: ClassType, key?: string) => {
     if (!model) {
         return;
     }
-    container.set(StringUtil.isFalsyString(key) ? model.name : key, model);
+    container.push([StringUtil.isFalsyString(key) ? model.name : key, model]);
 };
 
 ApiController.getModel = (key: string) => {
-    return container.get(key);
+    return container.find(([k]) => k === key)?.[1];
 };
