@@ -107,6 +107,8 @@ export class Builder {
                             loader: require.resolve('ts-loader'),
                             options: {
                                 transpileOnly: true,
+                                compiler: require.resolve('ts-patch/compiler'),
+                                configFile: pathResolve(this.options.workDir, './tsconfig.json'),
                             },
                         },
                         exclude: /node_modules/,
