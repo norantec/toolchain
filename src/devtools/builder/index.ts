@@ -27,7 +27,7 @@ class CatchNotFoundPlugin {
                         callback(null, notfoundPathname, request);
                     });
                 }
-                console.warn('notfound:', request);
+                console.warn('notfound:', context.issuer, request);
                 // make not found errors runtime errors
                 callback(null, notfoundPathname, request);
             });

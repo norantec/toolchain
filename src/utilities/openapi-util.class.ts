@@ -7,7 +7,7 @@ import {
 } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
 import { ClassType } from '../types/class-type.type';
 import { NestUtil } from './nest-util.class';
-import { reflect } from 'typescript-rtti';
+import { reflect } from 'typescript-rtti/dist/lib/reflect';
 import { METADATA_NAMES } from '../constants/metadata-names.constant';
 import { StringUtil } from './string-util.class';
 import { ReflectedBody } from '../decorators/reflected-body.decorator';
