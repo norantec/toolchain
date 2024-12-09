@@ -32,16 +32,15 @@ import { ResultDTO } from '../dtos/result.dto.class';
 import { UserUpdatePasswordRequestDTO } from '../dtos/user-update-password-request.dto.class';
 import { ClassType } from '../types/class-type.type';
 import { ApiExtraModels } from '@nestjs/swagger';
-import { OpenApiUtil } from '../utilities/openapi-util.class';
 import { DAOUtil } from '../utilities/dao-util.class';
 import { AuthGuard } from '@nestjs/passport';
 import { SystemGuard } from '../guards/system.guard';
 
 const container = [
-    [DAOUtil.getOriginalName(KeyDAO), OpenApiUtil.generateSchemaDTOFromModel(KeyDAO)],
-    [DAOUtil.getOriginalName(SubscriptionSnapshotDAO), OpenApiUtil.generateSchemaDTOFromModel(SubscriptionSnapshotDAO)],
-    [DAOUtil.getOriginalName(SubscriptionDAO), OpenApiUtil.generateSchemaDTOFromModel(SubscriptionDAO)],
-    [DAOUtil.getOriginalName(UserDAO), OpenApiUtil.generateSchemaDTOFromModel(UserDAO)],
+    [DAOUtil.getOriginalName(KeyDAO), KeyDAO],
+    [DAOUtil.getOriginalName(SubscriptionSnapshotDAO), SubscriptionSnapshotDAO],
+    [DAOUtil.getOriginalName(SubscriptionDAO), SubscriptionDAO],
+    [DAOUtil.getOriginalName(UserDAO), UserDAO],
     [AuthCodeDTO.name, AuthCodeDTO],
     [AuthExchangeAccessTokenByCodeRequestDTO.name, AuthExchangeAccessTokenByCodeRequestDTO],
     [AuthExchangeAccessTokenByPasswordRequestDTO.name, AuthExchangeAccessTokenByPasswordRequestDTO],
@@ -99,4 +98,11 @@ ApiController.registerModel = (model: ClassType, key?: string) => {
 
 ApiController.getModel = (key: string) => {
     return container.find(([k]) => k === key)?.[1];
+};
+
+ApiController.getModelMap = () => {
+    return container.reduce((result, [key, value]) => {
+        result[key] = value;
+        return result;
+    }, {} as Record<string, ClassType>);
 };

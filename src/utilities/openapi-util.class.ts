@@ -1,11 +1,10 @@
 import { getSchemaPath } from '@nestjs/swagger';
 import {
+    InfoObject,
     OpenAPIObject,
     ReferenceObject,
     SchemaObject,
 } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
-import { ResponseDTO } from '../dtos/response.dto.class';
-import { PaginationResultDTO } from '../dtos/pagination-result.dto.class';
 import { ClassType } from '../types/class-type.type';
 import { NestUtil } from './nest-util.class';
 import { reflect } from 'typescript-rtti';
@@ -15,98 +14,71 @@ import { ReflectedBody } from '../decorators/reflected-body.decorator';
 import * as _ from 'lodash';
 import { CommonExceptionUtil } from './common-exception-util.class';
 import { ApiController } from '../decorators/api-controller.decorator';
-import { Model } from 'sequelize-typescript';
-import { ApiProperty } from '@nestjs/swagger';
-import { DECORATORS } from '@nestjs/swagger/dist/constants';
+import {
+    Mapping,
+    MappingMetadata,
+} from '../decorators/mapping.decorator';
+import { GROUP } from '../constants/group.constant';
 
-function generateBasicSchemaAndType(input: string): {
+interface OpenApiUtilOptions {
     Clazz: ClassType;
-    schema: SchemaObject & Partial<ReferenceObject>;
-} {
-    const blacklist = {
-        String: 'string',
-        Boolean: 'boolean',
-        Number: 'number',
-        BigInt: 'number',
-        Null: 'null',
-        Undefined: 'null',
-    };
-
-    if (StringUtil.isFalsyString(input) || !/^class\s\w+(?:\[\])*$/.test(input)) {
-        throw CommonExceptionUtil.create(CommonExceptionUtil.Code.INVALID_INFERRED_TYPE, {
-            type: input,
-        });
-    }
-
-    if (input.endsWith('[]')) {
-        return {
-            schema: {
-                type: 'array',
-                items: generateBasicSchemaAndType(input.slice(0, -2))?.schema,
-            },
-            Clazz: null,
-        };
-    } else {
-        const className = input.replace(/^class\s/g, '');
-
-        if (Object.keys(blacklist).includes(className)) {
-            return {
-                schema: {
-                    type: blacklist[className],
-                },
-                Clazz: null,
-            };
-        }
-
-        const Clazz = ApiController.getModel(className);
-
-        if (!Clazz) {
-            throw CommonExceptionUtil.create(CommonExceptionUtil.Code.INVALID_UNREGISTERED_CLASS, {
-                className,
-            });
-        }
-
-        return {
-            schema: {
-                $ref: getSchemaPath(className),
-            },
-            Clazz,
-        };
-    }
+    info?: InfoObject;
 }
 
 export class OpenApiUtil {
-    /**
-     * @param input something like class A[][][]
-     * @returns
-     */
-    public static generateRequestBodySchemaAndClassName = generateBasicSchemaAndType;
+    private info: InfoObject = {
+        title: 'API Documentation',
+        version: '1.0.0',
+    };
+    private readonly internalSchemas = {
+        'class String': {
+            type: 'string',
+        },
+        'class Boolean': {
+            type: 'boolean',
+        },
+        'class Number': {
+            type: 'number',
+        },
+        'class BigInt': {
+            type: 'number',
+        },
+        'class Date': {
+            type: 'string',
+            format: 'date-time',
+        },
+        'class Object': {
+            type: 'object',
+        },
+        null: {
+            type: 'null',
+        },
+        undefined: {
+            type: 'null',
+        },
+    };
+    private readonly document: OpenAPIObject = {
+        openapi: '3.0.0',
+        info: this.info,
+        paths: {},
+        components: {
+            schemas: {},
+        },
+    };
 
-    /**
-     * @param input something like class A[][][]
-     * @returns
-     */
-    public static generateResponseSchemaAndClassName(rawInput: string): ReturnType<typeof generateBasicSchemaAndType> {
-        let input = rawInput;
-        input = /^class\sPromise\<(.+)\>/.exec(input)?.[1] ?? input;
-        input = new RegExp(`^class ${PaginationResultDTO.name}<(.+)>`).exec(input)?.[1] ?? input;
-        const basicSchemaAndType = generateBasicSchemaAndType(input);
-        return {
-            schema: {
-                $ref: getSchemaPath(ResponseDTO),
-                properties: {
-                    data: {
-                        type: 'array',
-                        items: basicSchemaAndType.schema,
-                    },
-                },
-            },
-            Clazz: basicSchemaAndType.Clazz,
+    public constructor(private readonly options: OpenApiUtilOptions) {
+        this.info = {
+            ...this.info,
+            ...options?.info,
         };
     }
 
-    public static patchDocument(document: OpenAPIObject, Clazz: ClassType) {
-        const controllerClazzList = NestUtil.getControllerClasses(Clazz);
+    public generateDocument() {
+        Object.entries(this.generateComponentSchemas()).forEach(([key, schema]) => {
+            this.document.components.schemas[key] = schema;
+        });
+
+        const controllerClazzList = NestUtil.getControllerClasses(this.options?.Clazz);
         controllerClazzList.forEach((controllerClazz) => {
             const controllerReflection = reflect(controllerClazz);
             const methodNameList = Object
@@ -129,54 +101,172 @@ export class OpenApiUtil {
                 }
 
                 const reflectedBodyIndex = Reflect.getMetadata(ReflectedBody.metadataKey, controllerClazz, methodName);
-                const { schema: responseSchema } = OpenApiUtil.generateResponseSchemaAndClassName(controllerReflection.getMethod?.(methodName)?.returnType?.toString());
+                const responseSchema = this.generateResponseSchema(controllerReflection.getMethod?.(methodName)?.returnType?.toString());
                 let requestSchema: SchemaObject & Partial<ReferenceObject>;
 
                 if (reflectedBodyIndex >= 0) {
-                    requestSchema = OpenApiUtil.generateRequestBodySchemaAndClassName(controllerReflection.getMethod?.(methodName)?.parameterTypes?.[reflectedBodyIndex]?.toString?.()).schema;
+                    requestSchema = this.generateSchema(
+                        controllerReflection.getMethod?.(methodName)?.parameterTypes?.[reflectedBodyIndex]?.toString?.(),
+                        'request',
+                    );
                 }
 
                 scopeNames.forEach((scopeName) => {
                     const actualPathname = `${controllerPrefix}/${scopeName}`;
 
                     if (requestSchema) {
-                        _.set(document, `paths.["${actualPathname}"].post.requestBody.content`, {
+                        _.set(this.document, `paths.["${actualPathname}"].post.requestBody.content`, {
                             'application/json': {
                                 schema: requestSchema,
                             },
                         });
                     }
 
-                    _.set(document, `paths.["${actualPathname}"].post.responses.200.content`, {
-                        'application/json': {
-                            schema: responseSchema,
+                    _.set(this.document, `paths.["${actualPathname}"].post.responses`, {
+                        200: {
+                            description: 'Success',
+                            content: {
+                                'application/json': {
+                                    schema: responseSchema,
+                                },
+                            },
                         },
                     });
                 });
             });
         });
+
+        return this.document;
     }
 
-    public static generateSchemaDTOFromModel(Clazz: ClassType<Model>) {
-        if (!Clazz) {
-            return;
+    private generateSchema(input: string, scene: 'request' | 'response'): SchemaObject & Partial<ReferenceObject> {
+        if (StringUtil.isFalsyString(input) || !/^class\s\w+(?:\[\])*$/.test(input)) {
+            throw CommonExceptionUtil.create(CommonExceptionUtil.Code.INVALID_INFERRED_TYPE, {
+                type: input,
+            });
         }
 
-        class SchemaDTO {}
-
-        Object.getOwnPropertyNames(Clazz.prototype).forEach((propertyKey) => {
-            const swaggerApiModelProperties = Reflect.getMetadata(DECORATORS.API_MODEL_PROPERTIES, Clazz.prototype, propertyKey);
-
-            if (!swaggerApiModelProperties) {
-                return;
+        if (input.endsWith('[]')) {
+            return {
+                type: 'array',
+                items: this.generateSchema(input.slice(0, -2), scene),
+            };
+        } else {
+            if (['null', 'undefined'].includes(input)) {
+                return { ...this.internalSchemas[input] };
             }
 
-            ApiProperty(swaggerApiModelProperties)(
-                SchemaDTO.prototype,
-                propertyKey,
-            );
-        });
+            const className = input.replace(/^class\s/g, '');
 
-        return SchemaDTO;
+            if (Object.keys(this.internalSchemas).includes(input)) {
+                return { ...this.internalSchemas[input] };
+            }
+
+            const postfix = (() => {
+                switch (scene) {
+                    case 'request':
+                        return 'Request';
+                    case 'response':
+                        return 'Response';
+                }
+            })();
+
+            return {
+                $ref: getSchemaPath(`${className}.${postfix}`),
+            };
+        }
+    }
+
+    private generateResponseSchema(input: string): ReturnType<typeof this.generateSchema> {
+        let finalInput = input;
+        finalInput = /^class\sPromise\<(.+)\>/.exec(finalInput)?.[1] ?? finalInput;
+        finalInput = new RegExp('^class PaginationResultDTO<(.+)>').exec(finalInput)?.[1] ?? finalInput;
+        const basicSchema = this.generateSchema(finalInput, 'response');
+        return {
+            allOf: [
+                {
+                    $ref: getSchemaPath('ResponseDTO.Response'),
+                },
+                {
+                    properties: {
+                        data: {
+                            type: 'array',
+                            items: basicSchema,
+                        },
+                    },
+                },
+            ],
+        };
+    }
+
+    private generateComponentSchemas() {
+        const generateSchema = (mappingMetadata: MappingMetadata, Clazz: ClassType, scene: 'request' | 'response') => {
+            const postfix = (() => {
+                switch (scene) {
+                    case 'request':
+                        return 'Request';
+                    case 'response':
+                        return 'Response';
+                }
+            })();
+            return {
+                type: 'object',
+                properties: mappingMetadata.reduce((result, [propertyKey, options]) => {
+                    const groups = options?.groups;
+                    let propertyType = reflect(Clazz).getProperty?.(propertyKey)?.type?.toString?.();
+
+                    if (StringUtil.isFalsyString(propertyType)) {
+                        return result;
+                    }
+
+                    propertyType = propertyType.replace(/(\[\])+$/, '');
+
+                    switch (scene) {
+                        case 'request': {
+                            if (Array.isArray(groups) && !groups.includes(GROUP.REQUEST_ONLY)) {
+                                return result;
+                            } else {
+                                break;
+                            }
+                        }
+                        case 'response': {
+                            if (Array.isArray(groups) && !groups.includes(GROUP.RESPONSE_ONLY)) {
+                                return result;
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+
+                    if (Object.keys(this.internalSchemas).includes(propertyType)) {
+                        result[propertyKey] = this.internalSchemas[propertyType];
+                    } else {
+                        const className = /^class\s(\w+)/.exec(propertyType)?.[1];
+                        result[propertyKey] = {
+                            $ref: getSchemaPath(`${className}.${postfix}`),
+                        };
+                    }
+
+                    return result;
+                }, {} as Record<string, SchemaObject | Partial<ReferenceObject>>),
+            } as SchemaObject;
+        };
+
+        const result = Object
+            .entries(ApiController.getModelMap())
+            .reduce((result, [key, Clazz]) => {
+                const mappingMetadata = Reflect.getMetadata(Mapping.metadataKey, Clazz.prototype);
+
+                if (!Array.isArray(mappingMetadata)) {
+                    return result;
+                }
+
+                result[`${key}.Request`] = generateSchema(mappingMetadata, Clazz, 'request');
+                result[`${key}.Response`] = generateSchema(mappingMetadata, Clazz, 'response');
+
+                return result;
+            }, {} as Record<string, SchemaObject>);
+
+        return result;
     }
 }
