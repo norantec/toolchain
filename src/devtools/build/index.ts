@@ -58,7 +58,7 @@ class AutoRunPlugin {
                 return;
             }
 
-            const bundledScriptFile = assets?.find?.((item) => item?.name?.endsWith?.('.js'));
+            const bundledScriptFile = assets?.find?.((item) => item?.name?.endsWith?.('.js'))?.name;
 
             if (StringUtil.isFalsyString(bundledScriptFile)) {
                 console.warn('no output file');
@@ -66,7 +66,7 @@ class AutoRunPlugin {
                 return;
             }
 
-            const outputPath = pathResolve(compilation.options.output.path, bundledScriptFile.name);
+            const outputPath = pathResolve(compilation.options.output.path, bundledScriptFile);
 
             console.log('prepared to run file:', outputPath);
 
