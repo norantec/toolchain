@@ -7,6 +7,7 @@ import * as yup from 'yup';
 import * as fs from 'fs-extra';
 import * as childProcess from 'child_process';
 import { StringUtil } from '../../utilities/string-util.class';
+import * as _ from 'lodash';
 
 class CatchNotFoundPlugin {
     public apply(resolver) {
@@ -97,19 +98,17 @@ class AutoRunPlugin {
 }
 
 class CleanPlugin {
-    public apply(compiler: webpack.Compiler) {
-        compiler.hooks.afterEmit.tapAsync('CleanPlugin', (compilation: webpack.Compilation, callback) => {
-            // fs.removeSync(compilation.options.output.path);
-            const assets = compilation.getAssets();
-
-            assets?.forEach?.((item) => {
-                if (!item?.name?.endsWith?.('.js')) {
-                    console.log('removing:', item?.name);
-                    fs.removeSync(pathResolve(compilation.options.output.path, item.name));
-                }
-            });
-
-            callback();
+    public apply(compiler) {
+        compiler.hooks.compilation.tap('CleanPlugin', (compilation) => {
+            compilation.hooks.processAssets.tap(
+                {
+                    name: 'RemoveAssetPlugin',
+                    stage: compilation.PROCESS_ASSETS_STAGE_OPTIMIZE, // 选择合适的阶段
+                },
+                (assets) => {
+                    console.log('assets', assets);
+                },
+            );
         });
     }
 }
