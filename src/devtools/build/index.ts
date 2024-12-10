@@ -104,6 +104,7 @@ class CleanPlugin {
 
             assets?.forEach?.((item) => {
                 if (!item?.name?.endsWith?.('.js')) {
+                    console.log('removing:', item?.name);
                     fs.removeSync(pathResolve(compilation.options.output.path, item.name));
                 }
             });
