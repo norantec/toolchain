@@ -102,11 +102,15 @@ class CleanPlugin {
         compiler.hooks.compilation.tap('CleanPlugin', (compilation) => {
             compilation.hooks.processAssets.tap(
                 {
-                    name: 'RemoveAssetPlugin',
+                    name: 'CleanPlugin',
                     stage: compilation.PROCESS_ASSETS_STAGE_OPTIMIZE, // 选择合适的阶段
                 },
                 (assets) => {
-                    console.log('assets', assets);
+                    Object.keys(assets).forEach((key) => {
+                        if (!assets?.endsWith?.('.js')) {
+                            _.unset(asstes, key);
+                        }
+                    });
                 },
             );
         });
