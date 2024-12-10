@@ -6,6 +6,7 @@ import { Command } from 'commander';
 import * as yup from 'yup';
 import * as fs from 'fs-extra';
 import * as childProcess from 'child_process';
+import { StringUtil } from '../../utilities/string-util.class';
 
 class CatchNotFoundPlugin {
     public apply(resolver) {
@@ -57,10 +58,17 @@ class AutoRunPlugin {
                 return;
             }
 
-            const firstAsset = assets[0];
-            const outputPath = pathResolve(compilation.options.output.path, firstAsset.name);
+            const bundledScriptFile = assets?.find?.((item) => item?.name?.endsWith?.('.js'));
 
-            console.log('fount output file:', outputPath);
+            if (StringUtil.isFalsyString(bundledScriptFile)) {
+                console.warn('no output file');
+                callback();
+                return;
+            }
+
+            const outputPath = pathResolve(compilation.options.output.path, bundledScriptFile.name);
+
+            console.log('prepared to run file:', outputPath);
 
             if (this.options.onBeforeStart) {
                 await this.options?.onBeforeStart?.();
@@ -84,6 +92,23 @@ class AutoRunPlugin {
             } else {
                 callback();
             }
+        });
+    }
+}
+
+class CleanPlugin {
+    public apply(compiler: webpack.Compiler) {
+        compiler.hooks.afterEmit.tapAsync('CleanPlugin', (compilation: webpack.Compilation, callback) => {
+            // fs.removeSync(compilation.options.output.path);
+            const assets = compilation.getAssets();
+
+            assets?.forEach?.((item) => {
+                if (!item?.name?.endsWith?.('.js')) {
+                    fs.removeSync(pathResolve(compilation.options.output.path, item.name));
+                }
+            });
+
+            callback();
         });
     }
 }
@@ -167,6 +192,7 @@ export class Build {
             },
             plugins: [
                 new webpack.ProgressPlugin(),
+                new CleanPlugin(),
             ],
         };
     }
@@ -183,15 +209,6 @@ export class Build {
             ...this.configuration,
             plugins: [
                 ...this.configuration.plugins,
-                // new ShellPlugin.default({
-                //     onBuildEnd: () => {
-                //         return {
-                //             scripts: ['node '],
-                //             blocking: false,
-                //             parallel: true,
-                //         };
-                //     },
-                // }),
                 new AutoRunPlugin({
                     parallel: true,
                     onAfterStart: (childProcess) => {
