@@ -22,12 +22,9 @@ import { KeyCreateOrUpdateRequestDTO } from '../dtos/key-create-or-update-reques
 import { KeyListRequestDTO } from '../dtos/key-list-request.dto.class';
 import { LanguageDTO } from '../dtos/language.dto.class';
 import { PaginationRequestDTO } from '../dtos/pagination-request.dto.class';
-import { PaginationResultDTO } from '../dtos/pagination-result.dto.class';
 import { PaginationSearchItemDTO } from '../dtos/pagination-search-item.dto.class';
-import { PaginationDTO } from '../dtos/pagination.dto.class';
 import { PayloadDTO } from '../dtos/payload.dto.class';
 import { PlanDTO } from '../dtos/plan.dto.class';
-import { ResponseDTO } from '../dtos/response.dto.class';
 import { ResultDTO } from '../dtos/result.dto.class';
 import { UserUpdatePasswordRequestDTO } from '../dtos/user-update-password-request.dto.class';
 import { ClassType } from '../types/class-type.type';
@@ -55,12 +52,9 @@ const container = [
     [KeyListRequestDTO.name, KeyListRequestDTO],
     [LanguageDTO.name, LanguageDTO],
     [PaginationRequestDTO.name, PaginationRequestDTO],
-    [PaginationResultDTO.name, PaginationResultDTO],
     [PaginationSearchItemDTO.name, PaginationSearchItemDTO],
-    [PaginationDTO.name, PaginationDTO],
     [PayloadDTO.name, PayloadDTO],
     [PlanDTO.name, PlanDTO],
-    [ResponseDTO.name, ResponseDTO],
     [ResultDTO.name, ResultDTO],
     [UserUpdatePasswordRequestDTO.name, UserUpdatePasswordRequestDTO],
 ];

@@ -189,19 +189,8 @@ export class OpenApiUtil {
         finalInput = new RegExp('^class PaginationResultDTO<(.+)>').exec(finalInput)?.[1] ?? finalInput;
         const basicSchema = this.generateSchema(finalInput, 'response');
         return {
-            allOf: [
-                {
-                    $ref: getSchemaPath('ResponseDTO.Response'),
-                },
-                {
-                    properties: {
-                        data: {
-                            type: 'array',
-                            items: basicSchema,
-                        },
-                    },
-                },
-            ],
+            type: 'array',
+            items: basicSchema,
         };
     }
 
