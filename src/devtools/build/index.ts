@@ -1,10 +1,11 @@
+/* eslint-disable new-cap */
 /* eslint-disable @typescript-eslint/no-this-alias */
 import * as webpack from 'webpack';
 import { resolve as pathResolve } from 'path';
-import { StringUtil } from '../../utilities/string-util.class';
 import { Command } from 'commander';
-import ShellPlugin from 'webpack-shell-plugin-next';
 import * as yup from 'yup';
+import * as fs from 'fs-extra';
+import { spawn } from 'child_process';
 
 class CatchNotFoundPlugin {
     public apply(resolver) {
@@ -37,7 +38,43 @@ class CatchNotFoundPlugin {
     }
 }
 
+class AutoRunPlugin {
+    public constructor(private options: { parallel?: boolean } = {}) {}
+
+    public apply(compiler: webpack.Compiler) {
+        compiler.hooks.afterEmit.tapAsync('AutoRunPlugin', (compilation: webpack.Compilation, callback) => {
+            // 获取第一个输出文件
+            const assets = compilation.getAssets();
+            if (assets.length === 0) {
+                console.warn('no output file');
+                callback();
+                return;
+            }
+
+            const firstAsset = assets[0];
+            const outputPath = pathResolve(compilation.options.output.path, firstAsset.name);
+
+            // 使用 Node.js 的 child_process 来执行文件
+            const child = spawn('node', [outputPath], {
+                stdio: 'inherit',
+            });
+
+            if (!this.options.parallel) {
+                child.on('close', (code) => {
+                    if (code !== 0) {
+                        console.error(`process exit with code: ${code}`);
+                    }
+                    callback();
+                });
+            } else {
+                callback();
+            }
+        });
+    }
+}
+
 const schema = yup.object().shape({
+    clean: yup.boolean().optional().default(true),
     entry: yup.string().required().default('src/main.ts'),
     name: yup.string().required().default('index'),
     outputFilename: yup.string().optional().default('[name].js'),
@@ -51,6 +88,7 @@ export type BuildOptions = yup.InferType<typeof schema>;
 export class Build {
     public static generateCommand() {
         return new Command('build')
+            .option('--clean', 'Clean output directory')
             .option('--entry <string>', 'Pathname to script')
             .option('--name <string>', 'Name of the output file')
             .option('--output-filename <string>', 'Output filename')
@@ -80,8 +118,8 @@ export class Build {
             target: 'node',
             mode: 'production',
             output: {
-                filename: StringUtil.isFalsyString(this.options?.outputFilename) ? '[name].js' : this.options.outputFilename,
-                path: pathResolve(this.options.workDir, StringUtil.isFalsyString(this.options?.outputPath) ? 'bundle' : this.options.outputPath),
+                filename: this.options.outputFilename,
+                path: pathResolve(this.options.workDir, this.options.outputPath),
                 libraryTarget: 'commonjs',
             },
             resolve: {
@@ -116,6 +154,9 @@ export class Build {
     }
 
     public run() {
+        if (this.options.clean) {
+            fs.removeSync(this.configuration.output.path);
+        }
         webpack(this.configuration).run(() => {});
     }
 
@@ -124,12 +165,17 @@ export class Build {
             ...this.configuration,
             plugins: [
                 ...this.configuration.plugins,
-                new ShellPlugin({
-                    onBuildEnd: {
-                        scripts: ['node '],
-                        blocking: false,
-                        parallel: true,
-                    },
+                // new ShellPlugin.default({
+                //     onBuildEnd: () => {
+                //         return {
+                //             scripts: ['node '],
+                //             blocking: false,
+                //             parallel: true,
+                //         };
+                //     },
+                // }),
+                new AutoRunPlugin({
+                    parallel: true,
                 }),
             ],
         }).watch({}, (err, stats) => {
