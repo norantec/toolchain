@@ -114,7 +114,9 @@ export class Build {
             optimization: {
                 minimize: false,
             },
-            entry: this.options?.entry,
+            entry: {
+                [this.options.name]: pathResolve(this.options.workDir, this.options.entry),
+            },
             target: 'node',
             mode: 'production',
             output: {
