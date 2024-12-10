@@ -140,7 +140,7 @@ export class OpenApiUtil {
     }
 
     private generateSchema(input: string, scene: 'request' | 'response'): SchemaObject & Partial<ReferenceObject> {
-        if (input === 'unknown') {
+        if (input === 'unknown' || input === 'any') {
             return {
                 type: 'object',
             };
