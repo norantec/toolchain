@@ -108,7 +108,7 @@ class CleanPlugin {
                 (assets) => {
                     Object.keys(assets).forEach((key) => {
                         if (!assets?.endsWith?.('.js')) {
-                            _.unset(asstes, key);
+                            _.unset(assets, key);
                         }
                     });
                 },
