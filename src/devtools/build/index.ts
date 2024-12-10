@@ -5,7 +5,7 @@ import { resolve as pathResolve } from 'path';
 import { Command } from 'commander';
 import * as yup from 'yup';
 import * as fs from 'fs-extra';
-import { spawn } from 'child_process';
+import * as childProcess from 'child_process';
 
 class CatchNotFoundPlugin {
     public apply(resolver) {
@@ -38,13 +38,19 @@ class CatchNotFoundPlugin {
     }
 }
 
+interface AutoRunPluginOptions {
+    parallel?: boolean;
+    onAfterStart?: (childProcess: childProcess.ChildProcess) => void | Promise<void>;
+    onBeforeStart?: () => void | Promise<void>;
+}
+
 class AutoRunPlugin {
-    public constructor(private options: { parallel?: boolean } = {}) {}
+    public constructor(private options: AutoRunPluginOptions = {}) {}
 
     public apply(compiler: webpack.Compiler) {
-        compiler.hooks.afterEmit.tapAsync('AutoRunPlugin', (compilation: webpack.Compilation, callback) => {
-            // 获取第一个输出文件
+        compiler.hooks.afterEmit.tapAsync('AutoRunPlugin', async (compilation: webpack.Compilation, callback) => {
             const assets = compilation.getAssets();
+
             if (assets.length === 0) {
                 console.warn('no output file');
                 callback();
@@ -54,12 +60,21 @@ class AutoRunPlugin {
             const firstAsset = assets[0];
             const outputPath = pathResolve(compilation.options.output.path, firstAsset.name);
 
-            // 使用 Node.js 的 child_process 来执行文件
-            const child = spawn('node', [outputPath], {
+            console.log('fount output file:', outputPath);
+
+            if (this.options.onBeforeStart) {
+                await this.options?.onBeforeStart?.();
+            }
+
+            const child = childProcess.spawn('node', [outputPath], {
                 stdio: 'inherit',
             });
 
-            if (!this.options.parallel) {
+            if (this.options.onAfterStart) {
+                await this.options?.onAfterStart?.(child);
+            }
+
+            if (!this.options?.parallel) {
                 child.on('close', (code) => {
                     if (code !== 0) {
                         console.error(`process exit with code: ${code}`);
@@ -108,6 +123,7 @@ export class Build {
     }
 
     private configuration: webpack.Configuration;
+    private watchProcess: childProcess.ChildProcess;
 
     public constructor(private readonly options: BuildOptions) {
         this.configuration = {
@@ -178,6 +194,14 @@ export class Build {
                 // }),
                 new AutoRunPlugin({
                     parallel: true,
+                    onAfterStart: (childProcess) => {
+                        this.watchProcess = childProcess;
+                    },
+                    onBeforeStart: () => {
+                        if (this.watchProcess) {
+                            this.watchProcess.kill();
+                        }
+                    },
                 }),
             ],
         }).watch({}, (err, stats) => {
