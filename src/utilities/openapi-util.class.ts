@@ -140,6 +140,12 @@ export class OpenApiUtil {
     }
 
     private generateSchema(input: string, scene: 'request' | 'response'): SchemaObject & Partial<ReferenceObject> {
+        if (input === 'unknown') {
+            return {
+                type: 'object',
+            };
+        }
+
         if (StringUtil.isFalsyString(input) || !/^class\s\w+(?:\[\])*$/.test(input)) {
             throw CommonExceptionUtil.create(CommonExceptionUtil.Code.INVALID_INFERRED_TYPE, {
                 type: input,
