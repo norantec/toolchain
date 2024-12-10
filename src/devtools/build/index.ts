@@ -3,6 +3,8 @@ import * as webpack from 'webpack';
 import { resolve as pathResolve } from 'path';
 import { StringUtil } from '../../utilities/string-util.class';
 import { Command } from 'commander';
+import ShellPlugin from 'webpack-shell-plugin-next';
+import * as yup from 'yup';
 
 class CatchNotFoundPlugin {
     public apply(resolver) {
@@ -35,50 +37,42 @@ class CatchNotFoundPlugin {
     }
 }
 
-export interface BuildOptions {
-    entry: Record<string, string>;
-    outputFilename?: string;
-    outputPath?: string;
-    tsProject?: string;
-    workDir?: string;
-}
+const schema = yup.object().shape({
+    entry: yup.string().required().default('src/main.ts'),
+    name: yup.string().required().default('index'),
+    outputFilename: yup.string().optional().default('[name].js'),
+    outputPath: yup.string().optional().default('dist'),
+    tsProject: yup.string().optional().default('tsconfig.json'),
+    workDir: yup.string().optional().default(process.cwd()),
+});
 
-export class Builder {
+export type BuildOptions = yup.InferType<typeof schema>;
+
+export class Build {
     public static generateCommand() {
         return new Command('build')
-            .requiredOption('--entries <string...>', 'Entry file pathname')
+            .option('--entry <string>', 'Pathname to script')
+            .option('--name <string>', 'Name of the output file')
             .option('--output-filename <string>', 'Output filename')
             .option('--output-path <string>', 'Output path')
             .option('--ts-project <string>', 'TypeScript project file pathname')
             .option('--work-dir <string>', 'Work directory')
-            .action(async (inputOptions) => {
-                const {
-                    entries: rawEntries,
-                    ...options
-                } = inputOptions;
-                const workDir = StringUtil.isFalsyString(options.workDir) ? process.cwd() : pathResolve(process.cwd(), options.workDir);
-                const entry = Array.isArray(rawEntries)
-                    ? rawEntries.reduce((result, value) => {
-                        if (StringUtil.isFalsyString(value)) {
-                            return result;
-                        }
-                        const [key, pathname] = value.split(':');
-                        result[key] = pathResolve(workDir, pathname);
-                        return result;
-                    }, {})
-                    : {};
-                new Builder({
-                    ...options,
-                    workDir,
-                    entry,
-                }).run();
+            .option('--watch', 'Watch mode')
+            .action(async ({ watch, ...inputOptions }) => {
+                const options = schema.cast(inputOptions);
+                options.workDir = options.workDir === process.cwd() ? options.workDir : pathResolve(process.cwd(), options.workDir);
+                if (watch) {
+                    new Build(options).watch();
+                } else {
+                    new Build(options).run();
+                }
             });
     }
 
-    public constructor(private readonly options: BuildOptions) {}
+    private configuration: webpack.Configuration;
 
-    public run() {
-        webpack({
+    public constructor(private readonly options: BuildOptions) {
+        this.configuration = {
             optimization: {
                 minimize: false,
             },
@@ -119,6 +113,32 @@ export class Builder {
             plugins: [
                 new webpack.ProgressPlugin(),
             ],
-        }).run(() => {});
+        };
+    }
+
+    public run() {
+        webpack(this.configuration).run(() => {});
+    }
+
+    public watch() {
+        webpack({
+            ...this.configuration,
+            plugins: [
+                ...this.configuration.plugins,
+                new ShellPlugin({
+                    onBuildEnd: {
+                        scripts: ['node '],
+                        blocking: false,
+                        parallel: true,
+                    },
+                }),
+            ],
+        }).watch({}, (err, stats) => {
+            if (err) {
+                console.error(err);
+            } else {
+                console.log(stats.toString({ colors: true }));
+            }
+        });
     }
 }
