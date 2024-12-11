@@ -6,9 +6,9 @@ import { Command } from 'commander';
 import * as yup from 'yup';
 import * as fs from 'fs-extra';
 import * as childProcess from 'child_process';
-import { StringUtil } from '../../utilities/string-util.class';
+import { StringUtil } from '../../../utilities/string-util.class';
 import * as _ from 'lodash';
-import { CommandFactory } from './command-factory.class';
+import { CommandFactory } from '../command-factory.class';
 
 class CatchNotFoundPlugin {
     public apply(resolver) {
@@ -134,7 +134,10 @@ export const BuildCommand = CommandFactory.create({
     } as {
         childProcess: childProcess.ChildProcess;
     },
-    register: (command, callback) => {
+    register: ({
+        command,
+        callback,
+    }) => {
         command.addCommand(
             new Command('build')
                 .option('--clean', 'Clean output directory')
@@ -147,7 +150,10 @@ export const BuildCommand = CommandFactory.create({
                 .action(callback),
         );
     },
-    run: (logger, options, context) => {
+    run: ({
+        options,
+        context,
+    }) => {
         const {
             watch,
             clean,

@@ -1,18 +1,15 @@
-import { Bump } from './bump';
-// import { Build } from './build';
-import { Setup } from './setup';
 import { Command } from 'commander';
-import { BuildCommand } from './commands/build.command.class';
+import { BuildCommand } from './commands/build/build.command.class';
 import * as winston from 'winston';
+import { BumpCommand } from './commands/bump/bump.command.class';
+import { SetupCommand } from './commands/setup/setup.command';
 
 const program = new Command('nttc');
 
-program.addCommand(Bump.generateCommand());
-// program.addCommand(Build.generateCommand());
-program.addCommand(Setup.generateCommand());
-
 [
     BuildCommand,
+    BumpCommand,
+    SetupCommand,
 ].forEach((Command) => {
     const logger = winston.createLogger({
         level: 'info',
