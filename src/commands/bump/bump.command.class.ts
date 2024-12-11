@@ -219,7 +219,6 @@ const BaseBumpCommand = CommandFactory.create({
         const versions = await adapter.getVersions(packageName, context.rawOptions);
         const packageVersion = fs.readJsonSync(path.resolve('package.json'))?.version;
         const newVersion = await bump(type, packageVersion, versions);
-        console.log(newVersion);
         fs.writeJsonSync(
             path.join(process.cwd(), 'package.json'),
             {

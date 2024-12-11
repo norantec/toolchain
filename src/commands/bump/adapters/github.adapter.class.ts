@@ -41,6 +41,9 @@ export const GithubAdapter = BumpAdapterFactory.create({
 
             return versions.sort((version1, version2) => semver.compare(version2, version1));
         } catch (error) {
+            if (error?.status === 404) {
+                return [];
+            }
             logger.error(`Failed to get versions for ${packageName}: ${error?.message}`);
             return null;
         }
