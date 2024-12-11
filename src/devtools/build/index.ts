@@ -135,7 +135,6 @@ export class Build {
             .option('--clean', 'Clean output directory')
             .option('--entry <string>', 'Pathname to script')
             .option('--name <string>', 'Name of the output file')
-            .option('--output-filename <string>', 'Output filename')
             .option('--output-path <string>', 'Output path')
             .option('--ts-project <string>', 'TypeScript project file pathname')
             .option('--work-dir <string>', 'Work directory')
