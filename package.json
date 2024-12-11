@@ -5,7 +5,7 @@
     "main": "index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "build:cjs": "rimraf dist && tspc -b",
+        "build:cjs": "rimraf dist && tsc -b",
         "build": "npm run build:cjs",
         "setup:exec": "node bin/nttc.js setup",
         "setup": "npm run build && node bin/nttc.js setup"
@@ -85,7 +85,6 @@
         "sequelize-typescript": "^2.1.5",
         "ts-loader": "^9.5.1",
         "type-fest": "^4.27.0",
-        "typescript-rtti": "^0.9.6",
         "uuid": "^9.0.0",
         "webpack": "^5.96.1",
         "winston": "^3.8.2",
@@ -120,7 +119,6 @@
         "eslint-config-alloy": "^4.9.0",
         "rimraf": "^6.0.1",
         "ts-node": "^10.0.0",
-        "ts-patch": "^3.3.0",
         "typescript": "~5.1.3"
     }
 }

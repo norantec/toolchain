@@ -6,7 +6,7 @@ import { BumpAdapter } from './bump-adapter-factory.class';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as semver from 'semver';
-import { StringUtil } from '../../../utilities/string-util.class';
+import { StringUtil } from '../../utilities/string-util.class';
 import * as commander from 'commander';
 
 export enum BumpType {

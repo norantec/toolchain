@@ -6,7 +6,7 @@ import { Command } from 'commander';
 import * as yup from 'yup';
 import * as fs from 'fs-extra';
 import * as childProcess from 'child_process';
-import { StringUtil } from '../../../utilities/string-util.class';
+import { StringUtil } from '../../utilities/string-util.class';
 import * as _ from 'lodash';
 import { CommandFactory } from '../command-factory.class';
 

@@ -1,10 +1,5 @@
 {
     "compilerOptions": {
-        "plugins": [
-            {
-                "transform": "typescript-rtti/dist/transformer"
-            }
-        ],
         "module": "CommonJS",
         "declaration": true,
         "removeComments": true,
