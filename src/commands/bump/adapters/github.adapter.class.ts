@@ -19,7 +19,6 @@ export const GithubAdapter = BumpAdapterFactory.create({
         return subCommand;
     },
     getVersions: async (logger, packageName, options) => {
-        console.log('LENCONDA:FUCK:::', options);
         try {
             const octokit = new Octokit({
                 auth: options.token,
