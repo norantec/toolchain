@@ -16,7 +16,7 @@ export abstract class CommandFactory {
         schema: T1;
         context: C1;
         register: (command: commander.Command, callback: (options?: any) => void | Promise<void>) => void | Promise<void>;
-        run: (options?: RequiredDeep<yup.InferType<T1>>, context?: C1) => void | Promise<void>;
+        run: (loader: winston.Logger, options?: RequiredDeep<yup.InferType<T1>>, context?: C1) => void | Promise<void>;
     }) {
         return class {
             readonly #context = context;

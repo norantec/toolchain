@@ -147,7 +147,7 @@ export const BuildCommand = CommandFactory.create({
                 .action(callback),
         );
     },
-    run: (options, context) => {
+    run: (logger, options, context) => {
         const {
             watch,
             clean,
