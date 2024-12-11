@@ -70,7 +70,7 @@ class AutoRunPlugin {
 
             const outputPath = pathResolve(compilation.options.output.path, bundledScriptFile);
 
-            console.log('prepared to run file:', outputPath);
+            // console.log('prepared to run file:', outputPath);
 
             if (this.options.onBeforeStart) {
                 await this.options?.onBeforeStart?.();
