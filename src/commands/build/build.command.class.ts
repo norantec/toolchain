@@ -174,7 +174,7 @@ export const BuildCommand = CommandFactory.create({
                 [webpackOptions.name]: pathResolve(webpackOptions.workDir, webpackOptions.entry),
             },
             target: 'node',
-            mode: 'production',
+            mode: options.watch ? 'development' : 'production',
             output: {
                 filename: webpackOptions.outputFilename,
                 path: pathResolve(webpackOptions.workDir, webpackOptions.outputPath),
