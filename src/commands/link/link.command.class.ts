@@ -23,7 +23,10 @@ export const LinkCommand = CommandFactory.create({
                     .action(callback),
             );
     },
-    run: ({ options }) => {
+    run: ({
+        options,
+        logger,
+    }) => {
         const {
             dest,
             copy,
@@ -66,7 +69,7 @@ export const LinkCommand = CommandFactory.create({
 
                     fs.removeSync(destinationPathname);
 
-                    console.log(sourcePathname, '->', destinationPathname);
+                    logger?.info?.(`copied: ${sourcePathname} -> ${destinationPathname}`);
 
                     if (!fs.existsSync(sourcePathname)) {
                         continue;

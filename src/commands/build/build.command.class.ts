@@ -9,10 +9,14 @@ import * as childProcess from 'child_process';
 import { StringUtil } from '../../utilities/string-util.class';
 import * as _ from 'lodash';
 import { CommandFactory } from '../command-factory.class';
+import * as winston from 'winston';
 
 class CatchNotFoundPlugin {
+    public constructor(private logger?: winston.Logger) {}
+
     public apply(resolver) {
         const resolve = resolver.resolve;
+        const logger = this.logger;
         resolver.resolve = function (context, path, request, resolveContext, callback) {
             const self = this;
             resolve.call(self, context, path, request, resolveContext, (error, innerPath, result) => {
@@ -33,7 +37,7 @@ class CatchNotFoundPlugin {
                         callback(null, notfoundPathname, request);
                     });
                 }
-                console.warn('notfound:', context.issuer, request);
+                logger?.warn?.(`Notfound '${context.issuer}' from '${request}', skipping...`);
                 // make not found errors runtime errors
                 callback(null, notfoundPathname, request);
             });
@@ -42,6 +46,7 @@ class CatchNotFoundPlugin {
 }
 
 interface AutoRunPluginOptions {
+    logger?: winston.Logger;
     parallel?: boolean;
     onAfterStart?: (childProcess: childProcess.ChildProcess) => void | Promise<void>;
     onBeforeStart?: () => void | Promise<void>;
@@ -51,11 +56,12 @@ class AutoRunPlugin {
     public constructor(private options: AutoRunPluginOptions = {}) {}
 
     public apply(compiler: webpack.Compiler) {
+        const logger = this?.options?.logger;
         compiler.hooks.afterEmit.tapAsync('AutoRunPlugin', async (compilation: webpack.Compilation, callback) => {
             const assets = compilation.getAssets();
 
             if (assets.length === 0) {
-                console.warn('no output file');
+                logger?.warn?.('No output file was found, skipping...');
                 callback();
                 return;
             }
@@ -63,14 +69,14 @@ class AutoRunPlugin {
             const bundledScriptFile = assets?.find?.((item) => item?.name?.endsWith?.('.js'))?.name;
 
             if (StringUtil.isFalsyString(bundledScriptFile)) {
-                console.warn('no output file');
+                logger?.warn?.('No output file was found, skipping...');
                 callback();
                 return;
             }
 
             const outputPath = pathResolve(compilation.options.output.path, bundledScriptFile);
 
-            // console.log('prepared to run file:', outputPath);
+            logger?.info?.(`Prepared to run file: ${outputPath}`);
 
             if (this.options.onBeforeStart) {
                 await this.options?.onBeforeStart?.();
@@ -87,7 +93,7 @@ class AutoRunPlugin {
             if (!this.options?.parallel) {
                 child.on('close', (code) => {
                     if (code !== 0) {
-                        console.error(`process exit with code: ${code}`);
+                        logger?.error?.(`Process exited with code: ${code}`);
                     }
                     callback();
                 });
@@ -151,6 +157,7 @@ export const BuildCommand = CommandFactory.create({
         );
     },
     run: ({
+        logger,
         options,
         context,
     }) => {
@@ -180,7 +187,7 @@ export const BuildCommand = CommandFactory.create({
                     UNKNOWN: false,
                 },
                 plugins: [
-                    new CatchNotFoundPlugin(),
+                    new CatchNotFoundPlugin(logger),
                 ],
             },
             module: {
@@ -203,6 +210,7 @@ export const BuildCommand = CommandFactory.create({
                 new CleanPlugin(),
                 ...(!watch ? [] : [
                     new AutoRunPlugin({
+                        logger,
                         parallel: true,
                         onAfterStart: (childProcess) => {
                             context.childProcess = childProcess;
@@ -218,16 +226,16 @@ export const BuildCommand = CommandFactory.create({
         });
 
         if (watch) {
-            compiler.watch({}, (err, stats) => {
-                if (err) {
-                    console.error(err);
-                } else {
-                    console.log(stats.toString({ colors: true }));
+            compiler.watch({}, (error) => {
+                if (error) {
+                    logger?.error?.(error);
                 }
             });
         } else {
             if (clean) {
+                logger?.info?.(`Cleaning output directory: ${compiler.options.output.path}`);
                 fs.removeSync(compiler.options.output.path);
+                logger?.info?.('Output directory cleaned');
             }
             compiler.run(() => {});
         }

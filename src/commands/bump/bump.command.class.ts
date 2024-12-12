@@ -15,68 +15,6 @@ export enum BumpType {
     RELEASE = 'release',
 }
 
-// const ERROR_CODE = {
-//     BumpTypeMismatch: 'BUMP_TYPE_MISMATCH',
-//     IllegalNewPackageVersion: 'ILLEGAL_NEW_PACKAGE_VERSION',
-//     IllegalCurrentPackageVersion: 'ILLEGAL_CURRENT_PACKAGE_VERSION',
-// };
-
-// export abstract class Adapter {
-//     // public static extendCommand(command: commander.Command) {
-//     //     return command;
-//     // };
-//     // public static formatCommandInputs(inputs: Record<string, string | boolean>) {
-//     //     return inputs;
-//     // }
-//     public abstract getVersions(packageName: string): string[] | Promise<string[]>;
-// }
-
-// export class GitHubAdapter extends Adapter implements Adapter {
-//     public static extendCommand(command: commander.Command) {
-//         command.requiredOption('--adapter.token <string>', 'GitHub token');
-//         command.requiredOption('--adapter.owner <string>', 'GitHub owner name');
-//         command.requiredOption('--adapter.is-org', 'GitHub owner is organization');
-//         return command;
-//     }
-
-//     public constructor(private readonly options: {
-//         owner: string;
-//         token: string;
-//         isOrg?: boolean;
-//     }) {
-//         super();
-//     }
-
-//     public async getVersions(packageName: string) {
-//         const octokit = new Octokit({
-//             auth: this.options.token,
-//             log: {
-//                 debug: () => {},
-//                 info: () => {},
-//                 error: () => {},
-//                 warn: () => {},
-//             },
-//         });
-
-//         try {
-//             const response = await octokit.request(`GET /${this.options.isOrg ? 'orgs' : 'users'}/{owner}/packages/npm/{package_name}/versions`, {
-//                 owner: this.options.owner,
-//                 package_name: packageName.split('/').pop(),
-//             });
-//             const versions = response.data.map((pkg) => pkg.name);
-
-//             if (!Array.isArray(versions)) {
-//                 return [];
-//             }
-
-//             return versions.sort((version1, version2) => semver.compare(version2, version1));
-//         } catch (error) {
-//             console.log(error);
-//             return [];
-//         }
-//     }
-// }
-
 function getFormalReleaseVersion(version: string) {
     const parsed = semver.parse(version);
 
@@ -87,16 +25,14 @@ function getFormalReleaseVersion(version: string) {
     return `${parsed.major}.${parsed.minor}.${parsed.patch}`;
 }
 
-async function bump(type: BumpType, packageVersion: string, versions: string[]) {
+async function bump(type: BumpType, packageVersion: string, versions: string[], logger?: winston.Logger) {
     if (StringUtil.isFalsyString(packageVersion) || semver.valid(packageVersion) === null) {
-        // this.logger.error('Package version is illegal');
-        // this.options?.onError?.(new Error(ERROR_CODE.IllegalCurrentPackageVersion));
+        logger?.error('Package version is illegal');
         return;
     }
 
     if (!Object.values(BumpType).includes(type)) {
-        // this.logger.error(`Bump type is illegal, supported ${Object.values(BUMP_TYPE).join('/')}, but got: ${type}`);
-        // this.options?.onError?.(new Error(ERROR_CODE.BumpTypeMismatch));
+        logger?.error(`Bump type is illegal, supported ${Object.values(BumpType).join('/')}, but got: ${type}`);
         return;
     }
 
@@ -105,8 +41,7 @@ async function bump(type: BumpType, packageVersion: string, versions: string[]) 
     let newVersion: string;
 
     if ((!semver.valid(latestVersion) || semver.prerelease(latestVersion) === null) && !semver.valid(currentVersion)) {
-        // this.logger.error(`Illegal current version from package.json: ${currentVersion}`);
-        // this.options?.onError?.(new Error(ERROR_CODE.IllegalCurrentPackageVersion));
+        logger?.error(`Illegal current version from package.json: ${currentVersion}`);
         return;
     }
 
@@ -120,8 +55,7 @@ async function bump(type: BumpType, packageVersion: string, versions: string[]) 
         ];
 
         if (!legalNewVersionList.includes(currentVersion)) {
-            // this.logger.error(`Illegal current version from package.json: ${currentVersion}, supported versions: ${legalNewVersionList.join('/')}`);
-            // this.options?.onError?.(new Error(ERROR_CODE.IllegalCurrentPackageVersion));
+            logger?.error(`Illegal current version from package.json: ${currentVersion}, supported versions: ${legalNewVersionList.join('/')}`);
             return;
         }
 
@@ -172,11 +106,6 @@ const BaseBumpCommand = CommandFactory.create({
     }) => {
         const subCommand = new commander.Command('bump');
 
-        // subCommand.argument(
-        //     'type',
-        //     'Bump type, e.g. alpha/beta/release',
-        // );
-
         if (Array.isArray(context?.adapters)) {
             context.adapters.map((AdapterClass) => {
                 const adapter = new AdapterClass(logger);
@@ -201,12 +130,10 @@ const BaseBumpCommand = CommandFactory.create({
         }
 
         command.addCommand(subCommand);
-        // command.action((options) => {
-        //     callback(options);
-        // });
     },
     run: async ({
         context,
+        logger,
         options: { type },
     }) => {
         const adapter = context.adapter;
@@ -215,10 +142,22 @@ const BaseBumpCommand = CommandFactory.create({
             throw new Error('Adapter not found');
         }
 
-        const packageName = fs.readJsonSync(path.resolve('package.json'))?.name;
+        const packageJson = fs.readJsonSync(path.resolve('package.json'));
+        const packageName = packageJson.name;
+        const packageVersion = packageJson.version;
+
+        logger.info(`Got package name: ${packageName}, version: ${packageVersion}`);
+
         const versions = await adapter.getVersions(packageName, context.rawOptions);
-        const packageVersion = fs.readJsonSync(path.resolve('package.json'))?.version;
-        const newVersion = await bump(type, packageVersion, versions);
+        const newVersion = await bump(type, packageVersion, versions, logger);
+
+        if (StringUtil.isFalsyString(newVersion)) {
+            logger.error('Failed to bump package version');
+            return;
+        }
+
+        logger.info(`Got new version: ${newVersion}`);
+
         fs.writeJsonSync(
             path.join(process.cwd(), 'package.json'),
             {
@@ -230,7 +169,8 @@ const BaseBumpCommand = CommandFactory.create({
                 spaces: 4,
             },
         );
-        console.log(`Bump ${packageName} to ${newVersion} successfully`);
+
+        logger.info(`Bumped ${packageName} to ${newVersion} successfully`);
     },
 });
 
