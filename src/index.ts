@@ -12,8 +12,13 @@ const program = new Command('nttc');
     LinkCommand,
 ].forEach((Command) => {
     const logger = winston.createLogger({
-        level: 'info',
-        format: winston.format.json(),
+        level: 'verbose',
+        format: winston.format.combine(
+            winston.format.timestamp({
+                format: 'YYYY-MM-DD HH:mm:ss',
+            }),
+            winston.format.printf((info) => `${info.timestamp} - ${info.level}: ${info.message}` + (info.splat !== undefined ? `${info.splat}` : ' ')),
+        ),
         transports: [new winston.transports.Console()],
     });
     const commandInstance = new Command(logger);
