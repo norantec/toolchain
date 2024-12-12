@@ -206,7 +206,9 @@ export const BuildCommand = CommandFactory.create({
                 ],
             },
             plugins: [
-                new webpack.ProgressPlugin(),
+                new webpack.ProgressPlugin((percentage, message) => {
+                    logger?.info?.(`Build progress: ${percentage * 100}%, ${message}`);
+                }),
                 new CleanPlugin(),
                 ...(!watch ? [] : [
                     new AutoRunPlugin({
