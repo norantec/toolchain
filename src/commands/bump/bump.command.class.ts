@@ -8,6 +8,7 @@ import * as path from 'path';
 import * as semver from 'semver';
 import { StringUtil } from '../../utilities/string-util.class';
 import * as commander from 'commander';
+import { NpmAdapter } from './adapters/npm.adapter.class';
 
 export enum BumpType {
     ALPHA = 'alpha',
@@ -90,7 +91,10 @@ const BaseBumpCommand = CommandFactory.create({
         type: yup.string().required().oneOf(Object.values(BumpType)),
     }),
     context: {
-        adapters: [GithubAdapter] as BumpAdapter[],
+        adapters: [
+            GithubAdapter,
+            NpmAdapter,
+        ] as BumpAdapter[],
         adapter: null,
         rawOptions: {},
     } as {
