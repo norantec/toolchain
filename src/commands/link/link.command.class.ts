@@ -11,26 +11,16 @@ export const LinkCommand = CommandFactory.create({
         dest: yup.array(yup.string()).required(),
         copy: yup.boolean().optional().default(false),
     }),
-    register: ({
-        command,
-        callback,
-    }) => {
-        command
-            .addCommand(
-                new commander.Command('link')
-                    .option('-c, --copy', 'copy the package to the destination')
-                    .option('-d, --dest <string...>', 'destination that the package will be linked to')
-                    .action(callback),
-            );
+    register: ({ command, callback }) => {
+        command.addCommand(
+            new commander.Command('link')
+                .option('-c, --copy', 'copy the package to the destination')
+                .option('-d, --dest <string...>', 'destination that the package will be linked to')
+                .action(callback),
+        );
     },
-    run: ({
-        options,
-        logger,
-    }) => {
-        const {
-            dest,
-            copy,
-        } = options;
+    run: ({ options, logger }) => {
+        const { dest, copy } = options;
 
         if (!Array.isArray(dest) || dest.length === 0) {
             process.exit(1);
@@ -53,11 +43,7 @@ export const LinkCommand = CommandFactory.create({
             }
 
             if (copy) {
-                const files = _.uniq([
-                    'package.json',
-                    'README.md',
-                    ...(packageJson?.files || []),
-                ]);
+                const files = _.uniq(['package.json', 'README.md', ...(packageJson?.files || [])]);
 
                 if (!fs.existsSync(destinationPackagePathname)) {
                     fs.mkdirpSync(destinationPackagePathname);
@@ -87,4 +73,3 @@ export const LinkCommand = CommandFactory.create({
     },
     context: {},
 });
-

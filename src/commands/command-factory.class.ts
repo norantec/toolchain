@@ -33,21 +33,18 @@ export class CommandFactory {
             }
 
             public async register(command: commander.Command): Promise<void> {
-                return await register.call(
-                    this,
-                    {
-                        logger: this.#logger,
-                        command,
-                        context: this.#context,
-                        callback: (options) => {
-                            run.call(this, {
-                                logger: this.#logger,
-                                options: schema.cast(options),
-                                context: this.#context,
-                            });
-                        },
+                return await register.call(this, {
+                    logger: this.#logger,
+                    command,
+                    context: this.#context,
+                    callback: (options) => {
+                        run.call(this, {
+                            logger: this.#logger,
+                            options: schema.cast(options),
+                            context: this.#context,
+                        });
                     },
-                );
+                });
             }
 
             public updateContext(updater: (context: C) => C) {

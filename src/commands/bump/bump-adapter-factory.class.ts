@@ -10,7 +10,11 @@ export class BumpAdapterFactory {
         getVersions,
     }: {
         schema: T;
-        getVersions: (logger: winston.Logger, packageName: string, options?: RequiredDeep<yup.InferType<T>>) => Promise<string[]>;
+        getVersions: (
+            logger: winston.Logger,
+            packageName: string,
+            options?: RequiredDeep<yup.InferType<T>>,
+        ) => Promise<string[]>;
         register: () => commander.Command;
     }) {
         return class {

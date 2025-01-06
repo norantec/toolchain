@@ -2,11 +2,11 @@ import { v4 as uuidv4 } from 'uuid';
 
 export class StringUtil {
     public static isFalsyString(value: any, connector: 'AND' | 'OR' = 'AND') {
-        const stringList = Array.isArray(value)
-            ? value
-            : [value];
+        const stringList = Array.isArray(value) ? value : [value];
 
-        const checkResultList = stringList.map((stringValue) => typeof stringValue === 'string' && stringValue.length > 0);
+        const checkResultList = stringList.map(
+            (stringValue) => typeof stringValue === 'string' && stringValue.length > 0,
+        );
 
         if (connector === 'AND') {
             return checkResultList.some((result) => !result);

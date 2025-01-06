@@ -12,9 +12,7 @@ export const NpmAdapter = BumpAdapterFactory.create({
     }),
     register: () => {
         const subCommand = new commander.Command('npm');
-        subCommand
-            .option('--token <string>', 'NPM token')
-            .option('--registry <string>', 'NPM registry');
+        subCommand.option('--token <string>', 'NPM token').option('--registry <string>', 'NPM registry');
         return subCommand;
     },
     getVersions: async (logger, packageName, options) => {
@@ -22,14 +20,18 @@ export const NpmAdapter = BumpAdapterFactory.create({
             logger.verbose(`Requesting versions for ${packageName}`);
             const URL = `${options.registry}/${packageName}`;
             logger.verbose(`Using URL: ${URL}`);
-            let versions = await axios.default.get(URL, {
-                headers: {
-                    ...(!StringUtil.isFalsyString(options.token) ? { Authorization: `Bearer ${options.token}` } : {}),
-                },
-                responseType: 'json',
-            }).then((response) => {
-                return Object.keys(response.data?.versions ?? {});
-            });
+            let versions = await axios.default
+                .get(URL, {
+                    headers: {
+                        ...(!StringUtil.isFalsyString(options.token)
+                            ? { Authorization: `Bearer ${options.token}` }
+                            : {}),
+                    },
+                    responseType: 'json',
+                })
+                .then((response) => {
+                    return Object.keys(response.data?.versions ?? {});
+                });
             logger.verbose('Response received');
 
             if (!Array.isArray(versions)) {

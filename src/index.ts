@@ -6,18 +6,18 @@ import { LinkCommand } from './commands/link/link.command.class';
 
 const program = new Command('nttc');
 
-[
-    BuildCommand,
-    BumpCommand,
-    LinkCommand,
-].forEach((Command) => {
+[BuildCommand, BumpCommand, LinkCommand].forEach((Command) => {
     const logger = winston.createLogger({
         level: 'verbose',
         format: winston.format.combine(
             winston.format.timestamp({
                 format: 'YYYY-MM-DD HH:mm:ss',
             }),
-            winston.format.printf((info) => `${info.timestamp} - ${info.level}: ${info.message}` + (info.splat !== undefined ? `${info.splat}` : ' ')),
+            winston.format.printf(
+                (info) =>
+                    `${info.timestamp} - ${info.level}: ${info.message}` +
+                    (info.splat !== undefined ? `${info.splat}` : ' '),
+            ),
         ),
         transports: [new winston.transports.Console()],
     });

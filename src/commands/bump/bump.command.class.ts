@@ -56,7 +56,9 @@ async function bump(type: BumpType, packageVersion: string, versions: string[], 
         ];
 
         if (!legalNewVersionList.includes(currentVersion)) {
-            logger?.error(`Illegal current version from package.json: ${currentVersion}, supported versions: ${legalNewVersionList.join('/')}`);
+            logger?.error(
+                `Illegal current version from package.json: ${currentVersion}, supported versions: ${legalNewVersionList.join('/')}`,
+            );
             return;
         }
 
@@ -91,10 +93,7 @@ const BaseBumpCommand = CommandFactory.create({
         type: yup.string().required().oneOf(Object.values(BumpType)),
     }),
     context: {
-        adapters: [
-            GithubAdapter,
-            NpmAdapter,
-        ] as BumpAdapter[],
+        adapters: [GithubAdapter, NpmAdapter] as BumpAdapter[],
         adapter: null,
         rawOptions: {},
     } as {
@@ -102,44 +101,34 @@ const BaseBumpCommand = CommandFactory.create({
         adapter?: InstanceType<BumpAdapter>;
         rawOptions?: Record<string, any>;
     },
-    register: async ({
-        logger,
-        context,
-        command,
-        callback,
-    }) => {
+    register: async ({ logger, context, command, callback }) => {
         const subCommand = new commander.Command('bump');
 
         if (Array.isArray(context?.adapters)) {
-            context.adapters.map((AdapterClass) => {
-                const adapter = new AdapterClass(logger);
-                const command = adapter.register();
+            context.adapters
+                .map((AdapterClass) => {
+                    const adapter = new AdapterClass(logger);
+                    const command = adapter.register();
 
-                command
-                    .requiredOption('-t, --type <type>', 'Bump type, e.g. alpha/beta/release')
-                    .action((options) => {
-                        context.adapter = adapter;
-                        const {
-                            type,
-                            ...adapterOptions
-                        } = options;
-                        context.rawOptions = adapterOptions;
-                        callback({ type });
-                    });
+                    command
+                        .requiredOption('-t, --type <type>', 'Bump type, e.g. alpha/beta/release')
+                        .action((options) => {
+                            context.adapter = adapter;
+                            const { type, ...adapterOptions } = options;
+                            context.rawOptions = adapterOptions;
+                            callback({ type });
+                        });
 
-                return command;
-            }).forEach((command) => {
-                subCommand.addCommand(command);
-            });
+                    return command;
+                })
+                .forEach((command) => {
+                    subCommand.addCommand(command);
+                });
         }
 
         command.addCommand(subCommand);
     },
-    run: async ({
-        context,
-        logger,
-        options: { type },
-    }) => {
+    run: async ({ context, logger, options: { type } }) => {
         const adapter = context.adapter;
 
         if (!adapter) {
