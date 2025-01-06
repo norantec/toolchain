@@ -1,6 +1,13 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable new-cap */
 /* eslint-disable @typescript-eslint/no-this-alias */
+import { Volume } from 'memfs';
+import { ufs } from 'unionfs';
+import { Module } from 'module';
+import * as fs from 'fs-extra';
+import * as fs1 from 'fs';
+import { dirname as pathDirname, resolve as pathResolve } from 'path';
+
 const SYNC_WRITE_METHODS = [
     'writeFile',
     'writeFileSync',
@@ -15,30 +22,19 @@ const SYNC_WRITE_METHODS = [
 ];
 const PROMISE_WRITE_METHODS = ['writeFile', 'appendFile', 'mkdir', 'rmdir', 'unlink'];
 let interceptWriting = false;
+const volume = Volume.fromJSON({});
 
-import { Volume } from 'memfs';
-import { ufs } from 'unionfs';
-import { Module } from 'module';
-import * as fs from 'fs-extra';
-import * as webpack from 'webpack';
-import { dirname as pathDirname, resolve as pathResolve } from 'path';
-import { Command } from 'commander';
-import * as yup from 'yup';
-import * as childProcess from 'child_process';
-import { StringUtil } from '../../utilities/string-util.class';
-import * as _ from 'lodash';
-import { CommandFactory } from '../command-factory.class';
-import * as winston from 'winston';
-
-const volume = new Volume();
-
-ufs.use(fs).use(volume as unknown as typeof fs);
+ufs.use(fs1).use(volume as unknown as typeof fs1);
 
 // @ts-ignore
 const originalModuleLoad = Module._load;
 
 // @ts-ignore
 Module._load = (request, parent, isMain) => {
+    if (!['fs', 'node:fs', 'fs/promises', 'node:fs/promises'].includes(request)) {
+        return originalModuleLoad(request, parent, isMain);
+    }
+
     const promiseFs = {
         ...ufs.promises,
         ...PROMISE_WRITE_METHODS.reduce((result, methodName) => {
@@ -49,31 +45,39 @@ Module._load = (request, parent, isMain) => {
                 : ufs.promises[methodName];
             return result;
         }, {}),
+        constants: fs1.promises.constants,
+    };
+    const fs = {
+        ...ufs,
+        promises: promiseFs,
+        ...SYNC_WRITE_METHODS.reduce((result, methodName) => {
+            result[methodName] = interceptWriting
+                ? (...args) => {
+                      return volume[methodName](...args);
+                  }
+                : ufs[methodName];
+            return result;
+        }, {}),
+        constants: fs1.constants,
     };
 
     if (request === 'fs' || request === 'node:fs') {
-        return {
-            ...ufs,
-            ...SYNC_WRITE_METHODS.reduce((result, methodName) => {
-                result[methodName] = interceptWriting
-                    ? (...args) => {
-                          return volume[methodName](...args);
-                      }
-                    : ufs[methodName];
-                return result;
-            }, {}),
-            promises: promiseFs,
-        };
+        return fs;
     }
 
     if (request === 'fs/promises' || request === 'node:fs/promises') {
         return promiseFs;
     }
-
-    return originalModuleLoad(request, parent, isMain);
 };
 
-// import { exec } from '@yao-pkg/pkg';
+import * as webpack from 'webpack';
+import { Command } from 'commander';
+import * as yup from 'yup';
+import * as childProcess from 'child_process';
+import { StringUtil } from '../../utilities/string-util.class';
+import * as _ from 'lodash';
+import { CommandFactory } from '../command-factory.class';
+import * as winston from 'winston';
 
 class CatchNotFoundPlugin {
     public constructor(private logger?: winston.Logger) {}
@@ -195,17 +199,44 @@ class CleanPlugin {
 }
 
 class BinaryPlugin {
-    public constructor(private readonly outputJsPathname: string) {}
+    public constructor(
+        private readonly logger: winston.Logger,
+        private readonly outputJsPathname: string,
+    ) {}
 
     public apply(compiler: webpack.Compiler) {
         compiler.hooks.compilation.tap('BinaryPlugin', (compilation) => {
             compilation.hooks.processAssets.tapPromise('BinaryPlugin', async (assets) => {
-                const asset = Object.entries(assets).find(
-                    ([relativePathname]) =>
-                        pathResolve(pathDirname(this.outputJsPathname), relativePathname) === this.outputJsPathname,
-                )?.[1];
-                // volume.writeFileSync(this.outputJsPathname, asset?.source());
-                console.log('LENCONDA', asset?.source?.());
+                try {
+                    const assetItem = Object.entries(assets).find(([relativePathname]) => {
+                        return (
+                            pathResolve(pathDirname(this.outputJsPathname), relativePathname) === this.outputJsPathname
+                        );
+                    });
+
+                    if (!assetItem) {
+                        return;
+                    }
+
+                    const [relativePathname, asset] = assetItem;
+                    const { exec } = require('@yao-pkg/pkg');
+
+                    volume.mkdirSync(pathDirname(this.outputJsPathname), { recursive: true });
+                    volume.writeFileSync(this.outputJsPathname, asset?.source?.());
+                    _.unset(assets, relativePathname);
+                    await exec([
+                        this.outputJsPathname,
+                        '--output',
+                        pathResolve(pathDirname(this.outputJsPathname), 'build'),
+                    ]);
+
+                    console.log(
+                        'LENCONDA:FUCK',
+                        volume.readdirSync(pathResolve(pathDirname(this.outputJsPathname), 'build')),
+                    );
+                } catch (error) {
+                    this.logger.error(error);
+                }
             });
         });
     }
@@ -304,7 +335,7 @@ export const BuildCommand = CommandFactory.create({
                             }),
                         ];
                     } else {
-                        return [new BinaryPlugin(outputFilePathname)];
+                        return [new BinaryPlugin(logger, outputFilePathname)];
                     }
                 })(),
             ],
