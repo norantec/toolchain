@@ -6,7 +6,7 @@ import { ufs } from 'unionfs';
 import { Module } from 'module';
 import * as fs from 'fs-extra';
 import * as fs1 from 'fs';
-import { dirname as pathDirname, resolve as pathResolve } from 'path';
+import { dirname as pathDirname, resolve as pathResolve, relative as pathRelative } from 'path';
 
 const SYNC_WRITE_METHODS = [
     'writeFile',
@@ -42,7 +42,7 @@ Module._load = (request, parent, isMain) => {
                 ? async (...args) => {
                       return volume.promises[methodName](...args);
                   }
-                : ufs.promises[methodName];
+                : fs1.promises[methodName];
             return result;
         }, {}),
         constants: fs1.promises.constants,
@@ -55,7 +55,7 @@ Module._load = (request, parent, isMain) => {
                 ? (...args) => {
                       return volume[methodName](...args);
                   }
-                : ufs[methodName];
+                : fs1[methodName];
             return result;
         }, {}),
         constants: fs1.constants,
@@ -210,6 +210,7 @@ class BinaryPlugin {
         compiler.hooks.compilation.tap('BinaryPlugin', (compilation) => {
             compilation.hooks.processAssets.tapPromise('BinaryPlugin', async (assets) => {
                 try {
+                    interceptWriting = true;
                     const assetItem = Object.entries(assets).find(([relativePathname]) => {
                         return (
                             pathResolve(pathDirname(this.outputJsPathname), relativePathname) === this.outputJsPathname
@@ -222,21 +223,32 @@ class BinaryPlugin {
 
                     const [relativePathname, asset] = assetItem;
                     const { exec } = require('@yao-pkg/pkg');
+                    const outputPathname = pathDirname(this.outputJsPathname);
 
                     volume.mkdirSync(pathDirname(this.outputJsPathname), { recursive: true });
                     volume.writeFileSync(this.outputJsPathname, asset?.source?.());
                     _.unset(assets, relativePathname);
                     await exec([
                         this.outputJsPathname,
-                        '--output',
-                        pathResolve(this.workDir, 'build'),
+                        '--out-path',
+                        outputPathname,
                         '--compress',
                         'Brotli',
                         '--target',
                         `node${/^v(\d+).*/.exec(process.version)?.[1]}-${this.buildArch}`,
                     ]);
 
-                    console.log('LENCONDA:FUCK', volume.readdirSync(pathResolve(this.workDir, 'build')));
+                    // compilation.emitAsset(pathRelative(this.workDir, outputPathname),);
+                    volume.readdirSync(outputPathname).forEach((file) => {
+                        if (volume.statSync(pathResolve(outputPathname, file)).isFile()) {
+                            compilation.emitAsset(
+                                pathRelative(this.workDir, pathResolve(outputPathname, file)),
+                                new webpack.sources.RawSource(volume.readFileSync(pathResolve(outputPathname, file))),
+                            );
+                        }
+                    });
+
+                    interceptWriting = false;
                 } catch (error) {
                     this.logger.error(error);
                 }
