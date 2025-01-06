@@ -233,15 +233,10 @@ class BinaryPlugin {
                         '--compress',
                         'Brotli',
                         '--target',
-                        'node',
-                        '--arch',
                         `node${/^v(\d+).*/.exec(process.version)?.[1]}-${this.buildArch}`,
                     ]);
 
-                    console.log(
-                        'LENCONDA:FUCK',
-                        volume.readdirSync(pathResolve(pathDirname(this.outputJsPathname), 'build')),
-                    );
+                    console.log('LENCONDA:FUCK', volume.readdirSync(pathResolve(this.workDir, 'build')));
                 } catch (error) {
                     this.logger.error(error);
                 }
