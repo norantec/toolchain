@@ -203,7 +203,7 @@ class BinaryPlugin {
         private readonly logger: winston.Logger,
         private readonly workDir: string,
         private readonly outputJsPathname: string,
-        private readonly buildArch: string,
+        private readonly binaryArch: string,
     ) {}
 
     public apply(compiler: webpack.Compiler) {
@@ -235,7 +235,7 @@ class BinaryPlugin {
                         '--compress',
                         'Brotli',
                         '--target',
-                        `node${/^v(\d+).*/.exec(process.version)?.[1]}-${this.buildArch}`,
+                        `node${/^v(\d+).*/.exec(process.version)?.[1]}-${this.binaryArch}`,
                     ]);
 
                     // compilation.emitAsset(pathRelative(this.workDir, outputPathname),);
@@ -259,15 +259,8 @@ class BinaryPlugin {
 
 export const BuildCommand = CommandFactory.create({
     schema: yup.object().shape({
-        clean: yup.boolean().optional().default(true),
-        entry: yup.string().required().default('src/main.ts'),
-        name: yup.string().required().default('index'),
-        outputFilename: yup.string().optional().default('[name].js'),
-        outputPath: yup.string().optional().default('dist'),
-        tsProject: yup.string().optional().default('tsconfig.json'),
-        workDir: yup.string().optional().default(process.cwd()),
-        watch: yup.boolean().optional().default(false),
-        buildArch: yup
+        binary: yup.boolean().optional().default(false),
+        binaryArch: yup
             .string()
             .optional()
             .oneOf([
@@ -283,6 +276,14 @@ export const BuildCommand = CommandFactory.create({
                 'macos-arm64',
             ])
             .default('linux-x64'),
+        clean: yup.boolean().optional().default(false),
+        entry: yup.string().required().default('src/main.ts'),
+        name: yup.string().required().default('index'),
+        outputFilename: yup.string().optional().default('[name].js'),
+        outputPath: yup.string().optional().default('dist'),
+        tsProject: yup.string().optional().default('tsconfig.json'),
+        workDir: yup.string().optional().default(process.cwd()),
+        watch: yup.boolean().optional().default(false),
     }),
     context: {
         childProcess: null,
@@ -292,6 +293,7 @@ export const BuildCommand = CommandFactory.create({
     register: ({ command, callback }) => {
         command.addCommand(
             new Command('build')
+                .option('--binary', 'Build binary')
                 .option('--clean', 'Clean output directory')
                 .option('--entry <string>', 'Pathname to script')
                 .option('--name <string>', 'Name of the output file')
@@ -299,12 +301,12 @@ export const BuildCommand = CommandFactory.create({
                 .option('--ts-project <string>', 'TypeScript project file pathname')
                 .option('--work-dir <string>', 'Work directory')
                 .option('--watch', 'Watch mode')
-                .option('--build-arch <string>', 'Build architecture', 'linux-x64')
+                .option('--binary-arch <string>', 'Binary architecture', 'linux-x64')
                 .action(callback),
         );
     },
     run: ({ logger, options, context }) => {
-        const { watch, clean, buildArch, ...webpackOptions } = options;
+        const { watch, clean, binary, binaryArch, ...webpackOptions } = options;
         interceptWriting = !watch;
         const outputDirectoryPathname = pathResolve(webpackOptions.workDir, webpackOptions.outputPath);
         const outputFilePathname = pathResolve(outputDirectoryPathname, `${webpackOptions.name}.js`);
@@ -367,7 +369,8 @@ export const BuildCommand = CommandFactory.create({
                             }),
                         ];
                     } else {
-                        return [new BinaryPlugin(logger, webpackOptions.workDir, outputFilePathname, buildArch)];
+                        if (!binary) return [];
+                        return [new BinaryPlugin(logger, webpackOptions.workDir, outputFilePathname, binaryArch)];
                     }
                 })(),
             ],
