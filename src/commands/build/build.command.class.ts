@@ -201,7 +201,9 @@ class CleanPlugin {
 class BinaryPlugin {
     public constructor(
         private readonly logger: winston.Logger,
+        private readonly workDir: string,
         private readonly outputJsPathname: string,
+        private readonly buildArch: string,
     ) {}
 
     public apply(compiler: webpack.Compiler) {
@@ -227,7 +229,13 @@ class BinaryPlugin {
                     await exec([
                         this.outputJsPathname,
                         '--output',
-                        pathResolve(pathDirname(this.outputJsPathname), 'build'),
+                        pathResolve(this.workDir, 'build'),
+                        '--compress',
+                        'Brotli',
+                        '--target',
+                        'node',
+                        '--arch',
+                        `node${/^v(\d+).*/.exec(process.version)?.[1]}-${this.buildArch}`,
                     ]);
 
                     console.log(
@@ -252,6 +260,22 @@ export const BuildCommand = CommandFactory.create({
         tsProject: yup.string().optional().default('tsconfig.json'),
         workDir: yup.string().optional().default(process.cwd()),
         watch: yup.boolean().optional().default(false),
+        buildArch: yup
+            .string()
+            .optional()
+            .oneOf([
+                'alpine-x64',
+                'alpine-arm64',
+                'linux-x64',
+                'linux-arm64',
+                'linuxstatic-x64',
+                'linuxstatic-arm64',
+                'win-x64',
+                'win-arm64',
+                'macos-x64',
+                'macos-arm64',
+            ])
+            .default('linux-x64'),
     }),
     context: {
         childProcess: null,
@@ -268,11 +292,12 @@ export const BuildCommand = CommandFactory.create({
                 .option('--ts-project <string>', 'TypeScript project file pathname')
                 .option('--work-dir <string>', 'Work directory')
                 .option('--watch', 'Watch mode')
+                .option('--build-arch <string>', 'Build architecture', 'linux-x64')
                 .action(callback),
         );
     },
     run: ({ logger, options, context }) => {
-        const { watch, clean, ...webpackOptions } = options;
+        const { watch, clean, buildArch, ...webpackOptions } = options;
         interceptWriting = !watch;
         const outputDirectoryPathname = pathResolve(webpackOptions.workDir, webpackOptions.outputPath);
         const outputFilePathname = pathResolve(outputDirectoryPathname, `${webpackOptions.name}.js`);
@@ -335,7 +360,7 @@ export const BuildCommand = CommandFactory.create({
                             }),
                         ];
                     } else {
-                        return [new BinaryPlugin(logger, outputFilePathname)];
+                        return [new BinaryPlugin(logger, webpackOptions.workDir, outputFilePathname, buildArch)];
                     }
                 })(),
             ],
