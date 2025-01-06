@@ -240,7 +240,7 @@ class BinaryPlugin {
 
                     // compilation.emitAsset(pathRelative(this.workDir, outputPathname),);
                     volume.readdirSync(outputPathname).forEach((file) => {
-                        if (volume.statSync(pathResolve(outputPathname, file)).isFile()) {
+                        if (volume.statSync(pathResolve(outputPathname, file)).isFile() && !file.endsWith('.js')) {
                             compilation.emitAsset(
                                 pathRelative(this.workDir, pathResolve(outputPathname, file)),
                                 new webpack.sources.RawSource(volume.readFileSync(pathResolve(outputPathname, file))),
