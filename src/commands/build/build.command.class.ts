@@ -1,78 +1,10 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable new-cap */
 /* eslint-disable @typescript-eslint/no-this-alias */
-import { Volume } from 'memfs';
-import { ufs } from 'unionfs';
-import { Module } from 'module';
-import * as fs from 'fs-extra';
-import * as fs1 from 'fs';
-import { dirname as pathDirname, resolve as pathResolve, relative as pathRelative } from 'path';
-
-const SYNC_WRITE_METHODS = [
-    'writeFile',
-    'writeFileSync',
-    'appendFile',
-    'appendFileSync',
-    'mkdir',
-    'mkdirSync',
-    'rmdir',
-    'rmdirSync',
-    'unlink',
-    'unlinkSync',
-];
-const PROMISE_WRITE_METHODS = ['writeFile', 'appendFile', 'mkdir', 'rmdir', 'unlink'];
-let interceptWriting = false;
-const volume = Volume.fromJSON({});
-
-ufs.use(fs1).use(volume as unknown as typeof fs1);
-
-// @ts-ignore
-const originalModuleLoad = Module._load;
-
-// @ts-ignore
-Module._load = (request, parent, isMain) => {
-    if (!['fs', 'node:fs', 'fs/promises', 'node:fs/promises'].includes(request)) {
-        return originalModuleLoad(request, parent, isMain);
-    }
-
-    const promiseFs = {
-        ...ufs.promises,
-        ...PROMISE_WRITE_METHODS.reduce((result, methodName) => {
-            result[methodName] = interceptWriting
-                ? async (...args) => {
-                      return volume.promises[methodName](...args);
-                  }
-                : fs1.promises[methodName];
-            return result;
-        }, {}),
-        constants: fs1.promises.constants,
-    };
-    const fs = {
-        ...ufs,
-        promises: promiseFs,
-        ...SYNC_WRITE_METHODS.reduce((result, methodName) => {
-            result[methodName] = interceptWriting
-                ? (...args) => {
-                      return volume[methodName](...args);
-                  }
-                : fs1[methodName];
-            return result;
-        }, {}),
-        constants: fs1.constants,
-    };
-
-    if (request === 'fs' || request === 'node:fs') {
-        return fs;
-    }
-
-    if (request === 'fs/promises' || request === 'node:fs/promises') {
-        return promiseFs;
-    }
-};
-
 import * as webpack from 'webpack';
+import { resolve as pathResolve } from 'path';
 import { Command } from 'commander';
 import * as yup from 'yup';
+import * as fs from 'fs-extra';
 import * as childProcess from 'child_process';
 import { StringUtil } from '../../utilities/string-util.class';
 import * as _ from 'lodash';
@@ -183,100 +115,28 @@ class AutoRunPlugin {
 }
 
 class CleanPlugin {
-    public constructor(private readonly outputJsPathname: string) {}
-
-    public apply(compiler: webpack.Compiler) {
+    public apply(compiler) {
         compiler.hooks.compilation.tap('CleanPlugin', (compilation) => {
-            compilation.hooks.processAssets.tap('CleanPlugin', (assets) => {
-                Object.keys(assets).forEach((key) => {
-                    if (pathResolve(pathDirname(this.outputJsPathname), key) !== this.outputJsPathname) {
-                        _.unset(assets, key);
-                    }
-                });
-            });
-        });
-    }
-}
-
-class BinaryPlugin {
-    public constructor(
-        private readonly logger: winston.Logger,
-        private readonly workDir: string,
-        private readonly outputJsPathname: string,
-        private readonly binaryArch: string,
-    ) {}
-
-    public apply(compiler: webpack.Compiler) {
-        compiler.hooks.compilation.tap('BinaryPlugin', (compilation) => {
-            compilation.hooks.processAssets.tapPromise('BinaryPlugin', async (assets) => {
-                try {
-                    interceptWriting = true;
-                    const assetItem = Object.entries(assets).find(([relativePathname]) => {
-                        return (
-                            pathResolve(pathDirname(this.outputJsPathname), relativePathname) === this.outputJsPathname
-                        );
-                    });
-
-                    if (!assetItem) {
-                        return;
-                    }
-
-                    const [relativePathname, asset] = assetItem;
-                    const { exec } = require('@yao-pkg/pkg');
-                    const outputPathname = pathDirname(this.outputJsPathname);
-
-                    volume.mkdirSync(pathDirname(this.outputJsPathname), { recursive: true });
-                    volume.writeFileSync(this.outputJsPathname, asset?.source?.());
-                    _.unset(assets, relativePathname);
-                    await exec([
-                        this.outputJsPathname,
-                        '--out-path',
-                        outputPathname,
-                        '--compress',
-                        'Brotli',
-                        '--target',
-                        `node${/^v(\d+).*/.exec(process.version)?.[1]}-${this.binaryArch}`,
-                    ]);
-
-                    // compilation.emitAsset(pathRelative(this.workDir, outputPathname),);
-                    volume.readdirSync(outputPathname).forEach((file) => {
-                        if (volume.statSync(pathResolve(outputPathname, file)).isFile() && !file.endsWith('.js')) {
-                            compilation.emitAsset(
-                                pathRelative(this.workDir, pathResolve(outputPathname, file)),
-                                new webpack.sources.RawSource(volume.readFileSync(pathResolve(outputPathname, file))),
-                            );
+            compilation.hooks.processAssets.tap(
+                {
+                    name: 'CleanPlugin',
+                    stage: compilation.PROCESS_ASSETS_STAGE_OPTIMIZE,
+                },
+                (assets) => {
+                    Object.keys(assets).forEach((key) => {
+                        if (!key?.endsWith?.('.js')) {
+                            _.unset(assets, key);
                         }
                     });
-
-                    interceptWriting = false;
-                } catch (error) {
-                    this.logger.error(error);
-                }
-            });
+                },
+            );
         });
     }
 }
 
 export const BuildCommand = CommandFactory.create({
     schema: yup.object().shape({
-        binary: yup.boolean().optional().default(false),
-        binaryArch: yup
-            .string()
-            .optional()
-            .oneOf([
-                'alpine-x64',
-                'alpine-arm64',
-                'linux-x64',
-                'linux-arm64',
-                'linuxstatic-x64',
-                'linuxstatic-arm64',
-                'win-x64',
-                'win-arm64',
-                'macos-x64',
-                'macos-arm64',
-            ])
-            .default('linux-x64'),
-        clean: yup.boolean().optional().default(false),
+        clean: yup.boolean().optional().default(true),
         entry: yup.string().required().default('src/main.ts'),
         name: yup.string().required().default('index'),
         outputFilename: yup.string().optional().default('[name].js'),
@@ -293,7 +153,6 @@ export const BuildCommand = CommandFactory.create({
     register: ({ command, callback }) => {
         command.addCommand(
             new Command('build')
-                .option('--binary', 'Build binary')
                 .option('--clean', 'Clean output directory')
                 .option('--entry <string>', 'Pathname to script')
                 .option('--name <string>', 'Name of the output file')
@@ -301,15 +160,11 @@ export const BuildCommand = CommandFactory.create({
                 .option('--ts-project <string>', 'TypeScript project file pathname')
                 .option('--work-dir <string>', 'Work directory')
                 .option('--watch', 'Watch mode')
-                .option('--binary-arch <string>', 'Binary architecture', 'linux-x64')
                 .action(callback),
         );
     },
     run: ({ logger, options, context }) => {
-        const { watch, clean, binary, binaryArch, ...webpackOptions } = options;
-        interceptWriting = !watch;
-        const outputDirectoryPathname = pathResolve(webpackOptions.workDir, webpackOptions.outputPath);
-        const outputFilePathname = pathResolve(outputDirectoryPathname, `${webpackOptions.name}.js`);
+        const { watch, clean, ...webpackOptions } = options;
         const compiler = webpack({
             optimization: {
                 minimize: false,
@@ -318,10 +173,10 @@ export const BuildCommand = CommandFactory.create({
                 [webpackOptions.name]: pathResolve(webpackOptions.workDir, webpackOptions.entry),
             },
             target: 'node',
-            mode: watch ? 'development' : 'production',
+            mode: options.watch ? 'development' : 'production',
             output: {
                 filename: webpackOptions.outputFilename,
-                path: outputDirectoryPathname,
+                path: pathResolve(webpackOptions.workDir, webpackOptions.outputPath),
                 libraryTarget: 'commonjs',
             },
             resolve: {
@@ -351,7 +206,7 @@ export const BuildCommand = CommandFactory.create({
                 new webpack.ProgressPlugin((percentage, message) => {
                     logger?.info?.(`Build progress: ${percentage * 100}%, ${message}`);
                 }),
-                new CleanPlugin(outputFilePathname),
+                new CleanPlugin(),
                 ...(() => {
                     if (watch) {
                         return [
@@ -368,10 +223,8 @@ export const BuildCommand = CommandFactory.create({
                                 },
                             }),
                         ];
-                    } else {
-                        if (!binary) return [];
-                        return [new BinaryPlugin(logger, webpackOptions.workDir, outputFilePathname, binaryArch)];
                     }
+                    return [];
                 })(),
             ],
         });
