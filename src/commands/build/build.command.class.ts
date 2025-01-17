@@ -297,6 +297,7 @@ export const BuildCommand = CommandFactory.create({
     run: ({ logger, options, context }) => {
         const { watch, binary, clean, ...webpackOptions } = options;
         const absoluteOutputPath = pathResolve(webpackOptions.workDir, webpackOptions.outputPath);
+        console.log('LENCONDA:TEST', require.resolve('ts-patch/compiler'));
         const compiler = webpack({
             optimization: {
                 minimize: false,
