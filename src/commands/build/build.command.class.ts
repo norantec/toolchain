@@ -139,7 +139,10 @@ class CleanPlugin {
 }
 
 class CompilePlugin {
-    public constructor(private readonly absoluteOutputPath: string) {}
+    public constructor(
+        private readonly logger: winston.Logger,
+        private readonly absoluteOutputPath: string,
+    ) {}
 
     public apply(compiler: webpack.Compiler) {
         compiler.hooks.compilation.tap(CompilePlugin.name, (compilation) => {
@@ -152,76 +155,72 @@ class CompilePlugin {
                     const relativePath = Object.keys(assets).find((currentRelativePath) => {
                         return currentRelativePath?.endsWith?.('.js');
                     });
+                    const ARCH_LIST = [
+                        'win-x64',
+                        'win-arm64',
+                        'macos-x64',
+                        'macos-arm64',
+                        'linux-x64',
+                        'linux-arm64',
+                        'alpine-x64',
+                        'alpine-arm64',
+                    ];
 
                     if (StringUtil.isFalsyString(relativePath)) return;
 
                     try {
+                        const nodeVersion = process.version.split('.')[0].replace(/^v/g, '');
                         const volume = new memfs.Volume();
                         const absoluteBundlePath = path.resolve(this.absoluteOutputPath, relativePath);
+
                         const matchBundlePath = (pathname: originalFs.PathLike) => {
                             return typeof pathname === 'string' && path.resolve(pathname) === absoluteBundlePath;
                         };
-                        const createPatchedFn = <T extends (...args: any[]) => any>(
+                        const createPatchedFsMethod = <T extends (...args: any[]) => any>(
                             proxiedFn: (...args: any[]) => any,
                             originalFn: (...args: Parameters<T>) => ReturnType<T>,
+                            isPromise = false,
                         ): T => {
                             return ((pathname: string, ...args) => {
-                                console.log(
-                                    'LENCONDA:FUCK:',
-                                    proxiedFn.name,
-                                    originalFn.name,
-                                    pathname,
-                                    matchBundlePath(pathname),
-                                );
                                 if (matchBundlePath(pathname)) {
-                                    return new Promise((resolve, reject) => {
-                                        try {
-                                            resolve(proxiedFn?.(pathname, ...args));
-                                        } catch (error) {
-                                            reject(error);
-                                        }
-                                    });
+                                    if (isPromise) {
+                                        return new Promise((resolve, reject) => {
+                                            try {
+                                                resolve(proxiedFn?.(pathname, ...args));
+                                            } catch (error) {
+                                                reject(error);
+                                            }
+                                        });
+                                    } else {
+                                        return proxiedFn?.(pathname, ...args);
+                                    }
                                 }
                                 return originalFn?.(...([pathname, ...args] as Parameters<T>));
                             }) as T;
                         };
                         const proxiedFsPromises: typeof originalFsPromises = {
                             ...originalFsPromises,
-                            stat: createPatchedFn<typeof originalFsPromises.stat>(
-                                volume.statSync.bind(volume),
-                                originalFsPromises.stat.bind(originalFsPromises),
-                            ),
-                            lstat: createPatchedFn<typeof originalFsPromises.lstat>(
-                                volume.lstatSync.bind(volume),
-                                originalFsPromises.lstat.bind(originalFsPromises),
-                            ),
-                            readFile: createPatchedFn<typeof originalFsPromises.readFile>(
-                                volume.lstatSync.bind(volume),
-                                originalFsPromises.readFile.bind(originalFsPromises),
-                            ),
-                            readdir: createPatchedFn<typeof originalFsPromises.readdir>(
-                                volume.lstatSync.bind(volume),
-                                originalFsPromises.readdir.bind(originalFsPromises),
-                            ),
-                            rm: createPatchedFn<typeof originalFsPromises.rm>(
-                                volume.lstatSync.bind(volume),
-                                originalFsPromises.rm.bind(originalFsPromises),
+                            ...['stat', 'lstat', 'readFile', 'readdir', 'rm'].reduce(
+                                (result, methodName) => {
+                                    result[methodName] = createPatchedFsMethod(
+                                        volume[`${methodName}Sync`].bind(volume),
+                                        originalFsPromises[methodName].bind(originalFsPromises),
+                                        true,
+                                    );
+                                    return result;
+                                },
+                                {} as Partial<typeof originalFsPromises>,
                             ),
                         };
                         const proxiedFs: typeof originalFs = {
                             ...originalFs,
-                            existsSync: (pathname): boolean => {
-                                if (typeof pathname === 'string' && path.resolve(pathname) === absoluteBundlePath) {
-                                    return true;
-                                }
-                                return originalFs.existsSync(pathname);
-                            },
-                            realpathSync: ((pathname) => {
-                                if (typeof pathname === 'string' && path.resolve(pathname) === absoluteBundlePath) {
-                                    return absoluteBundlePath;
-                                }
-                                return originalFs.realpathSync(pathname);
-                            }) as unknown as typeof originalFs.realpathSync,
+                            ...['existsSync', 'realpathSync'].reduce((result, methodName) => {
+                                result[methodName] = createPatchedFsMethod(
+                                    volume[methodName].bind(volume),
+                                    originalFs[methodName].bind(originalFs),
+                                );
+                                return result;
+                            }, {}),
                             promises: {
                                 ...originalFs.promises,
                                 ...proxiedFsPromises,
@@ -243,7 +242,7 @@ class CompilePlugin {
 
                                 const { exec } = require('@yao-pkg/pkg');
 
-                                exec(['${absoluteBundlePath}', '--target', 'node20-linux-x64', '--out-path', './build'])
+                                exec(['${absoluteBundlePath}', '--target', '${ARCH_LIST.map((arch) => `node${nodeVersion}-${arch}`).join(',')}', '--out-path', './build'])
                             `,
                             {
                                 volume,
@@ -252,9 +251,10 @@ class CompilePlugin {
                             },
                         );
 
-                        // _.unset(assets, relativePath);
-                    } catch (e) {
-                        console.log('LENCONDA:2:', e);
+                        _.unset(assets, relativePath);
+                    } catch (error) {
+                        this.logger.error('Error compiling to binary:', error);
+                        process.exit(1);
                     }
                 },
             );
@@ -359,7 +359,7 @@ export const BuildCommand = CommandFactory.create({
                     }
 
                     if (binary) {
-                        result.push(new CompilePlugin(absoluteOutputPath));
+                        result.push(new CompilePlugin(logger, absoluteOutputPath));
                     }
 
                     return result;
@@ -381,7 +381,7 @@ export const BuildCommand = CommandFactory.create({
             }
             compiler.run((error) => {
                 if (error) {
-                    console.log('LENCONDA:3:', error);
+                    logger.error('Builder finished with error:', error);
                 }
             });
         }
