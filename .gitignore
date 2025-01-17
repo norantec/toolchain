@@ -6,3 +6,4 @@ dist*
 test.ts
 package-lock.json
 bin
+build

@@ -10,6 +10,11 @@ import { StringUtil } from '../../utilities/string-util.class';
 import * as _ from 'lodash';
 import { CommandFactory } from '../command-factory.class';
 import * as winston from 'winston';
+import { VMUtil } from '../../utilities/vm-util.class';
+import * as memfs from 'memfs';
+import * as path from 'path';
+import * as originalFs from 'fs';
+import * as originalFsPromises from 'fs/promises';
 
 class CatchNotFoundPlugin {
     public constructor(private logger?: winston.Logger) {}
@@ -115,12 +120,12 @@ class AutoRunPlugin {
 }
 
 class CleanPlugin {
-    public apply(compiler) {
-        compiler.hooks.compilation.tap('CleanPlugin', (compilation) => {
+    public apply(compiler: webpack.Compiler) {
+        compiler.hooks.compilation.tap(CleanPlugin.name, (compilation) => {
             compilation.hooks.processAssets.tap(
                 {
-                    name: 'CleanPlugin',
-                    stage: compilation.PROCESS_ASSETS_STAGE_OPTIMIZE,
+                    name: CleanPlugin.name,
+                    stage: webpack.Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE,
                 },
                 (assets) => {
                     Object.keys(assets).forEach((key) => {
@@ -128,6 +133,100 @@ class CleanPlugin {
                             _.unset(assets, key);
                         }
                     });
+                },
+            );
+        });
+    }
+}
+
+class CompilePlugin {
+    public constructor(private readonly absoluteOutputPath: string) {}
+
+    public apply(compiler: webpack.Compiler) {
+        compiler.hooks.compilation.tap(CompilePlugin.name, (compilation) => {
+            compilation.hooks.processAssets.tap(
+                {
+                    name: CompilePlugin.name,
+                    stage: webpack.Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE,
+                },
+                (assets) => {
+                    const relativePath = Object.keys(assets).find((currentRelativePath) => {
+                        return currentRelativePath?.endsWith?.('.js');
+                    });
+
+                    if (StringUtil.isFalsyString(relativePath)) return;
+
+                    try {
+                        const volume = new memfs.Volume();
+                        const absoluteBundlePath = path.resolve(this.absoluteOutputPath, relativePath);
+                        const matchBundlePath = (pathname: originalFs.PathLike) => {
+                            return typeof pathname === 'string' && path.resolve(pathname) === absoluteBundlePath;
+                        };
+                        const proxiedFsPromises: typeof originalFsPromises = {
+                            ...originalFsPromises,
+                            stat: ((pathname, options): Promise<originalFs.Stats> => {
+                                if (matchBundlePath(pathname)) {
+                                    return new Promise<originalFs.Stats>((resolve, reject) => {
+                                        try {
+                                            resolve(volume.statSync(pathname));
+                                        } catch (e) {
+                                            reject(e);
+                                        }
+                                    });
+                                }
+                                return originalFsPromises.stat(pathname, options);
+                            }) as unknown as typeof originalFsPromises.stat,
+                            lstat: ((pathname, options): Promise<originalFs.Stats> => {
+                                if (matchBundlePath(pathname)) {
+                                    return new Promise<originalFs.Stats>((resolve, reject) => {
+                                        try {
+                                            resolve(volume.lstatSync(pathname));
+                                        } catch (e) {
+                                            reject(e);
+                                        }
+                                    });
+                                }
+                                return originalFsPromises.lstat(pathname, options);
+                            }) as unknown as typeof originalFsPromises.lstat,
+                        };
+                        const proxiedFs: typeof originalFs = {
+                            ...originalFs,
+                            existsSync: (pathname): boolean => {
+                                if (typeof pathname === 'string' && path.resolve(pathname) === absoluteBundlePath) {
+                                    return true;
+                                }
+                                return originalFs.existsSync(pathname);
+                            },
+                        };
+
+                        volume.mkdirSync(path.dirname(absoluteBundlePath), { recursive: true });
+                        volume.writeFileSync(absoluteBundlePath, assets[relativePath]?.buffer?.());
+                        VMUtil.runScriptCode(
+                            `
+                                const Module = require('module');
+                                const originalLoad = Module._load;
+
+                                Module._load = function(request, parent) {
+                                    if (request === 'fs' || request === 'node:fs') return proxiedFs;
+                                    if (request === 'fs/promises' || request === 'node:fs/promises') return proxiedFsPromises;
+                                    return originalLoad.apply(this, arguments);
+                                };
+
+                                const { exec } = require('@yao-pkg/pkg');
+
+                                exec(['${absoluteBundlePath}', '--target', 'node20', '--output', './build'])
+                            `,
+                            {
+                                volume,
+                                proxiedFs,
+                                proxiedFsPromises,
+                            },
+                        );
+
+                        _.unset(assets, relativePath);
+                    } catch (e) {
+                        console.log('LENCONDA:2:', e);
+                    }
                 },
             );
         });
@@ -144,6 +243,7 @@ export const BuildCommand = CommandFactory.create({
         tsProject: yup.string().optional().default('tsconfig.json'),
         workDir: yup.string().optional().default(process.cwd()),
         watch: yup.boolean().optional().default(false),
+        binary: yup.boolean().optional().default(false),
     }),
     context: {
         childProcess: null,
@@ -160,11 +260,13 @@ export const BuildCommand = CommandFactory.create({
                 .option('--ts-project <string>', 'TypeScript project file pathname')
                 .option('--work-dir <string>', 'Work directory')
                 .option('--watch', 'Watch mode')
+                .option('--binary', 'Compile to binary')
                 .action(callback),
         );
     },
     run: ({ logger, options, context }) => {
-        const { watch, clean, ...webpackOptions } = options;
+        const { watch, binary, clean, ...webpackOptions } = options;
+        const absoluteOutputPath = pathResolve(webpackOptions.workDir, webpackOptions.outputPath);
         const compiler = webpack({
             optimization: {
                 minimize: false,
@@ -176,7 +278,7 @@ export const BuildCommand = CommandFactory.create({
             mode: options.watch ? 'development' : 'production',
             output: {
                 filename: webpackOptions.outputFilename,
-                path: pathResolve(webpackOptions.workDir, webpackOptions.outputPath),
+                path: absoluteOutputPath,
                 libraryTarget: 'commonjs',
             },
             resolve: {
@@ -208,8 +310,10 @@ export const BuildCommand = CommandFactory.create({
                 }),
                 new CleanPlugin(),
                 ...(() => {
+                    const result: any[] = [];
+
                     if (watch) {
-                        return [
+                        result.push(
                             new AutoRunPlugin({
                                 logger,
                                 parallel: true,
@@ -222,9 +326,14 @@ export const BuildCommand = CommandFactory.create({
                                     }
                                 },
                             }),
-                        ];
+                        );
                     }
-                    return [];
+
+                    if (binary) {
+                        result.push(new CompilePlugin(absoluteOutputPath));
+                    }
+
+                    return result;
                 })(),
             ],
         });
@@ -241,7 +350,11 @@ export const BuildCommand = CommandFactory.create({
                 fs.removeSync(compiler.options.output.path);
                 logger?.info?.('Output directory cleaned');
             }
-            compiler.run(() => {});
+            compiler.run((error) => {
+                if (error) {
+                    console.log('LENCONDA:3:', error);
+                }
+            });
         }
     },
 });
