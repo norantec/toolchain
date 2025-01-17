@@ -1,4 +1,3 @@
-/* eslint-disable new-cap */
 /* eslint-disable @typescript-eslint/no-this-alias */
 import * as webpack from 'webpack';
 import { resolve as pathResolve } from 'path';
@@ -162,32 +161,52 @@ class CompilePlugin {
                         const matchBundlePath = (pathname: originalFs.PathLike) => {
                             return typeof pathname === 'string' && path.resolve(pathname) === absoluteBundlePath;
                         };
+                        const createPatchedFn = <T extends (...args: any[]) => any>(
+                            proxiedFn: (...args: any[]) => any,
+                            originalFn: (...args: Parameters<T>) => ReturnType<T>,
+                        ): T => {
+                            return ((pathname: string, ...args) => {
+                                console.log(
+                                    'LENCONDA:FUCK:',
+                                    proxiedFn.name,
+                                    originalFn.name,
+                                    pathname,
+                                    matchBundlePath(pathname),
+                                );
+                                if (matchBundlePath(pathname)) {
+                                    return new Promise((resolve, reject) => {
+                                        try {
+                                            resolve(proxiedFn?.(pathname, ...args));
+                                        } catch (error) {
+                                            reject(error);
+                                        }
+                                    });
+                                }
+                                return originalFn?.(...([pathname, ...args] as Parameters<T>));
+                            }) as T;
+                        };
                         const proxiedFsPromises: typeof originalFsPromises = {
                             ...originalFsPromises,
-                            stat: ((pathname, options): Promise<originalFs.Stats> => {
-                                if (matchBundlePath(pathname)) {
-                                    return new Promise<originalFs.Stats>((resolve, reject) => {
-                                        try {
-                                            resolve(volume.statSync(pathname));
-                                        } catch (e) {
-                                            reject(e);
-                                        }
-                                    });
-                                }
-                                return originalFsPromises.stat(pathname, options);
-                            }) as unknown as typeof originalFsPromises.stat,
-                            lstat: ((pathname, options): Promise<originalFs.Stats> => {
-                                if (matchBundlePath(pathname)) {
-                                    return new Promise<originalFs.Stats>((resolve, reject) => {
-                                        try {
-                                            resolve(volume.lstatSync(pathname));
-                                        } catch (e) {
-                                            reject(e);
-                                        }
-                                    });
-                                }
-                                return originalFsPromises.lstat(pathname, options);
-                            }) as unknown as typeof originalFsPromises.lstat,
+                            stat: createPatchedFn<typeof originalFsPromises.stat>(
+                                volume.statSync.bind(volume),
+                                originalFsPromises.stat.bind(originalFsPromises),
+                            ),
+                            lstat: createPatchedFn<typeof originalFsPromises.lstat>(
+                                volume.lstatSync.bind(volume),
+                                originalFsPromises.lstat.bind(originalFsPromises),
+                            ),
+                            readFile: createPatchedFn<typeof originalFsPromises.readFile>(
+                                volume.lstatSync.bind(volume),
+                                originalFsPromises.readFile.bind(originalFsPromises),
+                            ),
+                            readdir: createPatchedFn<typeof originalFsPromises.readdir>(
+                                volume.lstatSync.bind(volume),
+                                originalFsPromises.readdir.bind(originalFsPromises),
+                            ),
+                            rm: createPatchedFn<typeof originalFsPromises.rm>(
+                                volume.lstatSync.bind(volume),
+                                originalFsPromises.rm.bind(originalFsPromises),
+                            ),
                         };
                         const proxiedFs: typeof originalFs = {
                             ...originalFs,
@@ -196,6 +215,16 @@ class CompilePlugin {
                                     return true;
                                 }
                                 return originalFs.existsSync(pathname);
+                            },
+                            realpathSync: ((pathname) => {
+                                if (typeof pathname === 'string' && path.resolve(pathname) === absoluteBundlePath) {
+                                    return absoluteBundlePath;
+                                }
+                                return originalFs.realpathSync(pathname);
+                            }) as unknown as typeof originalFs.realpathSync,
+                            promises: {
+                                ...originalFs.promises,
+                                ...proxiedFsPromises,
                             },
                         };
 
@@ -214,7 +243,7 @@ class CompilePlugin {
 
                                 const { exec } = require('@yao-pkg/pkg');
 
-                                exec(['${absoluteBundlePath}', '--target', 'node20', '--output', './build'])
+                                exec(['${absoluteBundlePath}', '--target', 'node20-linux-x64', '--out-path', './build'])
                             `,
                             {
                                 volume,
@@ -223,7 +252,7 @@ class CompilePlugin {
                             },
                         );
 
-                        _.unset(assets, relativePath);
+                        // _.unset(assets, relativePath);
                     } catch (e) {
                         console.log('LENCONDA:2:', e);
                     }
