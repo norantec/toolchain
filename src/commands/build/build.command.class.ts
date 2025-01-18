@@ -265,7 +265,9 @@ class CompilePlugin {
 
 export const BuildCommand = CommandFactory.create({
     schema: yup.object().shape({
+        binary: yup.boolean().optional().default(false),
         clean: yup.boolean().optional().default(true),
+        compiler: yup.string().optional(),
         entry: yup.string().required().default('src/main.ts'),
         name: yup.string().required().default('index'),
         outputFilename: yup.string().optional().default('[name].js'),
@@ -273,7 +275,6 @@ export const BuildCommand = CommandFactory.create({
         tsProject: yup.string().optional().default('tsconfig.json'),
         workDir: yup.string().optional().default(process.cwd()),
         watch: yup.boolean().optional().default(false),
-        binary: yup.boolean().optional().default(false),
     }),
     context: {
         childProcess: null,
@@ -283,14 +284,15 @@ export const BuildCommand = CommandFactory.create({
     register: ({ command, callback }) => {
         command.addCommand(
             new Command('build')
+                .option('--binary', 'Compile to binary')
                 .option('--clean', 'Clean output directory')
+                .option('--compiler', 'Compiler pathname')
                 .option('--entry <string>', 'Pathname to script')
                 .option('--name <string>', 'Name of the output file')
                 .option('--output-path <string>', 'Output path')
                 .option('--ts-project <string>', 'TypeScript project file pathname')
                 .option('--work-dir <string>', 'Work directory')
                 .option('--watch', 'Watch mode')
-                .option('--binary', 'Compile to binary')
                 .action(callback),
         );
     },
@@ -327,8 +329,13 @@ export const BuildCommand = CommandFactory.create({
                         use: {
                             loader: require.resolve('ts-loader'),
                             options: {
-                                compiler: require.resolve('ts-patch/compiler'),
-                                configFile: pathResolve(webpackOptions.workDir, './tsconfig.json'),
+                                ...(() => {
+                                    if (StringUtil.isFalsyString(options.compiler)) return {};
+                                    return {
+                                        compiler: require.resolve(options.compiler),
+                                    };
+                                })(),
+                                configFile: pathResolve(webpackOptions.tsProject),
                             },
                         },
                         exclude: /node_modules/,
