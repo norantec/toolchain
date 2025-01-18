@@ -286,7 +286,7 @@ export const BuildCommand = CommandFactory.create({
             new Command('build')
                 .option('--binary', 'Compile to binary')
                 .option('--clean', 'Clean output directory')
-                .option('--compiler', 'Compiler pathname')
+                .option('--compiler <string>', 'Compiler pathname')
                 .option('--entry <string>', 'Pathname to script')
                 .option('--name <string>', 'Name of the output file')
                 .option('--output-path <string>', 'Output path')
