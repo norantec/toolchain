@@ -267,7 +267,7 @@ export const BuildCommand = CommandFactory.create({
     schema: yup.object().shape({
         binary: yup.boolean().optional().default(false),
         clean: yup.boolean().optional().default(true),
-        compiler: yup.string().optional(),
+        compiler: yup.string().optional().default('typescript'),
         entry: yup.string().required().default('src/main.ts'),
         name: yup.string().required().default('index'),
         outputFilename: yup.string().optional().default('[name].js'),
@@ -329,12 +329,7 @@ export const BuildCommand = CommandFactory.create({
                         use: {
                             loader: require.resolve('ts-loader'),
                             options: {
-                                ...(() => {
-                                    if (StringUtil.isFalsyString(options.compiler)) return {};
-                                    return {
-                                        compiler: require.resolve(options.compiler),
-                                    };
-                                })(),
+                                compiler: require.resolve(options.compiler, { paths: [process.cwd()] }),
                                 configFile: pathResolve(webpackOptions.tsProject),
                             },
                         },
