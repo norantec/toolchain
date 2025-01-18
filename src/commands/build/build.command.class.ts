@@ -383,11 +383,9 @@ export const BuildCommand = CommandFactory.create({
                 fs.removeSync(compiler.options.output.path);
                 logger?.info?.('Output directory cleaned');
             }
-            compiler.run((error, assets) => {
+            compiler.run((error) => {
                 if (error) {
                     logger.error('Builder finished with error:', error);
-                } else {
-                    console.log(assets);
                 }
             });
         }
