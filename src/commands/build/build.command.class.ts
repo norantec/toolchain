@@ -286,18 +286,18 @@ export const BuildCommand = CommandFactory.create({
         );
     },
     run: ({ logger, options, context }) => {
-        const { watch, binary, clean, ...webpackOptions } = options;
+        const { watch, binary, clean, name: rawName, compiler: tsCompiler, ...webpackOptions } = options;
+        const name = `${rawName}-${process.arch}`;
         const absoluteOutputPath = pathResolve(webpackOptions.workDir, webpackOptions.outputPath);
-        // console.log('LENCONDA:TEST', require.resolve('ts-patch/compiler'));
         const compiler = webpack({
             optimization: {
                 minimize: false,
             },
             entry: {
-                [webpackOptions.name]: pathResolve(webpackOptions.workDir, webpackOptions.entry),
+                [name]: pathResolve(webpackOptions.workDir, webpackOptions.entry),
             },
             target: 'node',
-            mode: options.watch ? 'development' : 'production',
+            mode: watch ? 'development' : 'production',
             output: {
                 filename: webpackOptions.outputFilename,
                 path: absoluteOutputPath,
@@ -318,7 +318,7 @@ export const BuildCommand = CommandFactory.create({
                         use: {
                             loader: require.resolve('ts-loader'),
                             options: {
-                                compiler: require.resolve(options.compiler, { paths: [process.cwd()] }),
+                                compiler: require.resolve(tsCompiler, { paths: [process.cwd()] }),
                                 configFile: pathResolve(webpackOptions.tsProject),
                             },
                         },
