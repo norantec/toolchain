@@ -232,7 +232,7 @@ class CompilePlugin {
 
                                 const { exec } = require('@yao-pkg/pkg');
 
-                                exec(['${absoluteBundlePath}', '--target', '${['linux', 'macos', 'win'].map((os) => `node${nodeVersion}-${os}-${process.arch}`)}', '--out-path', './build'])
+                                exec(['${absoluteBundlePath}', '--target', '${['linux', 'macos', 'win'].map((os) => `node${nodeVersion}-${os}-${process.arch}`)}', '--out-path', '${this.absoluteOutputPath}'])
                             `,
                             {
                                 volume,
