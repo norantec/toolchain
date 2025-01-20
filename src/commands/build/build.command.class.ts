@@ -14,7 +14,6 @@ import * as memfs from 'memfs';
 import * as path from 'path';
 import * as originalFs from 'fs';
 import * as originalFsPromises from 'fs/promises';
-import * as os from 'os';
 
 class CatchNotFoundPlugin {
     public constructor(private logger?: winston.Logger) {}
@@ -156,18 +155,8 @@ class CompilePlugin {
                     const relativePath = Object.keys(assets).find((currentRelativePath) => {
                         return currentRelativePath?.endsWith?.('.js');
                     });
-                    const osType = (() => {
-                        switch (os.type()) {
-                            case 'Linux':
-                                return 'linux';
-                            case 'Darwin':
-                                return 'macos';
-                            case 'Windows_NT':
-                                return 'win';
-                        }
-                    })();
 
-                    if (StringUtil.isFalsyString(relativePath) || StringUtil.isFalsyString(osType)) return;
+                    if (StringUtil.isFalsyString(relativePath)) return;
 
                     try {
                         const nodeVersion = process.version.split('.')[0].replace(/^v/g, '');
@@ -243,7 +232,7 @@ class CompilePlugin {
 
                                 const { exec } = require('@yao-pkg/pkg');
 
-                                exec(['${absoluteBundlePath}', '--target', 'node${nodeVersion}-${osType}-${process.arch}', '--out-path', './build'])
+                                exec(['${absoluteBundlePath}', '--target', '${['linux', 'macos', 'win'].map((os) => `node${nodeVersion}-${os}-${process.arch}`)}', '--out-path', './build'])
                             `,
                             {
                                 volume,
