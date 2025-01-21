@@ -262,8 +262,8 @@ export const BuildCommand = CommandFactory.create({
         outputFilename: yup.string().optional().default('[name].js'),
         outputPath: yup.string().optional().default('dist'),
         tsProject: yup.string().optional().default('tsconfig.json'),
-        workDir: yup.string().optional().default(process.cwd()),
         watch: yup.boolean().optional().default(false),
+        workDir: yup.string().optional().default(process.cwd()),
     }),
     context: {
         childProcess: null,
@@ -287,7 +287,7 @@ export const BuildCommand = CommandFactory.create({
     },
     run: ({ logger, options, context }) => {
         const { watch, binary, clean, name: rawName, compiler: tsCompiler, ...webpackOptions } = options;
-        const name = `${rawName}-${process.arch}`;
+        const name = binary ? `${rawName}-${process.arch}` : rawName;
         const absoluteOutputPath = pathResolve(webpackOptions.workDir, webpackOptions.outputPath);
         const compiler = webpack({
             optimization: {
