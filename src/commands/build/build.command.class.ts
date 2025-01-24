@@ -2,7 +2,6 @@
 import * as webpack from 'webpack';
 import { resolve as pathResolve } from 'path';
 import { Command } from 'commander';
-import * as yup from 'yup';
 import * as fs from 'fs-extra';
 import { StringUtil } from '../../utilities/string-util.class';
 import * as _ from 'lodash';
@@ -14,6 +13,9 @@ import * as path from 'path';
 import * as originalFs from 'fs';
 import * as originalFsPromises from 'fs/promises';
 import { Worker } from 'worker_threads';
+import { SCHEMA } from './build.constants';
+import VirtualModulesPlugin from 'webpack-virtual-modules';
+import { v4 as uuid } from 'uuid';
 
 class CatchNotFoundPlugin {
     public constructor(private logger?: winston.Logger) {}
@@ -264,18 +266,7 @@ class VirtualFilePlugin {
 }
 
 export const BuildCommand = CommandFactory.create({
-    schema: yup.object().shape({
-        binary: yup.boolean().optional().default(false),
-        clean: yup.boolean().optional().default(true),
-        compiler: yup.string().optional().default('typescript'),
-        entry: yup.string().required().default('src/main.ts'),
-        name: yup.string().required().default('index'),
-        outputFilename: yup.string().optional().default('[name].js'),
-        outputPath: yup.string().optional().default('dist'),
-        tsProject: yup.string().optional().default('tsconfig.json'),
-        watch: yup.boolean().optional().default(false),
-        workDir: yup.string().optional().default(process.cwd()),
-    }),
+    schema: SCHEMA,
     context: {
         worker: null,
     } as {
@@ -288,6 +279,7 @@ export const BuildCommand = CommandFactory.create({
                 .option('--clean', 'Clean output directory')
                 .option('--compiler <string>', 'Compiler pathname')
                 .option('--entry <string>', 'Pathname to script')
+                .option('--loader <string>', 'Loader pathname')
                 .option('--name <string>', 'Name of the output file')
                 .option('--output-path <string>', 'Output path')
                 .option('--ts-project <string>', 'TypeScript project file pathname')
@@ -298,15 +290,21 @@ export const BuildCommand = CommandFactory.create({
     },
     run: ({ logger, options, context }) => {
         const volume = new memfs.Volume() as memfs.IFs;
-        const { watch, binary, clean, name: rawName, compiler: tsCompiler, ...webpackOptions } = options;
+        const { watch, binary, clean, name: rawName, compiler: tsCompiler, loader, ...webpackOptions } = options;
         const name = binary ? `${rawName}-${process.arch}` : rawName;
         const absoluteOutputPath = pathResolve(webpackOptions.workDir, webpackOptions.outputPath);
+        const absoluteRealEntryPath = pathResolve(webpackOptions.workDir, webpackOptions.entry);
+        const absoluteEntryPath =
+            watch && StringUtil.isFalsyString(loader)
+                ? pathResolve(path.dirname(absoluteRealEntryPath), `tmp_${uuid()}.ts`)
+                : absoluteRealEntryPath;
         const compiler = webpack({
+            cache: false,
             optimization: {
                 minimize: false,
             },
             entry: {
-                [name]: pathResolve(webpackOptions.workDir, webpackOptions.entry),
+                [name]: absoluteEntryPath,
             },
             target: 'node',
             mode: watch ? 'development' : 'production',
@@ -348,6 +346,12 @@ export const BuildCommand = CommandFactory.create({
 
                     if (watch) {
                         result.push(
+                            new VirtualModulesPlugin({
+                                [absoluteEntryPath]: (() => {
+                                    const loaderFunc = require(require.resolve(loader, { paths: [process.cwd()] }));
+                                    return fs.readFileSync(loaderFunc?.(options))?.toString?.();
+                                })(),
+                            }),
                             new VirtualFilePlugin(volume),
                             new AutoRunPlugin(
                                 {

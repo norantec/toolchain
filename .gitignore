@@ -1,9 +1,9 @@
-node_modules
-.env
-.env*
-.vscode
-dist*
+/node_modules
+/.env
+/.env*
+/.vscode
+/dist*
 test.ts
-package-lock.json
-bin
-build
+/package-lock.json
+/bin
+/build

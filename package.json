@@ -37,10 +37,11 @@
         "octokit": "^3.1.1",
         "semver": "^7.5.2",
         "ts-loader": "^9.5.1",
-        "type-fest": "^4.27.0",
+        "type-fest": "^4.33.0",
         "unionfs": "^4.5.4",
         "uuid": "^9.0.0",
         "webpack": "^5.96.1",
+        "webpack-virtual-modules": "^0.6.2",
         "winston": "^3.8.2",
         "yup": "^1.5.0"
     },
