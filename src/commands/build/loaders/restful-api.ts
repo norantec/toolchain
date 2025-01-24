@@ -43,7 +43,10 @@ export default ((options) => {
                 customJs: ['https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.7.2}/swagger-ui-bundle.js', 'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.7.2}/swagger-ui-standalone-preset.js'],
             });
 
-            await app.listen(listenPort ?? 8080, () => ENTRY?.callback?.(resolver));
+            await app.listen(listenPort ?? 8080, () => {
+                console.log('Listening on port:', listenPort);
+                ENTRY?.callback?.(resolver);
+            });
         }
 
         bootstrap();
