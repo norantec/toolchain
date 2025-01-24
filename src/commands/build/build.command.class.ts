@@ -266,6 +266,28 @@ class VirtualFilePlugin {
     }
 }
 
+class ForceWriteBundlePlugin {
+    public apply(compiler: webpack.Compiler) {
+        compiler.hooks.compilation.tap(ForceWriteBundlePlugin.name, (compilation) => {
+            compilation.hooks.processAssets.tap(
+                {
+                    name: ForceWriteBundlePlugin.name,
+                    stage: webpack.Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE,
+                },
+                (assets) => {
+                    Object.entries(assets).forEach(([pathname, asset]) => {
+                        const absolutePath = path.resolve(pathname);
+                        _.attempt(() => {
+                            fs.mkdirpSync(path.dirname(absolutePath));
+                        });
+                        fs.writeFileSync(absolutePath, asset?.buffer?.());
+                    });
+                },
+            );
+        });
+    }
+}
+
 export const BuildCommand = CommandFactory.create({
     schema: SCHEMA,
     context: {
@@ -304,12 +326,10 @@ export const BuildCommand = CommandFactory.create({
             if (StringUtil.isFalsyString(loader)) return result;
 
             let loaderFunc: BuildLoader;
+            const builtInLoaderPath = path.resolve(__dirname, './loaders', loader) + '.js';
 
-            if (
-                fs.existsSync(path.resolve(__dirname, './loaders', loader)) &&
-                fs.statSync(path.resolve(__dirname, './loaders', loader)).isFile()
-            ) {
-                loaderFunc = require(path.resolve(__dirname, './loaders', loader)) as BuildLoader;
+            if (fs.existsSync(builtInLoaderPath) && fs.statSync(builtInLoaderPath).isFile()) {
+                loaderFunc = require(builtInLoaderPath) as BuildLoader;
             } else {
                 loaderFunc = require(
                     require.resolve(loader, {
@@ -383,6 +403,10 @@ export const BuildCommand = CommandFactory.create({
                     const result: any[] = [];
 
                     result.push(new VirtualModulesPlugin(virtualEntries));
+
+                    if (!watch && !StringUtil.isFalsyString(loader)) {
+                        result.push(new ForceWriteBundlePlugin());
+                    }
 
                     if (watch) {
                         result.push(
