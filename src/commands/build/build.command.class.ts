@@ -415,11 +415,16 @@ export const BuildCommand = CommandFactory.create({
         });
 
         if (watch) {
-            compiler.watch({}, (error) => {
-                if (error) {
-                    logger?.error?.(error);
-                }
-            });
+            compiler.watch(
+                {
+                    ignored: !StringUtil.isFalsyString(loader) ? [absoluteEntryPath] : undefined,
+                },
+                (error) => {
+                    if (error) {
+                        logger?.error?.(error);
+                    }
+                },
+            );
         } else {
             if (clean) {
                 logger?.info?.(`Cleaning output directory: ${compiler.options.output.path}`);
