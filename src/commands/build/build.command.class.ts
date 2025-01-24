@@ -99,12 +99,8 @@ class AutoRunPlugin {
                 await this.options?.onBeforeStart?.();
             }
 
-            // const child = childProcess.spawn('node', [outputPath], {
-            //     stdio: 'inherit',
-            // });
-            // VMUtil.runScriptCode();
-            const worker = new Worker(outputPath, {
-                workerData: this.volume.readFileSync(outputPath).toString(),
+            const worker = new Worker(this.volume.readFileSync(outputPath).toString(), {
+                eval: true,
             });
 
             if (this.options.onAfterStart) {
