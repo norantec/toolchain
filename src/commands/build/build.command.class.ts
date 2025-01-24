@@ -267,6 +267,8 @@ class VirtualFilePlugin {
 }
 
 class ForceWriteBundlePlugin {
+    public constructor(private readonly outputPath: string) {}
+
     public apply(compiler: webpack.Compiler) {
         compiler.hooks.compilation.tap(ForceWriteBundlePlugin.name, (compilation) => {
             compilation.hooks.processAssets.tap(
@@ -276,7 +278,7 @@ class ForceWriteBundlePlugin {
                 },
                 (assets) => {
                     Object.entries(assets).forEach(([pathname, asset]) => {
-                        const absolutePath = path.resolve(pathname);
+                        const absolutePath = path.resolve(this.outputPath, pathname);
                         _.attempt(() => {
                             fs.mkdirpSync(path.dirname(absolutePath));
                         });
@@ -405,7 +407,7 @@ export const BuildCommand = CommandFactory.create({
                     result.push(new VirtualModulesPlugin(virtualEntries));
 
                     if (!watch && !StringUtil.isFalsyString(loader)) {
-                        result.push(new ForceWriteBundlePlugin());
+                        result.push(new ForceWriteBundlePlugin(absoluteOutputPath));
                     }
 
                     if (watch) {
