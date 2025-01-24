@@ -14,7 +14,7 @@ import * as originalFs from 'fs';
 import * as originalFsPromises from 'fs/promises';
 import { Worker } from 'worker_threads';
 import { SCHEMA } from './build.constants';
-import VirtualModulesPlugin from 'webpack-virtual-modules';
+import VirtualModulesPlugin = require('webpack-virtual-modules');
 import { v4 as uuid } from 'uuid';
 import { BuildLoader } from './build.types';
 
@@ -298,6 +298,44 @@ export const BuildCommand = CommandFactory.create({
         const absoluteEntryPath = !StringUtil.isFalsyString(loader)
             ? pathResolve(path.dirname(absoluteRealEntryPath), `tmp_${uuid()}.ts`)
             : absoluteRealEntryPath;
+        const virtualEntries = (() => {
+            const result: Record<string, string> = {};
+
+            if (StringUtil.isFalsyString(loader)) return result;
+
+            let loaderFunc: BuildLoader;
+
+            if (
+                fs.existsSync(path.resolve(__dirname, './loaders', loader)) &&
+                fs.statSync(path.resolve(__dirname, './loaders', loader)).isFile()
+            ) {
+                loaderFunc = require(path.resolve(__dirname, './loaders', loader)) as BuildLoader;
+            } else {
+                loaderFunc = require(
+                    require.resolve(loader, {
+                        paths: [process.cwd()],
+                    }),
+                ) as BuildLoader;
+            }
+
+            if (typeof loaderFunc !== 'function' && typeof (loaderFunc as any)?.default === 'function') {
+                loaderFunc = (loaderFunc as any).default as BuildLoader;
+            }
+
+            if (typeof loaderFunc !== 'function') {
+                throw new Error(`Loader '${loader}' is not a function`);
+            }
+
+            const content = loaderFunc?.(options);
+
+            if (StringUtil.isFalsyString(content)) {
+                throw new Error(`Loader '${loader}' returned non-string content`);
+            }
+
+            result[absoluteEntryPath] = content;
+
+            return result;
+        })();
         const compiler = webpack({
             cache: false,
             optimization: {
@@ -344,30 +382,7 @@ export const BuildCommand = CommandFactory.create({
                 ...(() => {
                     const result: any[] = [];
 
-                    if (!StringUtil.isFalsyString(loader)) {
-                        result.push(
-                            new VirtualModulesPlugin({
-                                [absoluteEntryPath]: (() => {
-                                    let loaderFunc: BuildLoader;
-
-                                    loaderFunc = require(
-                                        require.resolve(loader, {
-                                            paths: [process.cwd()],
-                                        }),
-                                    ) as BuildLoader;
-
-                                    if (
-                                        typeof loaderFunc !== 'function' &&
-                                        typeof (loaderFunc as any)?.default === 'function'
-                                    ) {
-                                        loaderFunc = (loaderFunc as any).default as BuildLoader;
-                                    }
-
-                                    return loaderFunc?.(options);
-                                })(),
-                            }),
-                        );
-                    }
+                    result.push(new VirtualModulesPlugin(virtualEntries));
 
                     if (watch) {
                         result.push(
