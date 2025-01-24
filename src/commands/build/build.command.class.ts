@@ -4,7 +4,6 @@ import { resolve as pathResolve } from 'path';
 import { Command } from 'commander';
 import * as yup from 'yup';
 import * as fs from 'fs-extra';
-import * as childProcess from 'child_process';
 import { StringUtil } from '../../utilities/string-util.class';
 import * as _ from 'lodash';
 import { CommandFactory } from '../command-factory.class';
@@ -14,6 +13,7 @@ import * as memfs from 'memfs';
 import * as path from 'path';
 import * as originalFs from 'fs';
 import * as originalFsPromises from 'fs/promises';
+import { Worker } from 'worker_threads';
 
 class CatchNotFoundPlugin {
     public constructor(private logger?: winston.Logger) {}
@@ -62,12 +62,15 @@ class CatchNotFoundPlugin {
 interface AutoRunPluginOptions {
     logger?: winston.Logger;
     parallel?: boolean;
-    onAfterStart?: (childProcess: childProcess.ChildProcess) => void | Promise<void>;
+    onAfterStart?: (worker: Worker) => void | Promise<void>;
     onBeforeStart?: () => void | Promise<void>;
 }
 
 class AutoRunPlugin {
-    public constructor(private options: AutoRunPluginOptions = {}) {}
+    public constructor(
+        private readonly options: AutoRunPluginOptions = {},
+        private readonly volume: memfs.IFs,
+    ) {}
 
     public apply(compiler: webpack.Compiler) {
         const logger = this?.options?.logger;
@@ -96,16 +99,20 @@ class AutoRunPlugin {
                 await this.options?.onBeforeStart?.();
             }
 
-            const child = childProcess.spawn('node', [outputPath], {
-                stdio: 'inherit',
+            // const child = childProcess.spawn('node', [outputPath], {
+            //     stdio: 'inherit',
+            // });
+            // VMUtil.runScriptCode();
+            const worker = new Worker(outputPath, {
+                workerData: this.volume.readFileSync(outputPath).toString(),
             });
 
             if (this.options.onAfterStart) {
-                await this.options?.onAfterStart?.(child);
+                await this.options?.onAfterStart?.(worker);
             }
 
             if (!this.options?.parallel) {
-                child.on('close', (code) => {
+                worker.on('exit', (code) => {
                     if (code !== 0) {
                         logger?.error?.(`Process exited with code: ${code}`);
                     }
@@ -142,6 +149,7 @@ class CompilePlugin {
     public constructor(
         private readonly logger: winston.Logger,
         private readonly absoluteOutputPath: string,
+        private readonly volume: memfs.IFs,
     ) {}
 
     public apply(compiler: webpack.Compiler) {
@@ -160,7 +168,6 @@ class CompilePlugin {
 
                     try {
                         const nodeVersion = process.version.split('.')[0].replace(/^v/g, '');
-                        const volume = new memfs.Volume();
                         const absoluteBundlePath = path.resolve(this.absoluteOutputPath, relativePath);
 
                         const matchBundlePath = (pathname: originalFs.PathLike) => {
@@ -193,7 +200,7 @@ class CompilePlugin {
                             ...['stat', 'lstat', 'readFile', 'readdir', 'rm'].reduce(
                                 (result, methodName) => {
                                     result[methodName] = createPatchedFsMethod(
-                                        volume[`${methodName}Sync`].bind(volume),
+                                        this.volume[`${methodName}Sync`].bind(this.volume),
                                         originalFsPromises[methodName].bind(originalFsPromises),
                                         true,
                                     );
@@ -206,7 +213,7 @@ class CompilePlugin {
                             ...originalFs,
                             ...['existsSync', 'realpathSync'].reduce((result, methodName) => {
                                 result[methodName] = createPatchedFsMethod(
-                                    volume[methodName].bind(volume),
+                                    this.volume[methodName].bind(this.volume),
                                     originalFs[methodName].bind(originalFs),
                                 );
                                 return result;
@@ -217,8 +224,8 @@ class CompilePlugin {
                             },
                         };
 
-                        volume.mkdirSync(path.dirname(absoluteBundlePath), { recursive: true });
-                        volume.writeFileSync(absoluteBundlePath, assets[relativePath]?.buffer?.());
+                        this.volume.mkdirSync(path.dirname(absoluteBundlePath), { recursive: true });
+                        this.volume.writeFileSync(absoluteBundlePath, assets[relativePath]?.buffer?.());
                         VMUtil.runScriptCode(
                             `
                                 const Module = require('module');
@@ -235,7 +242,7 @@ class CompilePlugin {
                                 exec(['${absoluteBundlePath}', '--target', '${['linux', 'macos', 'win'].map((os) => `node${nodeVersion}-${os}-${process.arch}`)}', '--out-path', '${this.absoluteOutputPath}'])
                             `,
                             {
-                                volume,
+                                volume: this.volume,
                                 proxiedFs,
                                 proxiedFsPromises,
                             },
@@ -249,6 +256,14 @@ class CompilePlugin {
                 },
             );
         });
+    }
+}
+
+class VirtualFilePlugin {
+    public constructor(private readonly volume: memfs.IFs) {}
+
+    public apply(compiler: webpack.Compiler) {
+        compiler.outputFileSystem = this.volume as webpack.OutputFileSystem;
     }
 }
 
@@ -266,9 +281,9 @@ export const BuildCommand = CommandFactory.create({
         workDir: yup.string().optional().default(process.cwd()),
     }),
     context: {
-        childProcess: null,
+        worker: null,
     } as {
-        childProcess: childProcess.ChildProcess;
+        worker: Worker;
     },
     register: ({ command, callback }) => {
         command.addCommand(
@@ -286,6 +301,7 @@ export const BuildCommand = CommandFactory.create({
         );
     },
     run: ({ logger, options, context }) => {
+        const volume = new memfs.Volume() as memfs.IFs;
         const { watch, binary, clean, name: rawName, compiler: tsCompiler, ...webpackOptions } = options;
         const name = binary ? `${rawName}-${process.arch}` : rawName;
         const absoluteOutputPath = pathResolve(webpackOptions.workDir, webpackOptions.outputPath);
@@ -336,23 +352,27 @@ export const BuildCommand = CommandFactory.create({
 
                     if (watch) {
                         result.push(
-                            new AutoRunPlugin({
-                                logger,
-                                parallel: true,
-                                onAfterStart: (childProcess) => {
-                                    context.childProcess = childProcess;
+                            new VirtualFilePlugin(volume),
+                            new AutoRunPlugin(
+                                {
+                                    logger,
+                                    parallel: true,
+                                    onAfterStart: (worker) => {
+                                        context.worker = worker;
+                                    },
+                                    onBeforeStart: () => {
+                                        if (context.worker) {
+                                            context.worker.terminate();
+                                        }
+                                    },
                                 },
-                                onBeforeStart: () => {
-                                    if (context.childProcess) {
-                                        context.childProcess.kill();
-                                    }
-                                },
-                            }),
+                                volume,
+                            ),
                         );
                     }
 
                     if (binary) {
-                        result.push(new CompilePlugin(logger, absoluteOutputPath));
+                        result.push(new CompilePlugin(logger, absoluteOutputPath, volume));
                     }
 
                     return result;
