@@ -1,4 +1,4 @@
-import { BuildOptions } from '../build.types';
+import { BuildLoader } from '../build.types';
 import * as path from 'path';
 import { Constructor } from 'type-fest';
 
@@ -11,7 +11,7 @@ export interface Entry {
     onBeforeBootstrap?: () => void | Promise<void>;
 }
 
-export default function (options: BuildOptions) {
+export default ((options) => {
     return `
         import 'reflect-metadata';
         import { NestFactory } from '@norantec/devkit/dist/lib/@nestjs/core';
@@ -48,4 +48,4 @@ export default function (options: BuildOptions) {
 
         bootstrap();
     `;
-}
+}) as BuildLoader;

@@ -2,7 +2,7 @@
     "name": "@norantec/nttc",
     "version": "1.0.0",
     "description": "NoranTec ToolChain",
-    "main": "index.js",
+    "main": "dist/index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "build:cjs": "rimraf dist && tsc -b",

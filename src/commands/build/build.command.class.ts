@@ -16,6 +16,7 @@ import { Worker } from 'worker_threads';
 import { SCHEMA } from './build.constants';
 import VirtualModulesPlugin from 'webpack-virtual-modules';
 import { v4 as uuid } from 'uuid';
+import { BuildLoader } from './build.types';
 
 class CatchNotFoundPlugin {
     public constructor(private logger?: winston.Logger) {}
@@ -294,10 +295,9 @@ export const BuildCommand = CommandFactory.create({
         const name = binary ? `${rawName}-${process.arch}` : rawName;
         const absoluteOutputPath = pathResolve(webpackOptions.workDir, webpackOptions.outputPath);
         const absoluteRealEntryPath = pathResolve(webpackOptions.workDir, webpackOptions.entry);
-        const absoluteEntryPath =
-            watch && StringUtil.isFalsyString(loader)
-                ? pathResolve(path.dirname(absoluteRealEntryPath), `tmp_${uuid()}.ts`)
-                : absoluteRealEntryPath;
+        const absoluteEntryPath = !StringUtil.isFalsyString(loader)
+            ? pathResolve(path.dirname(absoluteRealEntryPath), `tmp_${uuid()}.ts`)
+            : absoluteRealEntryPath;
         const compiler = webpack({
             cache: false,
             optimization: {
@@ -344,14 +344,33 @@ export const BuildCommand = CommandFactory.create({
                 ...(() => {
                     const result: any[] = [];
 
-                    if (watch) {
+                    if (!StringUtil.isFalsyString(loader)) {
                         result.push(
                             new VirtualModulesPlugin({
                                 [absoluteEntryPath]: (() => {
-                                    const loaderFunc = require(require.resolve(loader, { paths: [process.cwd()] }));
-                                    return fs.readFileSync(loaderFunc?.(options))?.toString?.();
+                                    let loaderFunc: BuildLoader;
+
+                                    loaderFunc = require(
+                                        require.resolve(loader, {
+                                            paths: [process.cwd()],
+                                        }),
+                                    ) as BuildLoader;
+
+                                    if (
+                                        typeof loaderFunc !== 'function' &&
+                                        typeof (loaderFunc as any)?.default === 'function'
+                                    ) {
+                                        loaderFunc = (loaderFunc as any).default as BuildLoader;
+                                    }
+
+                                    return loaderFunc?.(options);
                                 })(),
                             }),
+                        );
+                    }
+
+                    if (watch) {
+                        result.push(
                             new VirtualFilePlugin(volume),
                             new AutoRunPlugin(
                                 {
