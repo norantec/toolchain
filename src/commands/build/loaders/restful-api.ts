@@ -6,7 +6,7 @@ type Resolver = <T>(clazz: Constructor<T>) => Promise<T>;
 
 export interface Entry {
     Module: any;
-    scopeNameBlacklist: string[];
+    scopeNameBlacklist?: string[];
     getListenPort: (resolver: Resolver) => number | Promise<number>;
     callback?: (resolver: Resolver) => void | Promise<void>;
     onBeforeBootstrap?: () => void | Promise<void>;
