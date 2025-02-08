@@ -34,7 +34,7 @@ jobs:
           zip -r artifact.zip dist
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: |
           github.ref == 'refs/heads/alpha' ||
           github.ref == 'refs/heads/beta' ||
