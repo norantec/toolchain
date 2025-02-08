@@ -65,7 +65,7 @@ jobs:
           registry-url: 'https://npm.pkg.github.com/'
 
       - name: Download artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: artifact-${{ github.run_id }}
 
