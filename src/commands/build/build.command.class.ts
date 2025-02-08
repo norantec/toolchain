@@ -293,8 +293,10 @@ class ForceWriteBundlePlugin {
 export const BuildCommand = CommandFactory.create({
     schema: SCHEMA,
     context: {
+        progress: '0.00',
         worker: null,
     } as {
+        progress: string;
         worker: Worker;
     },
     register: ({ command, callback }) => {
@@ -398,7 +400,14 @@ export const BuildCommand = CommandFactory.create({
             },
             plugins: [
                 new webpack.ProgressPlugin((percentage, message) => {
-                    logger?.info?.(`Build progress: ${percentage * 100}%, ${message}`);
+                    const parsedPercentage = (percentage * 100).toFixed(2);
+
+                    if (context.progress === parsedPercentage) return;
+
+                    context.progress = parsedPercentage;
+                    logger?.info?.(
+                        `Build ${parsedPercentage}%${StringUtil.isFalsyString(message) ? '' : `: ${message}`}`,
+                    );
                 }),
                 new CleanPlugin(),
                 ...(() => {
