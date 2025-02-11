@@ -2,10 +2,10 @@ import { BuildLoader } from '../build.types';
 import * as path from 'path';
 import { Constructor } from 'type-fest';
 
-type Resolver = <T>(clazz: Constructor<T>) => Promise<T>;
+type Resolver = <T>(Class: Constructor<T>) => Promise<T>;
 
 export interface Entry {
-    Module: any;
+    Module: Constructor<any>;
     scopeNameBlacklist?: string[];
     getListenPort: (resolver: Resolver) => number | Promise<number>;
     callback?: (resolver: Resolver) => void | Promise<void>;
@@ -32,12 +32,12 @@ export default ((options) => {
             await ENTRY?.onBeforeBootstrap?.();
 
             const openApiUtil = new OpenApiUtil({
-                Clazz: ENTRY?.Module,
+                Class: ENTRY?.Module,
                 scopeNameBlacklist: ENTRY?.scopeNameBlacklist ?? [],
             });
             const openApiDocument = openApiUtil.generateDocument();
             const app = await NestFactory.create(ENTRY?.Module);
-            const resolver = (clazz) => app.resolve(clazz);
+            const resolver = (Class) => app.resolve(Class);
             const listenPort = await ENTRY?.getListenPort?.(resolver);
 
             SwaggerModule.setup('/docs/apis', app, openApiDocument, {
