@@ -48,7 +48,7 @@ export default ((options) => {
             });
 
             await app.listen(listenPort ?? 8080, () => {
-                loggerService.log('Listening on port:', listenPort);
+                loggerService.log(\`Listening on port: \$\{listenPort\}\`);
                 ENTRY?.callback?.(resolver);
             });
         }
