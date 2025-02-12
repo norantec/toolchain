@@ -20,6 +20,7 @@ export default ((options) => {
         import { OpenApiUtil } from '@norantec/devkit/dist/utilities/openapi-util.class';
         import { SwaggerModule } from '@nestjs/swagger';
         import { ApiController } from '@norantec/devkit/dist/decorators/api-controller.decorator';
+        import { LoggerService } from '@norantec/devkit/dist/modules/logger/logger.service';
         import ENTRY from '${path.resolve(options.entry)}';
 
         async function bootstrap() {
@@ -39,6 +40,7 @@ export default ((options) => {
             const app = await NestFactory.create(ENTRY?.Module);
             const resolver = (Class) => app.resolve(Class);
             const listenPort = await ENTRY?.getListenPort?.(resolver);
+            const loggerService = await app.resolve(LoggerService);
 
             SwaggerModule.setup('/docs/apis', app, openApiDocument, {
                 customCssUrl: ['https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.7.2}/swagger-ui.css'],
@@ -46,7 +48,7 @@ export default ((options) => {
             });
 
             await app.listen(listenPort ?? 8080, () => {
-                console.log('Listening on port:', listenPort);
+                loggerService.log('Listening on port:', listenPort);
                 ENTRY?.callback?.(resolver);
             });
         }
