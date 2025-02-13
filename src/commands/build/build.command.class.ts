@@ -112,14 +112,24 @@ class AutoRunPlugin {
                 await this.options?.onAfterStart?.(worker);
             }
 
-            if (!this.options?.parallel) {
-                worker.on('exit', (code) => {
-                    if (code !== 0) {
-                        logger?.error?.(`Process exited with code: ${code}`);
-                    }
+            worker.on('exit', (code) => {
+                if (code !== 0) {
+                    logger?.error?.(`Process exited with code: ${code}`);
+                }
+                if (!this.options?.parallel) {
                     callback();
-                });
-            } else {
+                }
+            });
+            worker.on('error', (error) => {
+                logger?.error?.('Worker error:');
+                logger?.error?.(error?.message);
+                logger?.error?.(error?.stack);
+                if (!this.options?.parallel) {
+                    callback();
+                }
+            });
+
+            if (this.options?.parallel) {
                 callback();
             }
         });
