@@ -77,6 +77,12 @@ class AutoRunPlugin {
 
     public apply(compiler: webpack.Compiler) {
         const logger = this?.options?.logger;
+        compiler.hooks.beforeCompile.tapAsync('AutoRunPlugin', async (compilationParams, callback) => {
+            if (this.options.onBeforeStart) {
+                await this.options?.onBeforeStart?.();
+            }
+            callback();
+        });
         compiler.hooks.afterEmit.tapAsync('AutoRunPlugin', async (compilation: webpack.Compilation, callback) => {
             const assets = compilation.getAssets();
 
@@ -97,10 +103,6 @@ class AutoRunPlugin {
             const outputPath = pathResolve(compilation.options.output.path, bundledScriptFile);
 
             logger?.info?.(`Prepared to run file: ${outputPath}`);
-
-            if (this.options.onBeforeStart) {
-                await this.options?.onBeforeStart?.();
-            }
 
             const worker = new Worker(this.volume.readFileSync(outputPath).toString(), {
                 eval: true,
@@ -430,9 +432,9 @@ export const BuildCommand = CommandFactory.create({
                                         context.worker = worker;
                                     },
                                     onBeforeStart: () => {
-                                        if (context.worker) {
+                                        _.attempt(() => {
                                             context.worker.terminate();
-                                        }
+                                        });
                                     },
                                 },
                                 volume,
