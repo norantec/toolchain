@@ -17,6 +17,7 @@ import { SCHEMA } from './build.constants';
 import VirtualModulesPlugin = require('webpack-virtual-modules');
 import { v4 as uuid } from 'uuid';
 import { BuildLoader } from './build.types';
+import * as chokidar from 'chokidar';
 
 class CatchNotFoundPlugin {
     public constructor(private logger?: winston.Logger) {}
@@ -462,27 +463,25 @@ export const BuildCommand = CommandFactory.create({
         });
 
         if (watch) {
-            compiler.watch(
-                {
-                    ignored: !StringUtil.isFalsyString(loader) ? [absoluteEntryPath] : undefined,
-                },
-                (error) => {
-                    if (error) {
-                        logger?.error?.(error);
-                    }
-                },
-            );
-        } else {
-            if (clean) {
-                logger?.info?.(`Cleaning output directory: ${compiler.options.output.path}`);
-                fs.removeSync(compiler.options.output.path);
-                logger?.info?.('Output directory cleaned');
-            }
-            compiler.run((error) => {
-                if (error) {
-                    logger.error('Builder finished with error:', error);
-                }
+            const watcher = chokidar.watch([process.cwd()], {
+                persistent: true,
+            });
+            watcher.on('all', () => {
+                _.attempt(() => watcher.close());
+                _.attempt(() => context.worker.terminate());
+                _.attempt(() => compiler.close(() => {}));
             });
         }
+
+        if (clean) {
+            logger?.info?.(`Cleaning output directory: ${compiler.options.output.path}`);
+            fs.removeSync(compiler.options.output.path);
+            logger?.info?.('Output directory cleaned');
+        }
+        compiler.run((error) => {
+            if (error) {
+                logger.error('Builder finished with error:', error);
+            }
+        });
     },
 });
