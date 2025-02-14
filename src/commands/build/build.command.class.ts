@@ -18,6 +18,7 @@ import VirtualModulesPlugin = require('webpack-virtual-modules');
 import { v4 as uuid } from 'uuid';
 import { BuildLoader } from './build.types';
 import * as chokidar from 'chokidar';
+import * as ignore from 'ignore';
 
 class CatchNotFoundPlugin {
     public constructor(private logger?: winston.Logger) {}
@@ -461,29 +462,51 @@ export const BuildCommand = CommandFactory.create({
                 })(),
             ],
         });
-        const run = () =>
+        const run = () => {
             compiler.run((error) => {
                 if (error) {
                     logger.error('Builder finished with error:', error);
                 }
             });
+        };
+        const watchHandler = () => {
+            _.attempt(() => context.worker.terminate());
+            context.worker = null;
+            _.attempt(() => {
+                compiler.close(() => {
+                    run();
+                });
+            });
+        };
 
         if (watch) {
-            const watcher = chokidar.watch([process.cwd()], {
+            const ig = ignore().add(
+                (() => {
+                    const gitIgnorePath = path.resolve('.gitignore');
+                    if (fs.existsSync(gitIgnorePath) && fs.statSync(gitIgnorePath).isFile()) {
+                        return fs.readFileSync(gitIgnorePath).toString();
+                    }
+                    return '';
+                })(),
+            );
+            const watcher = chokidar.watch(process.cwd(), {
                 persistent: true,
+                ignoreInitial: true,
+                ignored: (pathname) => {
+                    const relativePath = path.relative(process.cwd(), pathname);
+                    if (StringUtil.isFalsyString(relativePath)) return false;
+                    if (relativePath.startsWith('.git')) return true;
+                    return ig.ignores(relativePath);
+                },
             });
-            watcher.on('all', () => {
-                context.worker = null;
-                _.attempt(() => watcher.close());
-                _.attempt(() => context.worker.terminate());
-                _.attempt(() => compiler.close(() => {}));
-                run();
-            });
+            watcher.on('change', watchHandler);
+            watcher.on('add', watchHandler);
+            watcher.on('unlink', watchHandler);
         }
 
         if (clean) {
             logger?.info?.(`Cleaning output directory: ${compiler.options.output.path}`);
-            fs.removeSync(compiler.options.output.path);
+            _.attempt(() => fs.removeSync(compiler?.options?.output?.path));
             logger?.info?.('Output directory cleaned');
         }
 
