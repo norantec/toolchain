@@ -461,15 +461,23 @@ export const BuildCommand = CommandFactory.create({
                 })(),
             ],
         });
+        const run = () =>
+            compiler.run((error) => {
+                if (error) {
+                    logger.error('Builder finished with error:', error);
+                }
+            });
 
         if (watch) {
             const watcher = chokidar.watch([process.cwd()], {
                 persistent: true,
             });
             watcher.on('all', () => {
+                context.worker = null;
                 _.attempt(() => watcher.close());
                 _.attempt(() => context.worker.terminate());
                 _.attempt(() => compiler.close(() => {}));
+                run();
             });
         }
 
@@ -478,10 +486,7 @@ export const BuildCommand = CommandFactory.create({
             fs.removeSync(compiler.options.output.path);
             logger?.info?.('Output directory cleaned');
         }
-        compiler.run((error) => {
-            if (error) {
-                logger.error('Builder finished with error:', error);
-            }
-        });
+
+        run();
     },
 });
