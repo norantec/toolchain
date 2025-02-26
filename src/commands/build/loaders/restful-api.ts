@@ -17,7 +17,7 @@ export default ((options) => {
         import 'reflect-metadata';
         import { NestFactory } from '@norantec/devkit/dist/lib/@nestjs/core';
         import { StringUtil } from '@norantec/nttc/dist/utilities/string-util.class';
-        import { OpenApiUtil } from '@norantec/devkit/dist/utilities/openapi-util.class';
+        import { OpenApiUtil } from '@norantec/devkit/dist/utilities/open-api-util.class';
         import { SwaggerModule } from '@nestjs/swagger';
         import { ApiController } from '@norantec/devkit/dist/decorators/api-controller.decorator';
         import { LoggerService } from '@norantec/devkit/dist/modules/logger/logger.service';
