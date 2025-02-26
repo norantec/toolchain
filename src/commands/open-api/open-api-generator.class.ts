@@ -27,7 +27,7 @@ export class OpenApiGenerator {
     }
 
     public async generate() {
-        console.log(this.generateComponents('DataMap', this.options?.document?.components?.schemas));
+        console.log(this.generateComponents('DataTypeMap', this.options?.document?.components?.schemas));
     }
 
     private generateComponents(
@@ -37,15 +37,16 @@ export class OpenApiGenerator {
         if (!_.isObjectLike(schemas) || StringUtil.isFalsyString(mapInterfaceIdentifier)) return;
         const generatedComponents = Object.entries(schemas)
             .reduce((result: string[], [key, schemaItem]) => {
-                return result.concat(`'${key}': ${this.generateComponent(mapInterfaceIdentifier, schemaItem)}`);
+                const componentLines = this.generateComponent(mapInterfaceIdentifier, schemaItem);
+                return result.concat(`'${key}': ${componentLines.shift()}`).concat(...componentLines);
             }, [] as string[])
             .map((item) => `    ${item}`);
-        return [`export interface ${mapInterfaceIdentifier} {`, ...generatedComponents, '}'].join('\n');
+        return [`export interface ${mapInterfaceIdentifier} {`, ...generatedComponents, '};'].join('\n');
     }
 
-    private generateComponent(mapInterfaceIdentifier: string, schema: SchemaObject | ReferenceObject): string {
+    private generateComponent(mapInterfaceIdentifier: string, schema: SchemaObject | ReferenceObject): string[] {
         if (!StringUtil.isFalsyString((schema as ReferenceObject)?.$ref)) {
-            return (schema as ReferenceObject).$ref.split('/').pop();
+            return [(schema as ReferenceObject).$ref.split('/').pop()];
         }
 
         if ((schema as SchemaObject).type === 'object' && _.isObjectLike((schema as SchemaObject)?.properties)) {
@@ -105,9 +106,9 @@ export class OpenApiGenerator {
                 },
                 [] as string[],
             );
-            return ['{', ...fields.map((field) => `        ${field}`), '    };'].join('\n');
+            return ['{', ...fields.map((field) => `    ${field}`), '};'];
         }
 
-        return 'never';
+        return ['never;'];
     }
 }
