@@ -21,14 +21,18 @@
     "files": [
         "bin",
         "dist",
-        "preserved"
+        "preserved",
+        "templates"
     ],
     "bin": {
         "nttc": "./bin/nttc.js"
     },
     "homepage": "https://github.com/norantec/nttc#readme",
     "dependencies": {
+        "@apidevtools/swagger-parser": "^10.1.1",
+        "@nestjs/swagger": "^11.0.5",
         "@yao-pkg/pkg": "^6.2.0",
+        "ajv": "^8.17.1",
         "axios": "^1.7.9",
         "chokidar": "^3.6.0",
         "commander": "^12.0.0",
