@@ -3,10 +3,11 @@ import { BuildCommand } from './commands/build/build.command.class';
 import * as winston from 'winston';
 import { BumpCommand } from './commands/bump/bump.command.class';
 import { LinkCommand } from './commands/link/link.command.class';
+import { SDKCommand } from './commands/sdk/sdk.command.class';
 
 const program = new Command('nttc');
 
-[BuildCommand, BumpCommand, LinkCommand].forEach((Command) => {
+[BuildCommand, BumpCommand, LinkCommand, SDKCommand].forEach((Command) => {
     const logger = winston.createLogger({
         level: 'verbose',
         format: winston.format.combine(

@@ -9,12 +9,7 @@ import * as semver from 'semver';
 import { StringUtil } from '../../utilities/string-util.class';
 import * as commander from 'commander';
 import { NpmAdapter } from './adapters/npm.adapter.class';
-
-export enum BumpType {
-    ALPHA = 'alpha',
-    BETA = 'beta',
-    RELEASE = 'release',
-}
+import { BumpType } from '../../enums/bump-type.enum';
 
 function getFormalReleaseVersion(version: string) {
     const parsed = semver.parse(version);

@@ -6,7 +6,7 @@ type Resolver = <T>(Class: Constructor<T>) => Promise<T>;
 
 export interface Entry {
     Module: Constructor<any>;
-    scopeNameBlacklist?: string[];
+    scopeIdentifierBlacklist?: string[];
     getListenPort: (resolver: Resolver) => number | Promise<number>;
     callback?: (resolver: Resolver) => void | Promise<void>;
     onBeforeBootstrap?: () => void | Promise<void>;
@@ -34,7 +34,7 @@ export default ((options) => {
 
             const openApiUtil = new OpenApiUtil({
                 Class: ENTRY?.Module,
-                scopeNameBlacklist: ENTRY?.scopeNameBlacklist ?? [],
+                scopeIdentifierBlacklist: ENTRY?.scopeIdentifierBlacklist ?? [],
             });
             const openApiDocument = openApiUtil.generateDocument();
             const app = await NestFactory.create(ENTRY?.Module);

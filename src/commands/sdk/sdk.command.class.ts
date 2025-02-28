@@ -1,23 +1,26 @@
 import * as webpack from 'webpack';
 import { resolve as pathResolve } from 'path';
 import { Command } from 'commander';
-import * as fs from 'fs-extra';
 import { StringUtil } from '../../utilities/string-util.class';
 import { CommandFactory } from '../command-factory.class';
 import * as memfs from 'memfs';
 import * as path from 'path';
 import { Worker } from 'worker_threads';
-import { SCHEMA } from './generate.constants';
+import { SCHEMA } from './sdk.constants';
 import VirtualModulesPlugin = require('webpack-virtual-modules');
 import { v4 as uuid } from 'uuid';
-import { GenerateLoader } from './generate.types';
 import { CatchNotFoundPlugin } from '../../webpack/plugins/catch-not-found-plugin';
 import { VirtualFilePlugin } from '../../webpack/plugins/virtual-file-plugin';
 import { AutoRunPlugin } from '../../webpack/plugins/auto-run-plugin';
 import * as _ from 'lodash';
+import * as fs from 'fs-extra';
+import * as yup from 'yup';
+import { SDKOptions } from './sdk.types';
 
-export const GenerateCommand = CommandFactory.create({
-    schema: SCHEMA,
+export const SDKCommand = CommandFactory.create({
+    schema: yup.object({
+        config: yup.string().required(),
+    }),
     context: {
         progress: '0.00',
         worker: null,
@@ -27,61 +30,67 @@ export const GenerateCommand = CommandFactory.create({
     },
     register: ({ command, callback }) => {
         command.addCommand(
-            new Command('build')
-                .option('--compiler <string>', 'Compiler pathname')
-                .option('--entry <string>', 'Pathname to script')
-                .option('--loader <string>', 'Loader pathname')
-                .option('--output-path <string>', 'Output path')
-                .option('--ts-project <string>', 'TypeScript project file pathname')
-                .option('--work-dir <string>', 'Work directory')
-                .action(callback),
+            new Command('sdk').requiredOption('-c, --config <string>', 'Config file pathname').action(callback),
         );
     },
     run: ({ logger, options, context }) => {
         const volume = new memfs.Volume() as memfs.IFs;
-        const { compiler: tsCompiler, loader, ...webpackOptions } = options;
+        const { config: configFilePath } = options;
+        const configAbsolutePath = path.resolve(configFilePath);
+        const config: SDKOptions = SCHEMA.cast(fs.readJsonSync(configAbsolutePath));
         const name = `index${uuid().split('-')[0]}`;
-        const absoluteOutputPath = pathResolve(webpackOptions.workDir, webpackOptions.outputPath);
-        const absoluteRealEntryPath = pathResolve(webpackOptions.workDir, webpackOptions.entry);
-        const absoluteEntryPath = !StringUtil.isFalsyString(loader)
-            ? pathResolve(path.dirname(absoluteRealEntryPath), `tmp_${uuid()}.ts`)
-            : absoluteRealEntryPath;
-        const virtualEntries = (() => {
-            const result: Record<string, string> = {};
+        const workDir = path.resolve(path.dirname(configAbsolutePath), config.workDir);
+        const absoluteOutputPath = pathResolve(workDir, config.outputPath);
+        const absoluteRealEntryPath = pathResolve(workDir, config.entry);
+        const absoluteEntryPath = pathResolve(path.dirname(absoluteRealEntryPath), `tmp_${uuid()}.ts`);
+        const loaderCode = `
+            import 'reflect-metadata';
+            import { OpenApiUtil } from '@norantec/devkit/dist/utilities/open-api-util.class';
+            import { SDKUtil } from '@norantec/devkit/dist/utilities/sdk-util.class';
+            import { ApiController } from '@norantec/devkit/dist/decorators/api-controller.decorator';
+            import ENTRY from '${path.resolve(config.entry)}';
+            import * as fs from '@norantec/devkit/dist/lib/fs-extra';
+            import * as path from 'path';
+    
+            async function bootstrap() {
+                if (Array.isArray(ENTRY?.models)) {
+                    ENTRY?.models?.forEach?.((model) => {
+                        ApiController.registerModel(model);
+                    });
+                }
+    
+                await ENTRY?.onBeforeBootstrap?.();
+    
+                const fileMap = new SDKUtil({
+                    packageName: '${config?.packageName}',
+                    packageVersion: '${config?.packageVersion}',
+                    registry: '${config?.registry}',
+                    authorEmail: '${config?.authorEmail}',
+                    authorName: '${config?.authorName}',
+                    registry: '${config?.registry}',
+                    document: new OpenApiUtil({
+                        Class: ENTRY?.Module,
+                        scopeIdentifierBlacklist: ENTRY?.scopeIdentifierBlacklist ?? [],
+                    }).generateDocument(),
+                }).generate() || {};
 
-            if (StringUtil.isFalsyString(loader)) return result;
+                try {
+                    fs.removeSync('${absoluteEntryPath}');
+                } catch (e) {}
 
-            let loaderFunc: GenerateLoader;
-            const builtInLoaderPath = path.resolve(__dirname, './loaders', loader) + '.js';
+                try {
+                    fs.mkdirpSync('${absoluteEntryPath}');
+                } catch (e) {}
 
-            if (fs.existsSync(builtInLoaderPath) && fs.statSync(builtInLoaderPath).isFile()) {
-                loaderFunc = require(builtInLoaderPath) as GenerateLoader;
-            } else {
-                loaderFunc = require(
-                    require.resolve(loader, {
-                        paths: [process.cwd()],
-                    }),
-                ) as GenerateLoader;
+                Object.entries(fileMap).forEach(([relativePath, content]) => {
+                    const absolutePath = path.resolve('${absoluteOutputPath}', relativePath);
+                    fs.mkdirpSync(path.dirname(absolutePath));
+                    fs.writeFileSync(absolutePath, content, 'utf-8');
+                });
             }
-
-            if (typeof loaderFunc !== 'function' && typeof (loaderFunc as any)?.default === 'function') {
-                loaderFunc = (loaderFunc as any).default as GenerateLoader;
-            }
-
-            if (typeof loaderFunc !== 'function') {
-                throw new Error(`Loader '${loader}' is not a function`);
-            }
-
-            const content = loaderFunc?.(options);
-
-            if (StringUtil.isFalsyString(content)) {
-                throw new Error(`Loader '${loader}' returned non-string content`);
-            }
-
-            result[absoluteEntryPath] = content;
-
-            return result;
-        })();
+    
+            bootstrap();
+        `;
         const compiler = webpack({
             cache: false,
             optimization: {
@@ -100,7 +109,7 @@ export const GenerateCommand = CommandFactory.create({
             resolve: {
                 extensions: ['.js', '.cjs', '.mjs', '.ts', '.tsx'],
                 alias: {
-                    src: pathResolve(webpackOptions.workDir, './src'),
+                    src: pathResolve(workDir, './src'),
                     UNKNOWN: false,
                 },
                 plugins: [new CatchNotFoundPlugin(logger)],
@@ -112,8 +121,8 @@ export const GenerateCommand = CommandFactory.create({
                         use: {
                             loader: require.resolve('ts-loader'),
                             options: {
-                                compiler: require.resolve(tsCompiler, { paths: [process.cwd()] }),
-                                configFile: pathResolve(webpackOptions.tsProject),
+                                compiler: require.resolve(config.compiler, { paths: [process.cwd()] }),
+                                configFile: pathResolve(config.tsProject),
                             },
                         },
                         exclude: /node_modules/,
@@ -134,12 +143,14 @@ export const GenerateCommand = CommandFactory.create({
                 ...(() => {
                     const result: any[] = [];
                     result.push(
-                        new VirtualModulesPlugin(virtualEntries),
+                        new VirtualModulesPlugin({
+                            [absoluteEntryPath]: loaderCode,
+                        }),
                         new VirtualFilePlugin(volume),
                         new AutoRunPlugin(
                             {
                                 logger,
-                                parallel: true,
+                                parallel: false,
                                 onAfterStart: (worker) => {
                                     context.worker = worker;
                                 },
