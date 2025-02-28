@@ -3,19 +3,16 @@ import { resolve as pathResolve } from 'path';
 import { Command } from 'commander';
 import { StringUtil } from '../../utilities/string-util.class';
 import { CommandFactory } from '../command-factory.class';
-import * as memfs from 'memfs';
 import * as path from 'path';
 import { Worker } from 'worker_threads';
 import { SCHEMA } from './sdk.constants';
 import VirtualModulesPlugin = require('webpack-virtual-modules');
 import { v4 as uuid } from 'uuid';
 import { CatchNotFoundPlugin } from '../../webpack/plugins/catch-not-found-plugin';
-import { VirtualFilePlugin } from '../../webpack/plugins/virtual-file-plugin';
-import { AutoRunPlugin } from '../../webpack/plugins/auto-run-plugin';
-import * as _ from 'lodash';
 import * as fs from 'fs-extra';
 import * as yup from 'yup';
 import { SDKOptions } from './sdk.types';
+import { ForceWriteBundlePlugin } from '../../webpack/plugins/force-write-bundle-plugin';
 
 export const SDKCommand = CommandFactory.create({
     schema: yup.object({
@@ -34,7 +31,6 @@ export const SDKCommand = CommandFactory.create({
         );
     },
     run: ({ logger, options, context }) => {
-        const volume = new memfs.Volume() as memfs.IFs;
         const { config: configFilePath } = options;
         const configAbsolutePath = path.resolve(configFilePath);
         const config: SDKOptions = SCHEMA.cast(fs.readJsonSync(configAbsolutePath));
@@ -146,23 +142,8 @@ export const SDKCommand = CommandFactory.create({
                         new VirtualModulesPlugin({
                             [absoluteEntryPath]: loaderCode,
                         }),
-                        new VirtualFilePlugin(volume),
-                        new AutoRunPlugin(
-                            {
-                                logger,
-                                parallel: false,
-                                onAfterStart: (worker) => {
-                                    context.worker = worker;
-                                },
-                                onBeforeStart: () => {
-                                    _.attempt(() => {
-                                        context.worker.terminate();
-                                    });
-                                },
-                            },
-                            volume,
-                        ),
                     );
+                    result.push(new ForceWriteBundlePlugin(absoluteOutputPath));
                     return result;
                 })(),
             ],
