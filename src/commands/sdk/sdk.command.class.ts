@@ -12,7 +12,7 @@ import { CatchNotFoundPlugin } from '../../webpack/plugins/catch-not-found-plugi
 import * as fs from 'fs-extra';
 import * as yup from 'yup';
 import { SDKOptions } from './sdk.types';
-import { ForceWriteBundlePlugin } from '../../webpack/plugins/force-write-bundle-plugin';
+import { RunOncePlugin } from '../../webpack/plugins/run-once-plugin';
 
 export const SDKCommand = CommandFactory.create({
     schema: yup.object({
@@ -143,7 +143,7 @@ export const SDKCommand = CommandFactory.create({
                             [absoluteEntryPath]: loaderCode,
                         }),
                     );
-                    result.push(new ForceWriteBundlePlugin(absoluteOutputPath));
+                    result.push(new RunOncePlugin(logger));
                     return result;
                 })(),
             ],
