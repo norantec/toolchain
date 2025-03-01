@@ -71,11 +71,11 @@ export const SDKCommand = CommandFactory.create({
                 }).generate() || {};
 
                 try {
-                    fs.removeSync('${absoluteEntryPath}');
+                    fs.removeSync('${absoluteOutputPath}');
                 } catch (e) {}
 
                 try {
-                    fs.mkdirpSync('${absoluteEntryPath}');
+                    fs.mkdirpSync('${absoluteOutputPath}');
                 } catch (e) {}
 
                 Object.entries(fileMap).forEach(([relativePath, content]) => {

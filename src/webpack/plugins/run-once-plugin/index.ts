@@ -21,7 +21,7 @@ export class RunOncePlugin {
 
                     this.logger.info(`Found bundle file: ${targetAsset?.[0]}, executing...`);
 
-                    const worker = new Worker(targetAsset?.[1]?.buffer?.toString?.(), {
+                    const worker = new Worker(targetAsset?.[1]?.buffer?.()?.toString?.(), {
                         eval: true,
                     });
 
