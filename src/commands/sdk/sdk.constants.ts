@@ -7,7 +7,6 @@ export const SCHEMA = yup.object().shape({
     entry: yup.string().required().default('src/main.ts'),
     outputPath: yup.string().optional().default('dist'),
     packageName: yup.string().required(),
-    packageVersion: yup.string().required(),
     registry: yup.string().optional().default('https://registry.npmjs.org'),
     tsProject: yup.string().optional().default('tsconfig.json'),
     workDir: yup.string().optional().default(process.cwd()),

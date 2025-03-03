@@ -59,7 +59,6 @@ export const SDKCommand = CommandFactory.create({
     
                 const fileMap = new SDKUtil({
                     packageName: '${config?.packageName}',
-                    packageVersion: '${config?.packageVersion}',
                     registry: '${config?.registry}',
                     authorEmail: '${config?.authorEmail}',
                     authorName: '${config?.authorName}',
