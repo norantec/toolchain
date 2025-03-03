@@ -141,7 +141,7 @@ const BaseBumpCommand = CommandFactory.create({
 
         if (StringUtil.isFalsyString(newVersion)) {
             logger.error('Failed to bump package version');
-            return;
+            process.exit(1);
         }
 
         logger.info(`Got new version: ${newVersion}`);

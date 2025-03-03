@@ -56,7 +56,7 @@ export const GithubAdapter = BumpAdapterFactory.create({
                 return [];
             }
             logger.error(`Failed to get versions for ${packageName}: ${error?.message}`);
-            return null;
+            process.exit(1);
         }
     },
 });
