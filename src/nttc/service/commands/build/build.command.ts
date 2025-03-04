@@ -73,7 +73,9 @@ export const BuildCommand = CommandFactory.create({
             let filePath: string;
 
             try {
-                filePath = require.resolve(pathResolve('../../../../presets/service', 'loader', `build.loader.hbs`));
+                filePath = require.resolve(
+                    pathResolve(__dirname, '../../../../../presets/service', loader, `build.loader.hbs`),
+                );
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (e) {}
 
