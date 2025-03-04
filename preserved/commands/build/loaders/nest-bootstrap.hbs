@@ -34,7 +34,7 @@ async function bootstrap() {
     const finalListenPort = listenPort > 0 ? listenPort : 8080;
 
     await app.listen(finalListenPort, () => {
-        loggerService.log(\`Listening on port: \$\{finalListenPort\}\`);
+        loggerService.log(`Listening on port: ${finalListenPort}`);
         ENTRY?.callback?.(resolver);
     });
 }
