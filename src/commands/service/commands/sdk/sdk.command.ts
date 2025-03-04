@@ -1,18 +1,28 @@
 import * as webpack from 'webpack';
 import { resolve as pathResolve } from 'path';
 import { Command } from 'commander';
-import { StringUtil } from '../../utilities/string-util.class';
-import { CommandFactory } from '../command-factory.class';
+import { StringUtil } from '../../../../utilities/string-util.class';
+import { CommandFactory } from '../../../../factories/command.factory';
 import * as path from 'path';
 import { Worker } from 'worker_threads';
-import { SCHEMA } from './sdk.constants';
 import VirtualModulesPlugin = require('webpack-virtual-modules');
 import { v4 as uuid } from 'uuid';
-import { CatchNotFoundPlugin } from '../../webpack/plugins/catch-not-found-plugin';
+import { CatchNotFoundPlugin } from '../../../../webpack/plugins/catch-not-found-plugin';
 import * as fs from 'fs-extra';
 import * as yup from 'yup';
-import { SDKOptions } from './sdk.types';
-import { RunOncePlugin } from '../../webpack/plugins/run-once-plugin';
+import { RunOncePlugin } from '../../../../webpack/plugins/run-once-plugin';
+
+export const CONFIG_SCHEMA = yup.object().shape({
+    authorEmail: yup.string().optional(),
+    authorName: yup.string().optional(),
+    compiler: yup.string().optional().default('typescript'),
+    entry: yup.string().required().default('src/main.ts'),
+    outputPath: yup.string().optional().default('dist'),
+    packageName: yup.string().required(),
+    registry: yup.string().optional().default('https://registry.npmjs.org'),
+    tsProject: yup.string().optional().default('tsconfig.json'),
+    workDir: yup.string().optional().default(process.cwd()),
+});
 
 export const SDKCommand = CommandFactory.create({
     schema: yup.object({
@@ -25,15 +35,13 @@ export const SDKCommand = CommandFactory.create({
         progress: string;
         worker: Worker;
     },
-    register: ({ command, callback }) => {
-        command.addCommand(
-            new Command('sdk').requiredOption('-c, --config <string>', 'Config file pathname').action(callback),
-        );
+    register: ({ callback }) => {
+        return new Command('sdk').requiredOption('-c, --config <string>', 'Config file pathname').action(callback);
     },
     run: ({ logger, options, context }) => {
         const { config: configFilePath } = options;
         const configAbsolutePath = path.resolve(configFilePath);
-        const config: SDKOptions = SCHEMA.cast(fs.readJsonSync(configAbsolutePath));
+        const config = CONFIG_SCHEMA.cast(fs.readJsonSync(configAbsolutePath));
         const name = `index${uuid().split('-')[0]}`;
         const workDir = path.resolve(path.dirname(configAbsolutePath), config.workDir);
         const absoluteOutputPath = pathResolve(workDir, config.outputPath);

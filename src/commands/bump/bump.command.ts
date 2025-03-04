@@ -1,5 +1,5 @@
 import * as yup from 'yup';
-import { CommandFactory } from '../command-factory.class';
+import { CommandFactory } from '../../factories/command.factory';
 import { GithubAdapter } from './adapters/github.adapter.class';
 import * as winston from 'winston';
 import { BumpAdapter } from './bump-adapter-factory.class';
@@ -13,11 +13,7 @@ import { BumpType } from '../../enums/bump-type.enum';
 
 function getFormalReleaseVersion(version: string) {
     const parsed = semver.parse(version);
-
-    if (!parsed) {
-        return null;
-    }
-
+    if (!parsed) return null;
     return `${parsed.major}.${parsed.minor}.${parsed.patch}`;
 }
 
@@ -83,7 +79,7 @@ async function bump(type: BumpType, packageVersion: string, versions: string[], 
     return newVersion;
 }
 
-const BaseBumpCommand = CommandFactory.create({
+export const BumpCommand = CommandFactory.create({
     schema: yup.object().shape({
         type: yup.string().required().oneOf(Object.values(BumpType)),
     }),
@@ -96,7 +92,7 @@ const BaseBumpCommand = CommandFactory.create({
         adapter?: InstanceType<BumpAdapter>;
         rawOptions?: Record<string, any>;
     },
-    register: async ({ logger, context, command, callback }) => {
+    register: ({ logger, context, callback }) => {
         const subCommand = new commander.Command('bump');
 
         if (Array.isArray(context?.adapters)) {
@@ -121,7 +117,7 @@ const BaseBumpCommand = CommandFactory.create({
                 });
         }
 
-        command.addCommand(subCommand);
+        return subCommand;
     },
     run: async ({ context, logger, options: { type } }) => {
         const adapter = context.adapter;
@@ -161,15 +157,3 @@ const BaseBumpCommand = CommandFactory.create({
         logger.info(`Bumped ${packageName} to ${newVersion} successfully`);
     },
 });
-
-export class BumpCommand extends BaseBumpCommand {
-    public constructor(logger: winston.Logger) {
-        super(logger);
-    }
-
-    public addAdapters(adapters: BumpAdapter[]) {
-        this.updateContext((context) => ({
-            adapters: (Array.isArray(context?.adapters) ? context.adapters : []).concat(adapters),
-        }));
-    }
-}

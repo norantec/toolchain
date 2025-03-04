@@ -2,28 +2,40 @@ import * as webpack from 'webpack';
 import { resolve as pathResolve } from 'path';
 import { Command } from 'commander';
 import * as fs from 'fs-extra';
-import { StringUtil } from '../../utilities/string-util.class';
+import { StringUtil } from '../../../../utilities/string-util.class';
 import * as _ from 'lodash';
-import { CommandFactory } from '../command-factory.class';
+import { CommandFactory } from '../../../../factories/command.factory';
 import * as memfs from 'memfs';
 import * as path from 'path';
 import { Worker } from 'worker_threads';
-import { SCHEMA } from './build.constants';
 import VirtualModulesPlugin = require('webpack-virtual-modules');
 import { v4 as uuid } from 'uuid';
 import * as chokidar from 'chokidar';
 import * as ignore from 'ignore';
-import { CatchNotFoundPlugin } from '../../webpack/plugins/catch-not-found-plugin';
-import { CleanPlugin } from '../../webpack/plugins/clean-plugin';
-import { ForceWriteBundlePlugin } from '../../webpack/plugins/force-write-bundle-plugin';
-import { VirtualFilePlugin } from '../../webpack/plugins/virtual-file-plugin';
-import { AutoRunPlugin } from '../../webpack/plugins/auto-run-plugin';
-import { CompilePlugin } from '../../webpack/plugins/compile-plugin';
-import { ResolveUtil } from '../../utilities/resolve-util.class';
+import { CatchNotFoundPlugin } from '../../../../webpack/plugins/catch-not-found-plugin';
+import { CleanPlugin } from '../../../../webpack/plugins/clean-plugin';
+import { ForceWriteBundlePlugin } from '../../../../webpack/plugins/force-write-bundle-plugin';
+import { VirtualFilePlugin } from '../../../../webpack/plugins/virtual-file-plugin';
+import { AutoRunPlugin } from '../../../../webpack/plugins/auto-run-plugin';
+import { CompilePlugin } from '../../../../webpack/plugins/compile-plugin';
+import { ResolveUtil } from '../../../../utilities/resolve-util.class';
 import * as handlebars from 'handlebars';
+import * as yup from 'yup';
 
 export const BuildCommand = CommandFactory.create({
-    schema: SCHEMA,
+    schema: yup.object().shape({
+        binary: yup.boolean().optional().default(false),
+        clean: yup.boolean().optional().default(true),
+        compiler: yup.string().optional().default('typescript'),
+        entry: yup.string().required().default('src/main.ts'),
+        loader: yup.string().optional(),
+        name: yup.string().required().default('index'),
+        outputFilename: yup.string().optional().default('[name].js'),
+        outputPath: yup.string().optional().default('dist'),
+        tsProject: yup.string().optional().default('tsconfig.json'),
+        watch: yup.boolean().optional().default(false),
+        workDir: yup.string().optional().default(process.cwd()),
+    }),
     context: {
         progress: '0.00',
         worker: null,
@@ -31,21 +43,19 @@ export const BuildCommand = CommandFactory.create({
         progress: string;
         worker: Worker;
     },
-    register: ({ command, callback }) => {
-        command.addCommand(
-            new Command('build')
-                .option('--binary', 'Compile to binary')
-                .option('--clean', 'Clean output directory')
-                .option('--compiler <string>', 'Compiler pathname')
-                .option('--entry <string>', 'Pathname to script')
-                .option('--loader <string>', 'Loader pathname')
-                .option('--name <string>', 'Name of the output file')
-                .option('--output-path <string>', 'Output path')
-                .option('--ts-project <string>', 'TypeScript project file pathname')
-                .option('--work-dir <string>', 'Work directory')
-                .option('--watch', 'Watch mode')
-                .action(callback),
-        );
+    register: ({ callback }) => {
+        return new Command('build')
+            .option('--binary', 'Compile to binary')
+            .option('--clean', 'Clean output directory')
+            .option('--compiler <string>', 'Compiler pathname')
+            .option('--entry <string>', 'Pathname to script')
+            .option('--loader <string>', 'Loader pathname')
+            .option('--name <string>', 'Name of the output file')
+            .option('--output-path <string>', 'Output path')
+            .option('--ts-project <string>', 'TypeScript project file pathname')
+            .option('--work-dir <string>', 'Work directory')
+            .option('--watch', 'Watch mode')
+            .action(callback);
     },
     run: ({ logger, options, context }) => {
         const resolveUtil = new ResolveUtil(__dirname);

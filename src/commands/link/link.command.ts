@@ -1,4 +1,4 @@
-import { CommandFactory } from '../command-factory.class';
+import { CommandFactory } from '../../factories/command.factory';
 import * as yup from 'yup';
 import * as commander from 'commander';
 import * as fs from 'fs-extra';
@@ -9,12 +9,10 @@ export const LinkCommand = CommandFactory.create({
     schema: yup.object().shape({
         dest: yup.array(yup.string()).required(),
     }),
-    register: ({ command, callback }) => {
-        command.addCommand(
-            new commander.Command('link')
-                .option('-d, --dest <string...>', 'destination that the package will be linked to')
-                .action(callback),
-        );
+    register: ({ callback }) => {
+        return new commander.Command('link')
+            .option('-d, --dest <string...>', 'destination that the package will be linked to')
+            .action(callback);
     },
     run: ({ options }) => {
         const { dest } = options;
