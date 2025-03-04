@@ -1,15 +1,13 @@
 import { Command } from 'commander';
-// import { BuildCommand } from './commands/build/build.command';
 import * as winston from 'winston';
 import { ServiceCommand } from './commands/service/service.command';
-// import { BumpCommand } from './commands/bump/bump.command';
-// import { LinkCommand } from './commands/link/link.command';
-// import { SDKCommand } from './commands/sdk/sdk.command';
+import { BumpCommand } from './commands/bump/bump.command';
+import { LinkCommand } from './commands/link/link.command';
 
 (async () => {
     const program = new Command('nttc');
 
-    for (const commandGenerator of [ServiceCommand]) {
+    for (const commandGenerator of [ServiceCommand, BumpCommand, LinkCommand]) {
         const logger = winston.createLogger({
             level: 'verbose',
             format: winston.format.combine(
