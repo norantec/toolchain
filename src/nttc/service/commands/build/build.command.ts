@@ -18,7 +18,6 @@ import { ForceWriteBundlePlugin } from '../../../../webpack/plugins/force-write-
 import { VirtualFilePlugin } from '../../../../webpack/plugins/virtual-file-plugin';
 import { AutoRunPlugin } from '../../../../webpack/plugins/auto-run-plugin';
 import { CompilePlugin } from '../../../../webpack/plugins/compile-plugin';
-import { ResolveUtil } from '../../../../utilities/resolve-util.class';
 import * as handlebars from 'handlebars';
 import * as yup from 'yup';
 
@@ -58,7 +57,6 @@ export const BuildCommand = CommandFactory.create({
             .action(callback);
     },
     run: ({ logger, options, context }) => {
-        const resolveUtil = new ResolveUtil(__dirname);
         const volume = new memfs.Volume() as memfs.IFs;
         const { watch, binary, clean, name: rawName, compiler: tsCompiler, loader, ...webpackOptions } = options;
         const name = binary ? `${rawName}-${process.arch}` : rawName;
@@ -75,7 +73,7 @@ export const BuildCommand = CommandFactory.create({
             let filePath: string;
 
             try {
-                filePath = require.resolve(resolveUtil.preserved('loaders', `${loader}.hbs`));
+                filePath = require.resolve(pathResolve('../../../../presets/service', 'loader', `build.loader.hbs`));
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (e) {}
 
