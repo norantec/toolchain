@@ -7,7 +7,7 @@ export class ResolveUtil {
         this.relativeDirname = path.relative(path.resolve(__dirname, '..'), dirname);
     }
 
-    public preserved(pathname: string) {
-        return path.resolve(__dirname, '../../preserved', this.relativeDirname, pathname);
+    public preserved(...pathnames: string[]) {
+        return path.resolve(__dirname, '../../preserved', this.relativeDirname, ...pathnames);
     }
 }

@@ -11,7 +11,6 @@ import { Worker } from 'worker_threads';
 import { SCHEMA } from './build.constants';
 import VirtualModulesPlugin = require('webpack-virtual-modules');
 import { v4 as uuid } from 'uuid';
-import { BuildLoader } from './build.types';
 import * as chokidar from 'chokidar';
 import * as ignore from 'ignore';
 import { CatchNotFoundPlugin } from '../../webpack/plugins/catch-not-found-plugin';
@@ -20,6 +19,8 @@ import { ForceWriteBundlePlugin } from '../../webpack/plugins/force-write-bundle
 import { VirtualFilePlugin } from '../../webpack/plugins/virtual-file-plugin';
 import { AutoRunPlugin } from '../../webpack/plugins/auto-run-plugin';
 import { CompilePlugin } from '../../webpack/plugins/compile-plugin';
+import { ResolveUtil } from '../../utilities/resolve-util.class';
+import * as handlebars from 'handlebars';
 
 export const BuildCommand = CommandFactory.create({
     schema: SCHEMA,
@@ -47,6 +48,7 @@ export const BuildCommand = CommandFactory.create({
         );
     },
     run: ({ logger, options, context }) => {
+        const resolveUtil = new ResolveUtil(__dirname);
         const volume = new memfs.Volume() as memfs.IFs;
         const { watch, binary, clean, name: rawName, compiler: tsCompiler, loader, ...webpackOptions } = options;
         const name = binary ? `${rawName}-${process.arch}` : rawName;
@@ -60,31 +62,39 @@ export const BuildCommand = CommandFactory.create({
 
             if (StringUtil.isFalsyString(loader)) return result;
 
-            let loaderFunc: BuildLoader;
-            const builtInLoaderPath = path.resolve(__dirname, './loaders', loader) + '.js';
+            let filePath: string;
 
-            if (fs.existsSync(builtInLoaderPath) && fs.statSync(builtInLoaderPath).isFile()) {
-                loaderFunc = require(builtInLoaderPath) as BuildLoader;
-            } else {
-                loaderFunc = require(
-                    require.resolve(loader, {
+            try {
+                filePath = require.resolve(resolveUtil.preserved('loaders', `${loader}.hbs`));
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            } catch (e) {}
+
+            if (StringUtil.isFalsyString(filePath)) {
+                try {
+                    filePath = require.resolve(`${loader}.hbs`, {
                         paths: [process.cwd()],
-                    }),
-                ) as BuildLoader;
+                    });
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                } catch (e) {}
             }
 
-            if (typeof loaderFunc !== 'function' && typeof (loaderFunc as any)?.default === 'function') {
-                loaderFunc = (loaderFunc as any).default as BuildLoader;
+            if (StringUtil.isFalsyString(filePath)) {
+                throw new Error(`Cannot find HBS file for '${loader}' in ${process.cwd()}`);
             }
 
-            if (typeof loaderFunc !== 'function') {
-                throw new Error(`Loader '${loader}' is not a function`);
-            }
+            let content: string;
 
-            const content = loaderFunc?.(options);
+            try {
+                content = fs.readFileSync(filePath).toString();
+                content = handlebars.compile(content, { noEscape: true })({
+                    entry: webpackOptions?.entry,
+                    absoluteEntry: absoluteRealEntryPath,
+                });
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            } catch (e) {}
 
             if (StringUtil.isFalsyString(content)) {
-                throw new Error(`Loader '${loader}' returned non-string content`);
+                throw new Error(`Cannot load '${loader}'`);
             }
 
             result[absoluteEntryPath] = content;
