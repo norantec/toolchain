@@ -21,8 +21,7 @@
     "files": [
         "bin",
         "dist",
-        "preserved",
-        "templates"
+        "preserved"
     ],
     "bin": {
         "nttc": "./bin/nttc.js"
