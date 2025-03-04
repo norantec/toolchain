@@ -1,8 +1,8 @@
 import { Command } from 'commander';
 import * as winston from 'winston';
-import { ServiceCommand } from './commands/service/service.command';
-import { BumpCommand } from './commands/bump/bump.command';
-import { LinkCommand } from './commands/link/link.command';
+import { ServiceCommand } from './service/service.command';
+import { BumpCommand } from './bump/bump.command';
+import { LinkCommand } from './link/link.command';
 
 (async () => {
     const program = new Command('nttc');
