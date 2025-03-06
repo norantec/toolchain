@@ -1,0 +1,5 @@
+export const GROUP = {
+    EXPOSE_ALL: 'θEXPOSE_ALL',
+    RESPONSE_ONLY: 'θRESPONSE_ONLY',
+    REQUEST_ONLY: 'θREQUEST_ONLY',
+};

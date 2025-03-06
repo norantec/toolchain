@@ -1,0 +1,69 @@
+/* eslint-disable @typescript-eslint/no-unsafe-function-type */
+import 'reflect-metadata';
+import { Controller, UseGuards } from '@nestjs/common';
+import { METADATA_NAMES } from '../constants/metadata-names.constant';
+import { AuthGuard } from '@nestjs/passport';
+import { SystemHeadGuard } from '../guards/system-head.guard';
+import * as _ from 'lodash';
+import { StringUtil } from './string-util.class';
+import { Method } from '../decorators/method.decorator';
+
+export interface ApiControllerOptions {
+    allowedAuthAdapters?: string[] | boolean;
+    headGuards?: Function[];
+    tailGuards?: Function[];
+    version?: number;
+}
+
+export class ApiControllerUtil {
+    public static create() {
+        const ApiController = (options?: ApiControllerOptions): ClassDecorator => {
+            return (target) => {
+                const finalPrefix = `/api/v${options?.version >= 1 ? options?.version : 1}`;
+                const methodNames = Reflect.getMetadata(METADATA_NAMES.METHODS, target);
+                const controllerAllowedAdapters = Method.normalizeAllowedAdapters(options?.allowedAuthAdapters);
+
+                if (Array.isArray(methodNames) && Array.isArray(controllerAllowedAdapters)) {
+                    methodNames.forEach((methodName) => {
+                        if (StringUtil.isFalsyString(methodName)) return;
+
+                        const methodAllowedAuthAdapters: string[] | boolean = Reflect.getMetadata(
+                            METADATA_NAMES.METHOD_AUTH_ADAPTERS,
+                            target,
+                            methodName,
+                        );
+
+                        if (methodAllowedAuthAdapters === false) return;
+
+                        if (Array.isArray(methodAllowedAuthAdapters)) {
+                            Reflect.defineMetadata(
+                                METADATA_NAMES.METHOD_AUTH_ADAPTERS,
+                                _.uniq(controllerAllowedAdapters.concat(methodAllowedAuthAdapters)),
+                                target,
+                                methodName,
+                            );
+                        } else if (methodAllowedAuthAdapters === true) {
+                            Reflect.defineMetadata(
+                                METADATA_NAMES.METHOD_AUTH_ADAPTERS,
+                                controllerAllowedAdapters,
+                                target,
+                                methodName,
+                            );
+                        }
+                    });
+                }
+
+                Reflect.defineMetadata(METADATA_NAMES.CONTROLLER_PREFIX, finalPrefix, target);
+                Controller(finalPrefix)(target);
+                UseGuards(
+                    SystemHeadGuard,
+                    ...options?.headGuards,
+                    ...(controllerAllowedAdapters === false ? [] : [AuthGuard('auth')]),
+                    ...options?.tailGuards,
+                )(target);
+            };
+        };
+
+        return ApiController;
+    }
+}

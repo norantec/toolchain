@@ -1,9 +1,9 @@
 import 'reflect-metadata';
 import { NestFactory } from '@open-norantec/toolchain/dist/lib/@nestjs/core';
-import { StringUtil } from '@norantec/nttc/dist/utilities/string-util.class';
+import { StringUtil } from '@open-norantec/toolchain/dist/utilities/string-util.class';
 import { OpenApiUtil } from '@open-norantec/toolchain/dist/utilities/open-api-util.class';
 import { SwaggerModule } from '@nestjs/swagger';
-import { ApiController } from '@open-norantec/toolchain/dist/decorators/api-controller.decorator';
+import { ModelUtil } from '@open-norantec/toolchain/dist/utilities/model-util.class';
 import { LoggerService } from '@open-norantec/toolchain/dist/modules/logger/logger.service';
 import ENTRY from '{{absoluteEntry}}';
 
