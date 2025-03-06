@@ -10,13 +10,16 @@ import { Method } from '../decorators/method.decorator';
 
 export interface ApiControllerOptions {
     allowedAuthAdapters?: string[] | boolean;
-    headGuards?: Function[];
-    tailGuards?: Function[];
     version?: number;
 }
 
+export interface ApiControllerUtilCreateOptions {
+    headGuards?: Function[];
+    tailGuards?: Function[];
+}
+
 export class ApiControllerUtil {
-    public static create() {
+    public static create(createOptions?: ApiControllerUtilCreateOptions) {
         const ApiController = (options?: ApiControllerOptions): ClassDecorator => {
             return (target) => {
                 const finalPrefix = `/api/v${options?.version >= 1 ? options?.version : 1}`;
@@ -57,9 +60,9 @@ export class ApiControllerUtil {
                 Controller(finalPrefix)(target);
                 UseGuards(
                     SystemHeadGuard,
-                    ...options?.headGuards,
+                    ...createOptions?.headGuards,
                     ...(controllerAllowedAdapters === false ? [] : [AuthGuard('auth')]),
-                    ...options?.tailGuards,
+                    ...createOptions?.tailGuards,
                 )(target);
             };
         };
