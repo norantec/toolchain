@@ -27,6 +27,10 @@
     "bin": {
         "nttc": "./bin/nttc.js"
     },
+    "publishConfig": {
+        "access": "public",
+        "registry": "https://registry.npmjs.org"
+    },
     "homepage": "https://github.com/norantec/toolchain#readme",
     "dependencies": {
         "@apidevtools/swagger-parser": "^10.1.1",
