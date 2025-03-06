@@ -89,7 +89,7 @@ jobs:
       - name: Prepare NPMRC
         run: |
           echo "always-auth=true" >> ./.npmrc
-          echo "@norantec:registry=https://registry.npmjs.org" >> ./.npmrc
+          echo "@open-norantec:registry=https://registry.npmjs.org" >> ./.npmrc
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> ./.npmrc
 
       - name: Publish package
