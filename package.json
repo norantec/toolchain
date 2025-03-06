@@ -22,7 +22,9 @@
         "bin",
         "dist",
         "preserved",
-        "presets"
+        "presets",
+        "LICENSE",
+        "README.md"
     ],
     "bin": {
         "nttc": "./bin/nttc.js"
