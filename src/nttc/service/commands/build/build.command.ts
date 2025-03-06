@@ -13,7 +13,7 @@ import { v4 as uuid } from 'uuid';
 import * as chokidar from 'chokidar';
 import * as ignore from 'ignore';
 import { CatchNotFoundPlugin } from '../../../../webpack/plugins/catch-not-found-plugin';
-import { CleanPlugin } from '../../../../webpack/plugins/clean-plugin';
+import { CleanNonJSFilePlugin } from '../../../../webpack/plugins/clean-non-js-file-plugin';
 import { ForceWriteBundlePlugin } from '../../../../webpack/plugins/force-write-bundle-plugin';
 import { VirtualFilePlugin } from '../../../../webpack/plugins/virtual-file-plugin';
 import { AutoRunPlugin } from '../../../../webpack/plugins/auto-run-plugin';
@@ -160,7 +160,7 @@ export const BuildCommand = CommandFactory.create({
                         `Build ${parsedPercentage}%${StringUtil.isFalsyString(message) ? '' : `: ${message}`}`,
                     );
                 }),
-                new CleanPlugin(),
+                new CleanNonJSFilePlugin(),
                 ...(() => {
                     const result: any[] = [];
 

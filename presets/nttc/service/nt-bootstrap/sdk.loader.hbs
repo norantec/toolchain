@@ -1,0 +1,45 @@
+import 'reflect-metadata';
+import { OpenApiUtil } from '@open-norantec/toolchain/dist/utilities/open-api-util.class';
+import { SDKUtil } from '@open-norantec/toolchain/dist/utilities/sdk-util.class';
+import { ApiController } from '@open-norantec/toolchain/dist/decorators/api-controller.decorator';
+import ENTRY from '{{absoluteEntry}}';
+import * as fs from '@open-norantec/toolchain/dist/lib/fs-extra';
+import * as path from 'path';
+
+async function bootstrap() {
+    if (Array.isArray(ENTRY?.models)) {
+        ENTRY?.models?.forEach?.((model) => {
+            ApiController.registerModel(model);
+        });
+    }
+
+    await ENTRY?.onBeforeBootstrap?.();
+
+    const fileMap = new SDKUtil({
+        packageName: '{{config?.packageName}}',
+        registry: '{{config?.registry}}',
+        authorEmail: '{{config?.authorEmail}}',
+        authorName: '{{config?.authorName}}',
+        registry: '{{config?.registry}}',
+        document: new OpenApiUtil({
+            Class: ENTRY?.Module,
+            scopeIdentifierBlacklist: ENTRY?.scopeIdentifierBlacklist ?? [],
+        }).generateDocument(),
+    }).generate() || {};
+
+    try {
+        fs.removeSync('{{absoluteOutputPath}}');
+    } catch (e) {}
+
+    try {
+        fs.mkdirpSync('{{absoluteOutputPath}}');
+    } catch (e) {}
+
+    Object.entries(fileMap).forEach(([relativePath, content]) => {
+        const absolutePath = path.resolve('{{absoluteOutputPath}}', relativePath);
+        fs.mkdirpSync(path.dirname(absolutePath));
+        fs.writeFileSync(absolutePath, content, 'utf-8');
+    });
+}
+
+bootstrap();

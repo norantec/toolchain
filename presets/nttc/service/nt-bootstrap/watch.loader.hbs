@@ -1,0 +1,42 @@
+import 'reflect-metadata';
+import { NestFactory } from '@open-norantec/toolchain/lib/@nestjs/core';
+import { StringUtil } from '@norantec/nttc/dist/utilities/string-util.class';
+import { OpenApiUtil } from '@open-norantec/toolchain/utilities/open-api-util.class';
+import { SwaggerModule } from '@nestjs/swagger';
+import { ApiController } from '@open-norantec/toolchain/decorators/api-controller.decorator';
+import { LoggerService } from '@open-norantec/toolchain/modules/logger/logger.service';
+import ENTRY from '{{absoluteEntry}}';
+
+async function bootstrap() {
+    if (Array.isArray(ENTRY?.models)) {
+        ENTRY?.models?.forEach?.((model) => {
+            ApiController.registerModel(model);
+        });
+    }
+
+    await ENTRY?.onBeforeBootstrap?.();
+
+    const openApiUtil = new OpenApiUtil({
+        Class: ENTRY?.Module,
+        scopeIdentifierBlacklist: ENTRY?.scopeIdentifierBlacklist ?? [],
+    });
+    const openApiDocument = openApiUtil.generateDocument();
+    const app = await NestFactory.create(ENTRY?.Module);
+    const resolver = (Class) => app.resolve(Class);
+    const listenPort = await ENTRY?.getListenPort?.(resolver);
+    const loggerService = await app.resolve(LoggerService);
+
+    SwaggerModule.setup('/docs/apis', app, openApiDocument, {
+        customCssUrl: ['https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.7.2/swagger-ui.css'],
+        customJs: ['https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.7.2/swagger-ui-bundle.js', 'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.7.2/swagger-ui-standalone-preset.js'],
+    });
+
+    const finalListenPort = listenPort > 0 ? listenPort : 8080;
+
+    await app.listen(finalListenPort, () => {
+        loggerService.log(`Listening on port: ${finalListenPort}`);
+        ENTRY?.callback?.(resolver);
+    });
+}
+
+bootstrap();

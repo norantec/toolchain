@@ -1,5 +1,5 @@
 {
-    "name": "@norantec/nttc",
+    "name": "@open-norantec/toolchain",
     "version": "1.0.0",
     "description": "NoranTec ToolChain",
     "main": "dist/index.js",
@@ -12,11 +12,11 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+ssh://git@github.com/norantec/nttc.git"
+        "url": "git+ssh://git@github.com/norantec/toolchain.git"
     },
     "author": "lenconda <i@lenconda.top>",
     "bugs": {
-        "url": "https://github.com/norantec/nttc/issues"
+        "url": "https://github.com/norantec/toolchain/issues"
     },
     "files": [
         "bin",
@@ -27,7 +27,7 @@
     "bin": {
         "nttc": "./bin/nttc.js"
     },
-    "homepage": "https://github.com/norantec/nttc#readme",
+    "homepage": "https://github.com/norantec/toolchain#readme",
     "dependencies": {
         "@apidevtools/swagger-parser": "^10.1.1",
         "@nestjs/swagger": "^11.0.5",

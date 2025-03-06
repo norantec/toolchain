@@ -1,12 +1,12 @@
 import * as webpack from 'webpack';
 import * as _ from 'lodash';
 
-export class CleanPlugin {
+export class CleanNonJSFilePlugin {
     public apply(compiler: webpack.Compiler) {
-        compiler.hooks.compilation.tap(CleanPlugin.name, (compilation) => {
+        compiler.hooks.compilation.tap(CleanNonJSFilePlugin.name, (compilation) => {
             compilation.hooks.processAssets.tap(
                 {
-                    name: CleanPlugin.name,
+                    name: CleanNonJSFilePlugin.name,
                     stage: webpack.Compilation.PROCESS_ASSETS_STAGE_OPTIMIZE,
                 },
                 (assets) => {
