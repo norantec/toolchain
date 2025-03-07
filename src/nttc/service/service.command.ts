@@ -35,33 +35,40 @@ const BASIC_CONFIG_SCHEMA = yup.object({
     compiler: yup.string().optional().default('typescript'),
     clean: yup.boolean().optional().default(true),
     entry: yup.string().required().default('src/main.ts'),
-    outputPath: yup.string().optional().default('dist'),
-    sourceDir: yup.string().optional().default('./src'),
     tsProject: yup.string().optional().default('tsconfig.json'),
-    workDir: yup.string().optional().default(process.cwd()),
+});
+
+const BASIC_CONFIG_CLEAN_SCHEMA = yup.object({
+    compiler: yup.string().optional(),
+    clean: yup.boolean().optional(),
+    entry: yup.string().optional(),
+    tsProject: yup.string().optional(),
 });
 
 type BasicConfig = yup.InferType<typeof BASIC_CONFIG_SCHEMA>;
 
 export const CONFIG_SCHEMA = BASIC_CONFIG_SCHEMA.concat(
-    yup.object({
+    yup.object().shape({
         preset: yup.string().optional().default('nt-bootstrap'),
+        outputPath: yup.string().optional().default('dist'),
+        sourceDir: yup.string().optional().default('./src'),
+        workDir: yup.string().optional().default(process.cwd()),
         runtimeOptions: yup
             .object({
-                [RunType.BUNDLE as 'bundle']: BASIC_CONFIG_SCHEMA.concat(
+                [RunType.BUNDLE as 'bundle']: BASIC_CONFIG_CLEAN_SCHEMA.concat(
                     yup.object({
                         binary: yup.boolean().optional().default(false),
                         name: yup.string().required().default('index'),
                         outputFilename: yup.string().optional().default('[name].js'),
                     }),
                 ).optional(),
-                [RunType.WATCH as 'watch']: BASIC_CONFIG_SCHEMA.concat(
+                [RunType.WATCH as 'watch']: BASIC_CONFIG_CLEAN_SCHEMA.concat(
                     yup.object({
                         name: yup.string().required().default('index'),
                         outputFilename: yup.string().optional().default('[name].js'),
                     }),
                 ).optional(),
-                [RunType.SDK as 'sdk']: BASIC_CONFIG_SCHEMA.concat(SDK_UTIL_SCHEMA).optional(),
+                [RunType.SDK as 'sdk']: BASIC_CONFIG_CLEAN_SCHEMA.concat(SDK_UTIL_SCHEMA).optional(),
             })
             .optional(),
     }),
@@ -107,14 +114,8 @@ export const ServiceCommand = CommandFactory.create({
         };
 
         let name: string;
-        const absoluteOutputPath = path.resolve(
-            getMergedConfigValue(runType, 'workDir'),
-            getMergedConfigValue(runType, 'outputPath'),
-        );
-        const absoluteRealEntryPath = path.resolve(
-            getMergedConfigValue(runType, 'workDir'),
-            getMergedConfigValue(runType, 'entry'),
-        );
+        const absoluteOutputPath = path.resolve(config.workDir, config.outputPath, runType);
+        const absoluteRealEntryPath = path.resolve(config?.workDir, getMergedConfigValue(runType, 'entry'));
         const absoluteEntryPath = path.resolve(path.dirname(absoluteRealEntryPath), `tmp_${uuid()}.ts`);
         const virtualEntries = (() => {
             const result: Record<string, string> = {};
@@ -221,10 +222,7 @@ export const ServiceCommand = CommandFactory.create({
             resolve: {
                 extensions: ['.js', '.cjs', '.mjs', '.ts', '.tsx'],
                 alias: {
-                    src: path.resolve(
-                        getMergedConfigValue(runType, 'workDir'),
-                        getMergedConfigValue(runType, 'sourceDir'),
-                    ),
+                    src: path.resolve(config?.workDir, config?.sourceDir),
                     UNKNOWN: false,
                 },
                 plugins: [new CatchNotFoundPlugin(logger)],
@@ -340,8 +338,8 @@ export const ServiceCommand = CommandFactory.create({
         }
 
         if (getMergedConfigValue(runType, 'clean')) {
-            logger?.info?.(`Cleaning output directory: ${compiler.options.output.path}`);
-            _.attempt(() => fs.removeSync(compiler?.options?.output?.path));
+            logger?.info?.(`Cleaning output directory: ${absoluteOutputPath}`);
+            _.attempt(() => fs.removeSync(absoluteOutputPath));
             logger?.info?.('Output directory cleaned');
         }
 
