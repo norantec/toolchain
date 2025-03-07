@@ -80,6 +80,7 @@ export const ServiceCommand = CommandFactory.create({
     schema: yup.object({
         config: yup.string().required(),
         runType: yup.string().oneOf(Object.values(RunType)).required(),
+        debug: yup.boolean().default(false),
     }),
     context: {
         progress: '0.00',
@@ -92,13 +93,18 @@ export const ServiceCommand = CommandFactory.create({
         return new Command('service')
             .requiredOption('-c, --config <string>', 'Config file pathname')
             .requiredOption('-t, --run-type <string>', 'Run type')
+            .option('-d, --debug', 'Debug mode')
             .action(callback);
     },
     run: ({ logger, options, context }) => {
         const volume = new memfs.Volume() as memfs.IFs;
-        const { config: configFilePath, runType } = options;
+        const { config: configFilePath, runType, debug } = options;
         const configAbsolutePath = path.resolve(configFilePath);
         const config = CONFIG_SCHEMA.cast(fs.readJsonSync(configAbsolutePath));
+
+        if (!Object.values(RunType).includes(runType)) {
+            throw new Error(`Run type must be one of values: ${Object.values(RunType).join('/')}, but got ${runType}`);
+        }
 
         const getSpecifiedConfig = <T extends RunTypeValue>(runType: T): Config['runtimeOptions'][T] => {
             return config?.runtimeOptions?.[runType];
@@ -260,8 +266,9 @@ export const ServiceCommand = CommandFactory.create({
 
                     result.push(new CleanNonJSFilePlugin(), new VirtualModulesPlugin(virtualEntries));
 
-                    if (![RunType.SDK, RunType.WATCH].includes(runType)) {
+                    if (![RunType.SDK, RunType.WATCH].includes(runType) || debug) {
                         result.push(new ForceWriteBundlePlugin(absoluteOutputPath));
+                        if (debug) return result;
                     }
 
                     if (runType === RunType.SDK) {
