@@ -260,9 +260,11 @@ export const ServiceCommand = CommandFactory.create({
 
                     result.push(new CleanNonJSFilePlugin(), new VirtualModulesPlugin(virtualEntries));
 
-                    if (runType !== RunType.SDK) {
+                    if (![RunType.SDK, RunType.WATCH].includes(runType)) {
                         result.push(new ForceWriteBundlePlugin(absoluteOutputPath));
-                    } else {
+                    }
+
+                    if (runType === RunType.SDK) {
                         result.push(new RunOncePlugin(logger));
                     }
 
