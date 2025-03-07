@@ -21,6 +21,7 @@ import { AutoRunPlugin } from '../../webpack/plugins/auto-run-plugin';
 import * as chokidar from 'chokidar';
 import * as ignore from 'ignore';
 import { RunOncePlugin } from '../../webpack/plugins/run-once-plugin';
+import { SCHEMA as SDK_UTIL_SCHEMA } from '../../utilities/sdk-util.class';
 
 export enum RunType {
     WATCH = 'watch',
@@ -60,14 +61,7 @@ export const CONFIG_SCHEMA = BASIC_CONFIG_SCHEMA.concat(
                         outputFilename: yup.string().optional().default('[name].js'),
                     }),
                 ).optional(),
-                [RunType.SDK as 'sdk']: BASIC_CONFIG_SCHEMA.concat(
-                    yup.object({
-                        authorEmail: yup.string().optional(),
-                        authorName: yup.string().optional(),
-                        packageName: yup.string().required(),
-                        registry: yup.string().optional().default('https://registry.npmjs.org'),
-                    }),
-                ).optional(),
+                [RunType.SDK as 'sdk']: BASIC_CONFIG_SCHEMA.concat(SDK_UTIL_SCHEMA).optional(),
             })
             .optional(),
     }),

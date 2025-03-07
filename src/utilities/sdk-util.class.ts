@@ -75,9 +75,9 @@ const templateFiles = {
 };
 
 export const SCHEMA = yup.object({
-    packageName: yup.string().required(),
-    authorName: yup.string().optional(),
     authorEmail: yup.string().optional(),
+    authorName: yup.string().optional(),
+    packageName: yup.string().required(),
     registry: yup.string().optional().default('https://registry.npmjs.org'),
 });
 
