@@ -11,11 +11,11 @@ export class ModelUtil {
         container.push([StringUtil.isFalsyString(key) ? model.name : key, model]);
     }
 
-    public static getModel(key: string) {
+    public static get(key: string) {
         return container.find(([k]) => k === key)?.[1];
     }
 
-    public static getModelMap() {
+    public static getMap() {
         return container.reduce(
             (result, [key, value]: [string, Constructor<any>]) => {
                 result[key] = value;

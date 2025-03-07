@@ -121,7 +121,7 @@ export const ServiceCommand = CommandFactory.create({
 
             if (
                 StringUtil.isFalsyString(config?.preset) ||
-                [RunType.BUNDLE, RunType.WATCH, RunType.SDK].includes(runType)
+                ![RunType.BUNDLE, RunType.WATCH, RunType.SDK].includes(runType)
             ) {
                 return {
                     [absoluteEntryPath]: fs.readFileSync(absoluteRealEntryPath).toString(),
@@ -132,12 +132,7 @@ export const ServiceCommand = CommandFactory.create({
 
             try {
                 filePath = require.resolve(
-                    path.resolve(
-                        __dirname,
-                        '../../../../../presets/nttc/service',
-                        config.preset,
-                        `${runType}.loader.hbs`,
-                    ),
+                    path.resolve(__dirname, '../../../presets/nttc/service', config.preset, `${runType}.loader.hbs`),
                 );
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (e) {}

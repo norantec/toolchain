@@ -294,7 +294,7 @@ export class OpenApiUtil {
             } as SchemaObject;
         };
 
-        const result = Object.entries(ModelUtil.getModelMap()).reduce(
+        const result = Object.entries(ModelUtil.getMap()).reduce(
             (result, [key, Class]) => {
                 const mappingMetadata = Reflect.getMetadata(Mapping.metadataKey, Class.prototype);
 

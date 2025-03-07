@@ -9,7 +9,7 @@ import * as path from 'path';
 async function bootstrap() {
     if (Array.isArray(ENTRY?.models)) {
         ENTRY?.models?.forEach?.((model) => {
-            ModelUtil.registerModel(model);
+            ModelUtil.register(model);
         });
     }
 
