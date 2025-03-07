@@ -45,7 +45,7 @@ type BasicConfig = yup.InferType<typeof BASIC_CONFIG_SCHEMA>;
 
 export const CONFIG_SCHEMA = BASIC_CONFIG_SCHEMA.concat(
     yup.object({
-        preset: yup.string().optional(),
+        preset: yup.string().optional().default('nt-bootstrap'),
         runtimeOptions: yup
             .object({
                 [RunType.BUNDLE as 'bundle']: BASIC_CONFIG_SCHEMA.concat(
