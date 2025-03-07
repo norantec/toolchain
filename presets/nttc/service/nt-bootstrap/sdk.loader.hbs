@@ -16,11 +16,11 @@ async function bootstrap() {
     await ENTRY?.onBeforeBootstrap?.();
 
     const fileMap = new SDKUtil({
-        packageName: '{{config?.packageName}}',
-        registry: '{{config?.registry}}',
-        authorEmail: '{{config?.authorEmail}}',
-        authorName: '{{config?.authorName}}',
-        registry: '{{config?.registry}}',
+        packageName: '{{config.packageName}}',
+        registry: '{{config.registry}}',
+        authorEmail: '{{config.authorEmail}}',
+        authorName: '{{config.authorName}}',
+        registry: '{{config.registry}}',
         document: new OpenApiUtil({
             Class: ENTRY?.Module,
             scopeIdentifierBlacklist: ENTRY?.scopeIdentifierBlacklist ?? [],
