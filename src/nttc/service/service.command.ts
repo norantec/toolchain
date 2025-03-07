@@ -12,7 +12,7 @@ import * as handlebars from 'handlebars';
 import * as webpack from 'webpack';
 import { CatchNotFoundPlugin } from '../../webpack/plugins/catch-not-found-plugin';
 import { CleanNonJSFilePlugin } from '../../webpack/plugins/clean-non-js-file-plugin';
-import VirtualModulesPlugin from 'webpack-virtual-modules';
+import VirtualModulesPlugin = require('webpack-virtual-modules');
 import { ForceWriteBundlePlugin } from '../../webpack/plugins/force-write-bundle-plugin';
 import { CompilePlugin } from '../../webpack/plugins/compile-plugin';
 import * as memfs from 'memfs';

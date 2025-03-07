@@ -60,9 +60,9 @@ export class ApiControllerUtil {
                 Controller(finalPrefix)(target);
                 UseGuards(
                     SystemHeadGuard,
-                    ...createOptions?.headGuards,
+                    ...(Array.isArray(createOptions?.headGuards) ? createOptions?.headGuards : []),
                     ...(controllerAllowedAdapters === false ? [] : [AuthGuard('auth')]),
-                    ...createOptions?.tailGuards,
+                    ...(Array.isArray(createOptions?.tailGuards) ? createOptions?.tailGuards : []),
                 )(target);
             };
         };
