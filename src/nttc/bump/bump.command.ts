@@ -1,6 +1,5 @@
 import * as yup from 'yup';
 import { CommandFactory } from '../../factories/command.factory';
-import { GithubAdapter } from './adapters/github.adapter.class';
 import * as winston from 'winston';
 import { BumpAdapter } from './bump-adapter-factory.class';
 import * as fs from 'fs-extra';
@@ -8,8 +7,9 @@ import * as path from 'path';
 import * as semver from 'semver';
 import { StringUtil } from '../../utilities/string-util.class';
 import * as commander from 'commander';
-import { NpmAdapter } from './adapters/npm.adapter.class';
 import { BumpType } from '../../enums/bump-type.enum';
+import { JSONUtil } from '../../utilities/json-util.class';
+import * as handlebars from 'handlebars';
 
 function getFormalReleaseVersion(version: string) {
     const parsed = semver.parse(version);
@@ -82,48 +82,54 @@ async function bump(type: BumpType, packageVersion: string, versions: string[], 
 export const BumpCommand = CommandFactory.create({
     schema: yup.object().shape({
         type: yup.string().required().oneOf(Object.values(BumpType)),
+        config: yup.string().required(),
     }),
-    context: {
-        adapters: [GithubAdapter, NpmAdapter] as BumpAdapter[],
-        adapter: null,
-        rawOptions: {},
-    } as {
-        adapters?: BumpAdapter[];
-        adapter?: InstanceType<BumpAdapter>;
-        rawOptions?: Record<string, any>;
+    context: {},
+    register: ({ callback }) => {
+        const command = new commander.Command('bump');
+
+        command
+            .requiredOption('-t, --type <string>', 'Bump type, e.g. alpha/beta/release')
+            .requiredOption('-c, --config <string>', 'Config file pathname')
+            .action(callback);
+
+        return command;
     },
-    register: ({ logger, context, callback }) => {
-        const subCommand = new commander.Command('bump');
+    run: async ({ logger, options: { type, config: configPath } }) => {
+        const config = fs.readJsonSync(path.resolve(configPath));
 
-        if (Array.isArray(context?.adapters)) {
-            context.adapters
-                .map((AdapterClass) => {
-                    const adapter = new AdapterClass(logger);
-                    const command = adapter.register();
-
-                    command
-                        .requiredOption('-t, --type <type>', 'Bump type, e.g. alpha/beta/release')
-                        .action((options) => {
-                            context.adapter = adapter;
-                            const { type, ...adapterOptions } = options;
-                            context.rawOptions = adapterOptions;
-                            callback({ type });
-                        });
-
-                    return command;
-                })
-                .forEach((command) => {
-                    subCommand.addCommand(command);
-                });
+        if (StringUtil.isFalsyString(config?.adapter)) {
+            throw new Error('Adapter not specified');
         }
 
-        return subCommand;
-    },
-    run: async ({ context, logger, options: { type } }) => {
-        const adapter = context.adapter;
+        const requireAdapter = (adapterPath: string): BumpAdapter => {
+            const requiredAdapterModule = require(adapterPath);
+            if (typeof requiredAdapterModule?.default === 'function')
+                return requiredAdapterModule?.default as BumpAdapter;
+            if (typeof requiredAdapterModule === 'function') return requiredAdapterModule as BumpAdapter;
+            return null;
+        };
+        const loadAdapter = (adapterName: string): BumpAdapter => {
+            let adapterPath = path.resolve(path.resolve(__dirname, './adapters'), `${adapterName}.adapter.js`);
 
-        if (!adapter) {
-            throw new Error('Adapter not found');
+            if (fs.existsSync(adapterPath) && fs.statSync(adapterPath).isFile()) {
+                const result = requireAdapter(adapterPath);
+                return result;
+            }
+
+            adapterPath = path.resolve(adapterName);
+
+            if (fs.existsSync(adapterPath) && fs.statSync(adapterPath).isFile()) {
+                return requireAdapter(adapterPath);
+            }
+
+            return null;
+        };
+
+        const adapter = loadAdapter(config.adapter);
+
+        if (typeof adapter !== 'function') {
+            throw new Error(`Cannot load adapter: '${config.adapter}'`);
         }
 
         const packageJson = fs.readJsonSync(path.resolve('package.json'));
@@ -132,7 +138,12 @@ export const BumpCommand = CommandFactory.create({
 
         logger.info(`Got package name: ${packageName}, version: ${packageVersion}`);
 
-        const versions = await adapter.getVersions(packageName, context.rawOptions);
+        const versions = await adapter(logger)(
+            packageName,
+            JSONUtil.parse(
+                handlebars.compile(JSON.stringify(config?.options ?? {}), { noEscape: true })({ env: process?.env }),
+            ),
+        );
         const newVersion = await bump(type, packageVersion, versions, logger);
 
         if (StringUtil.isFalsyString(newVersion)) {

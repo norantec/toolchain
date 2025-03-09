@@ -1,20 +1,14 @@
 import * as yup from 'yup';
-import * as commander from 'commander';
 import { BumpAdapterFactory } from '../bump-adapter-factory.class';
 import * as semver from 'semver';
 import { StringUtil } from '../../../utilities/string-util.class';
 import * as axios from 'axios';
 
-export const NpmAdapter = BumpAdapterFactory.create({
+export default BumpAdapterFactory.create({
     schema: yup.object().shape({
         token: yup.string().optional(),
         registry: yup.string().required().default('https://registry.npmjs.org'),
     }),
-    register: () => {
-        const subCommand = new commander.Command('npm');
-        subCommand.option('--token <string>', 'NPM token').option('--registry <string>', 'NPM registry');
-        return subCommand;
-    },
     getVersions: async (logger, packageName, options) => {
         try {
             logger.verbose(`Requesting versions for ${packageName}`);

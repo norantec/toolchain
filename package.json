@@ -1,6 +1,6 @@
 {
     "name": "@open-norantec/toolchain",
-    "version": "1.0.0",
+    "version": "1.0.0-alpha.15",
     "description": "NoranTec ToolChain",
     "main": "dist/index.js",
     "scripts": {

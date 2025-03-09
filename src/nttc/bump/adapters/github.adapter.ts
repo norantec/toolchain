@@ -1,24 +1,15 @@
 import * as yup from 'yup';
-import * as commander from 'commander';
 import { BumpAdapterFactory } from '../bump-adapter-factory.class';
 import { Octokit } from 'octokit';
 import * as semver from 'semver';
 import { StringUtil } from '../../../utilities/string-util.class';
 
-export const GithubAdapter = BumpAdapterFactory.create({
+export default BumpAdapterFactory.create({
     schema: yup.object().shape({
         token: yup.string().required(),
         owner: yup.string().required(),
         isOrg: yup.boolean().optional().default(false),
     }),
-    register: () => {
-        const subCommand = new commander.Command('github');
-        subCommand
-            .requiredOption('--token <string>', 'GitHub token')
-            .requiredOption('--owner <string>', 'GitHub owner name')
-            .option('--is-org', 'Current owner is an organization');
-        return subCommand;
-    },
     getVersions: async (logger, packageName, options) => {
         try {
             logger.verbose('Creating Octokit instance');

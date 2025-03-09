@@ -1,12 +1,10 @@
 import * as winston from 'winston';
-import * as commander from 'commander';
 import * as yup from 'yup';
 import { RequiredDeep } from 'type-fest';
 
 export class BumpAdapterFactory {
     public static create<T extends yup.ObjectSchema<any>>({
         schema,
-        register,
         getVersions,
     }: {
         schema: T;
@@ -15,22 +13,11 @@ export class BumpAdapterFactory {
             packageName: string,
             options?: RequiredDeep<yup.InferType<T>>,
         ) => Promise<string[]>;
-        register: () => commander.Command;
     }) {
-        return class {
-            #logger: winston.Logger;
-
-            public constructor(logger: winston.Logger) {
-                this.#logger = logger;
-            }
-
-            public register() {
-                return register.call(this);
-            }
-
-            public async getVersions(packageName: string, options?: any) {
-                return getVersions.call(this, this.#logger, packageName, schema.cast(options));
-            }
+        return (logger: winston.Logger) => {
+            return (packageName: string, options?: any) => {
+                return getVersions(logger, packageName, schema.cast(options));
+            };
         };
     }
 }
