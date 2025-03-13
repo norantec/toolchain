@@ -1,6 +1,6 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { type Request } from 'express';
-import { HeaderUtil } from '../utilities/header-util.class';
+import { HeaderUtil } from '@open-norantec/utilities/dist/header-util.class';
 import { HEADERS } from '../constants/headers.constant';
 
 export const CurrentLocale = createParamDecorator((data: unknown, context: ExecutionContext): any => {

@@ -1,5 +1,5 @@
 import { AES, enc, HmacSHA256 } from 'crypto-js';
-import { JSONUtil } from './json-util.class';
+import { JSONUtil } from '@open-norantec/utilities/dist/json-util.class';
 import { SerializableUtil } from './serializable-util.class';
 import { Constructor } from 'type-fest';
 import { StringUtil } from './string-util.class';

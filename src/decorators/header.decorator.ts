@@ -1,6 +1,6 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { type Request } from 'express';
-import { HeaderUtil } from '../utilities/header-util.class';
+import { HeaderUtil } from '@open-norantec/utilities/dist/header-util.class';
 
 export const Header = createParamDecorator((data: string, context: ExecutionContext): any => {
     const request = context.switchToHttp().getRequest<Request>();

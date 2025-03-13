@@ -8,7 +8,7 @@ import * as semver from 'semver';
 import { StringUtil } from '../../utilities/string-util.class';
 import * as commander from 'commander';
 import { BumpType } from '../../enums/bump-type.enum';
-import { JSONUtil } from '../../utilities/json-util.class';
+import { JSONUtil } from '@open-norantec/utilities/dist/json-util.class';
 import * as handlebars from 'handlebars';
 
 function getFormalReleaseVersion(version: string) {
