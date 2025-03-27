@@ -22,6 +22,7 @@ async function bootstrap() {
     });
     const openApiDocument = openApiUtil.generateDocument();
     const app = await NestFactory.create(ENTRY?.Module);
+    app.enableCors();
     const resolver = (Class) => app.resolve(Class);
     const listenPort = await ENTRY?.getListenPort?.(resolver);
     const loggerService = await app.resolve(LoggerService);
