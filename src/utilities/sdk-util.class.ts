@@ -134,7 +134,7 @@ export class SDKUtil {
             "import { PartialDeep } from 'type-fest';",
             "import { AxiosError as ClientError, AxiosResponse, AxiosRequestConfig } from 'axios';",
             "import axios from 'axios';",
-            "import hash from 'object-hash';",
+            "import * as hash from 'object-hash';",
             '\nexport { ClientError };',
             `\n${dataTypeMapCode}`,
             `\n${methodTypeMapCode}`,
