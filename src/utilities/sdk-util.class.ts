@@ -46,6 +46,12 @@ const templateFiles = {
         null,
         4,
     ),
+    'bump.config.json': JSON.stringify({
+        adapter: 'npm',
+        options: {
+            token: '{{env.NPM_TOKEN}}',
+        },
+    }),
     'tsconfig.json': JSON.stringify(
         {
             compilerOptions: {
