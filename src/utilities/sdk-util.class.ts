@@ -34,10 +34,12 @@ const templateFiles = {
             },
             dependencies: {
                 axios: '1.7.9',
+                'object-hash': '^3.0.0',
                 'type-fest': '4.35.0',
             },
             devDependencies: {
                 '@types/node': '^20.3.1',
+                '@types/object-hash': '^3.0.6',
                 typescript: '5.1.3',
             },
         },
@@ -83,7 +85,9 @@ export const SCHEMA = yup.object({
 
 const DATA_TYPE_MAP_NAME = 'DataTypeMap';
 const METHOD_TYPE_MAP_NAME = 'MethodTypeMap';
-const RESPONSE_TYPE_NAME = 'AxiosResponse';
+const RESPONSE_TYPE_NAME = 'ClientResponse';
+const OPTIONS_NAME = 'Options';
+const REQUEST_OPTIONS_NAME = 'RequestOptions';
 
 export interface OpenApiGeneratorOptions extends InferType<typeof SCHEMA> {
     document: OpenAPIObject;
@@ -122,32 +126,48 @@ export class SDKUtil {
         const methodTypeMapCode = this.generateMethodTypeMap(this.options?.document?.paths);
         return [
             "import { PartialDeep } from 'type-fest';",
-            "import { AxiosResponse, AxiosRequestConfig } from 'axios';",
+            "import { AxiosError as ClientError, AxiosResponse, AxiosRequestConfig } from 'axios';",
             "import axios from 'axios';",
+            "import hash from 'object-hash';",
+            '\nexport { ClientError };',
             `\n${dataTypeMapCode}`,
             `\n${methodTypeMapCode}`,
-            '\nexport interface Options extends Partial<AxiosRequestConfig> {',
+            `\nexport interface ${OPTIONS_NAME} extends Partial<AxiosRequestConfig> {`,
             '    getAuthorizationCredential?: () => string;',
             '}',
+            `\nexport interface ${RESPONSE_TYPE_NAME}<T> {`,
+            '    error?: ClientError;',
+            '    response?: T;',
+            '}',
+            `\nexport interface ${REQUEST_OPTIONS_NAME} {`,
+            '    ignoreCache?: boolean;',
+            '}',
             '\nexport class Client {',
-            '    public constructor(private readonly options: Options = {}) {}',
+            `    public constructor(private readonly options: ${OPTIONS_NAME} = {}) {}`,
             `\n    protected readonly REQUEST_METHOD_MAP = new Map<keyof ${METHOD_TYPE_MAP_NAME}, (...params: any[]) => Promise<unknown>>();`,
-            `\n    public createRequest<T extends keyof ${METHOD_TYPE_MAP_NAME}>(url: T): (requestBody?: ${METHOD_TYPE_MAP_NAME}[T]['requestBody']) => Promise<${RESPONSE_TYPE_NAME}<${METHOD_TYPE_MAP_NAME}[T]['responseData']>> {`,
+            `\n    protected readonly RESPONSE_CACHE_MAP = new Map<string, ${RESPONSE_TYPE_NAME}<unknown>>();`,
+            `\n    public createRequest<T extends keyof ${METHOD_TYPE_MAP_NAME}>(url: T): (requestBody?: ${METHOD_TYPE_MAP_NAME}[T]['requestBody'], options?: ${REQUEST_OPTIONS_NAME}) => Promise<${RESPONSE_TYPE_NAME}<${METHOD_TYPE_MAP_NAME}[T]['responseData']>> {`,
             "        if (typeof this.REQUEST_METHOD_MAP.get(url) !== 'function') {",
-            `            this.REQUEST_METHOD_MAP.set(url, (requestBody?: ${METHOD_TYPE_MAP_NAME}[T]['requestBody']) => this.request.call(this, url, requestBody));`,
+            `            this.REQUEST_METHOD_MAP.set(url, (requestBody?: ${METHOD_TYPE_MAP_NAME}[T]['requestBody'], options?: ${REQUEST_OPTIONS_NAME}) => this.request.call(this, url, requestBody, options));`,
             '        }',
-            `        return this.REQUEST_METHOD_MAP.get(url) as (requestBody?: ${METHOD_TYPE_MAP_NAME}[T]['requestBody']) => Promise<${RESPONSE_TYPE_NAME}<${METHOD_TYPE_MAP_NAME}[T]['responseData']>>;`,
+            `        return this.REQUEST_METHOD_MAP.get(url) as (requestBody?: ${METHOD_TYPE_MAP_NAME}[T]['requestBody'], options?: ${REQUEST_OPTIONS_NAME}) => Promise<${RESPONSE_TYPE_NAME}<${METHOD_TYPE_MAP_NAME}[T]['responseData']>>;`,
             '    }',
-            `\n    public async request<T extends keyof ${METHOD_TYPE_MAP_NAME}>(url: T, requestBody?: ${METHOD_TYPE_MAP_NAME}[T]['requestBody']): Promise<${RESPONSE_TYPE_NAME}<${METHOD_TYPE_MAP_NAME}[T]['responseData']>> {`,
+            `\n    public async request<T extends keyof ${METHOD_TYPE_MAP_NAME}>(url: T, requestBody?: ${METHOD_TYPE_MAP_NAME}[T]['requestBody'], options?: ${REQUEST_OPTIONS_NAME}): Promise<${RESPONSE_TYPE_NAME}<${METHOD_TYPE_MAP_NAME}[T]['responseData']>> {`,
+            '        const requestHash = hash(requestBody ?? null);',
+            '        if (this.RESPONSE_CACHE_MAP.has(requestHash) && !options?.ignoreCache) {',
+            '            return this.RESPONSE_CACHE_MAP.get(requestHash);',
+            '        }',
             '        const { getAuthorizationCredential, ...axiosOptions } = this?.options;',
             '        const credential = getAuthorizationCredential?.();',
-            '        return await axios.post(url, requestBody, {',
+            '        const result = await axios.post(url, requestBody, {',
             '            ...axiosOptions,',
             '            headers: {',
             '                ...axiosOptions?.headers,',
             "                Authorization: (typeof credential === 'string' && credential.length > 0) ? credential : this?.options?.headers?.Authorization,",
             '            },',
-            '        });',
+            '        }).then((response) => ({ error: null, response: response?.data })).catch((error) => ({ error, response: null }));',
+            '        this.RESPONSE_CACHE_MAP.set(requestHash, result);',
+            '        return result;',
             '    }',
             '}\n',
         ].join('\n');
