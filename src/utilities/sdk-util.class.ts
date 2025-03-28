@@ -175,7 +175,7 @@ export class SDKUtil {
             '\nexport class Client {',
             `    public constructor(private readonly options: ${OPTIONS_NAME} = {}) {}`,
             `\n    protected readonly REQUEST_METHOD_MAP = new Map<keyof ${METHOD_TYPE_MAP_NAME}, (...params: any[]) => Promise<unknown>>();`,
-            `\n    protected readonly RESPONSE_CACHE_MAP = new Map<string, ${responseDataTypeAnnotation}>();`,
+            `\n    protected readonly RESPONSE_CACHE_MAP = new Map<string, ${RESPONSE_TYPE_NAME}<${CLIENT_RESPONSE_DATA_TYPE_NAME}<unknown>>>();`,
             `\n    public createRequest<T extends keyof ${METHOD_TYPE_MAP_NAME}>(url: T): (requestBody?: ${requestBodyTypeAnnotation}, options?: ${REQUEST_OPTIONS_NAME}) => Promise<${responseDataTypeAnnotation}> {`,
             "        if (typeof this.REQUEST_METHOD_MAP.get(url) !== 'function') {",
             `            this.REQUEST_METHOD_MAP.set(url, (requestBody?: ${requestBodyTypeAnnotation}, options?: ${REQUEST_OPTIONS_NAME}) => this.request.call(this, url, requestBody, options));`,
