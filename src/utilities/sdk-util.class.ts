@@ -94,6 +94,7 @@ const METHOD_TYPE_MAP_NAME = 'MethodTypeMap';
 const RESPONSE_TYPE_NAME = 'ClientResponse';
 const OPTIONS_NAME = 'Options';
 const REQUEST_OPTIONS_NAME = 'RequestOptions';
+const RESPONSE_DATA_TYPE_NAME = 'ResponseData';
 
 export interface OpenApiGeneratorOptions extends InferType<typeof SCHEMA> {
     document: OpenAPIObject;
@@ -141,9 +142,14 @@ export class SDKUtil {
             `\nexport interface ${OPTIONS_NAME} extends Partial<AxiosRequestConfig> {`,
             '    getAuthorizationCredential?: () => string;',
             '}',
+            `\nexport interface ${RESPONSE_DATA_TYPE_NAME}<T> {`,
+            '    data: T[];',
+            `    pagination: ${DATA_TYPE_MAP_NAME}['PaginationDTO.Response']; | null`,
+            '    token: string | null',
+            '}',
             `\nexport interface ${RESPONSE_TYPE_NAME}<T> {`,
             '    error?: ClientError;',
-            '    response?: T[];',
+            `    response?: ${RESPONSE_DATA_TYPE_NAME}<T>;`,
             '}',
             `\nexport interface ${REQUEST_OPTIONS_NAME} {`,
             '    ignoreCache?: boolean;',
