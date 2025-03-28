@@ -97,7 +97,7 @@ const REQUEST_OPTIONS_NAME = 'RequestOptions';
 const CLIENT_RESPONSE_DATA_TYPE_NAME = 'ClientResponseData';
 const CLIENT_REQUEST_BODY_TYPE_NAME = 'ClientResponseData';
 
-type TypeCustomizerFn = (dataTypeMapName: string, genericName: string) => string[];
+type TypeCustomizerFn = (dataTypeMapName: string, name: string, genericName: string) => string[];
 
 export interface OpenApiGeneratorOptions extends InferType<typeof SCHEMA> {
     document: OpenAPIObject;
@@ -135,7 +135,7 @@ export class SDKUtil {
 
     private generateTypeCode(customizer: TypeCustomizerFn, dataTypeName: string): string[] {
         if (typeof customizer === 'function') {
-            const customizedLines = customizer(DATA_TYPE_MAP_NAME, 'T');
+            const customizedLines = customizer(DATA_TYPE_MAP_NAME, dataTypeName, 'T');
             if (
                 !Array.isArray(customizedLines) ||
                 customizedLines.filter((line) => !StringUtil.isFalsyString(line)).length === 0
@@ -150,6 +150,8 @@ export class SDKUtil {
     private generateIndexCode() {
         const dataTypeMapCode = this.generateDataTypeMap(this.options?.document?.components?.schemas);
         const methodTypeMapCode = this.generateMethodTypeMap(this.options?.document?.paths);
+        const requestBodyTypeAnnotation = `${CLIENT_REQUEST_BODY_TYPE_NAME}<${METHOD_TYPE_MAP_NAME}[T]['requestBody']>`;
+        const responseDataTypeAnnotation = `${RESPONSE_TYPE_NAME}<${CLIENT_RESPONSE_DATA_TYPE_NAME}<${METHOD_TYPE_MAP_NAME}[T]['responseData']>>`;
         return [
             "import { PartialDeep } from 'type-fest';",
             "import { AxiosError as ClientError, AxiosResponse, AxiosRequestConfig } from 'axios';",
@@ -174,13 +176,13 @@ export class SDKUtil {
             `    public constructor(private readonly options: ${OPTIONS_NAME} = {}) {}`,
             `\n    protected readonly REQUEST_METHOD_MAP = new Map<keyof ${METHOD_TYPE_MAP_NAME}, (...params: any[]) => Promise<unknown>>();`,
             `\n    protected readonly RESPONSE_CACHE_MAP = new Map<string, ${RESPONSE_TYPE_NAME}<unknown>>();`,
-            `\n    public createRequest<T extends keyof ${METHOD_TYPE_MAP_NAME}>(url: T): (requestBody?: ${METHOD_TYPE_MAP_NAME}[T]['requestBody'], options?: ${REQUEST_OPTIONS_NAME}) => Promise<${RESPONSE_TYPE_NAME}<${METHOD_TYPE_MAP_NAME}[T]['responseData']>> {`,
+            `\n    public createRequest<T extends keyof ${METHOD_TYPE_MAP_NAME}>(url: T): (requestBody?: ${requestBodyTypeAnnotation}, options?: ${REQUEST_OPTIONS_NAME}) => Promise<${responseDataTypeAnnotation}> {`,
             "        if (typeof this.REQUEST_METHOD_MAP.get(url) !== 'function') {",
-            `            this.REQUEST_METHOD_MAP.set(url, (requestBody?: ${METHOD_TYPE_MAP_NAME}[T]['requestBody'], options?: ${REQUEST_OPTIONS_NAME}) => this.request.call(this, url, requestBody, options));`,
+            `            this.REQUEST_METHOD_MAP.set(url, (requestBody?: ${requestBodyTypeAnnotation}, options?: ${REQUEST_OPTIONS_NAME}) => this.request.call(this, url, requestBody, options));`,
             '        }',
-            `        return this.REQUEST_METHOD_MAP.get(url) as (requestBody?: ${METHOD_TYPE_MAP_NAME}[T]['requestBody'], options?: ${REQUEST_OPTIONS_NAME}) => Promise<${RESPONSE_TYPE_NAME}<${METHOD_TYPE_MAP_NAME}[T]['responseData']>>;`,
+            `        return this.REQUEST_METHOD_MAP.get(url) as (requestBody?: ${requestBodyTypeAnnotation}, options?: ${REQUEST_OPTIONS_NAME}) => Promise<${responseDataTypeAnnotation}>;`,
             '    }',
-            `\n    public async request<T extends keyof ${METHOD_TYPE_MAP_NAME}>(url: T, requestBody?: ${METHOD_TYPE_MAP_NAME}[T]['requestBody'], options?: ${REQUEST_OPTIONS_NAME}): Promise<${RESPONSE_TYPE_NAME}<${METHOD_TYPE_MAP_NAME}[T]['responseData']>> {`,
+            `\n    public async request<T extends keyof ${METHOD_TYPE_MAP_NAME}>(url: T, requestBody?: ${requestBodyTypeAnnotation}, options?: ${REQUEST_OPTIONS_NAME}): Promise<${responseDataTypeAnnotation}> {`,
             '        const requestHash = hash(requestBody ?? null);',
             '        if (this.RESPONSE_CACHE_MAP.has(requestHash) && !options?.ignoreCache) {',
             '            return this.RESPONSE_CACHE_MAP.get(requestHash);',
