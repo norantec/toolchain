@@ -94,15 +94,15 @@ const METHOD_TYPE_MAP_NAME = 'MethodTypeMap';
 const RESPONSE_TYPE_NAME = 'ClientResponse';
 const OPTIONS_NAME = 'Options';
 const REQUEST_OPTIONS_NAME = 'RequestOptions';
-const RESPONSE_DATA_TYPE_NAME = 'ResponseData';
+const CLIENT_RESPONSE_DATA_TYPE_NAME = 'ClientResponseData';
+const CLIENT_REQUEST_BODY_TYPE_NAME = 'ClientResponseData';
+
+type TypeCustomizerFn = (dataTypeMapName: string, genericName: string) => string[];
 
 export interface OpenApiGeneratorOptions extends InferType<typeof SCHEMA> {
     document: OpenAPIObject;
-    customizeResponse?: (dataTypeMapName: string) => {
-        fields: Array<[string, string]>;
-        genericName: string;
-        type: 'interface' | 'type';
-    };
+    customizeRequestBodyType?: TypeCustomizerFn;
+    customizeResponseDataType?: TypeCustomizerFn;
 }
 
 export type GenerateResult = Record<string, string>;
@@ -133,6 +133,20 @@ export class SDKUtil {
         return result;
     }
 
+    private generateTypeCode(customizer: TypeCustomizerFn, dataTypeName: string): string[] {
+        if (typeof customizer === 'function') {
+            const customizedLines = customizer(DATA_TYPE_MAP_NAME, 'T');
+            if (
+                !Array.isArray(customizedLines) ||
+                customizedLines.filter((line) => !StringUtil.isFalsyString(line)).length === 0
+            ) {
+                throw new Error('Invalid cutomization of type');
+            }
+            return customizedLines;
+        }
+        return [`\nexport type ${dataTypeName}<T> = T;`];
+    }
+
     private generateIndexCode() {
         const dataTypeMapCode = this.generateDataTypeMap(this.options?.document?.components?.schemas);
         const methodTypeMapCode = this.generateMethodTypeMap(this.options?.document?.paths);
@@ -144,43 +158,14 @@ export class SDKUtil {
             '\nexport { ClientError };',
             `\n${dataTypeMapCode}`,
             `\n${methodTypeMapCode}`,
-            ...(() => {
-                let defaultLines = [`\nexport type ${RESPONSE_DATA_TYPE_NAME}<T> = T[];`];
-                if (typeof this.options?.customizeResponse === 'function') {
-                    const customized = this.options.customizeResponse(DATA_TYPE_MAP_NAME);
-
-                    switch (customized?.type) {
-                        case 'type': {
-                            if (StringUtil.isFalsyString(customized?.fields?.[0]?.[0])) {
-                                throw new Error('Field 0.0 must be a string');
-                            }
-
-                            if (StringUtil.isFalsyString(customized?.genericName)) {
-                                throw new Error('Generic name must be a string');
-                            }
-
-                            defaultLines = [
-                                `\nexport type ${RESPONSE_DATA_TYPE_NAME}<${customized.genericName}> = ${customized.fields[0][0]};`,
-                            ];
-
-                            break;
-                        }
-                        case 'interface': {
-                            // TODO:
-                            break;
-                        }
-                        default:
-                            throw new Error('customizeResponse type is not valid');
-                    }
-                }
-                return defaultLines;
-            })(),
+            ...this.generateTypeCode(this.options?.customizeRequestBodyType, CLIENT_REQUEST_BODY_TYPE_NAME),
+            ...this.generateTypeCode(this.options?.customizeResponseDataType, CLIENT_RESPONSE_DATA_TYPE_NAME),
             `\nexport interface ${OPTIONS_NAME} extends Partial<AxiosRequestConfig> {`,
             '    getAuthorizationCredential?: () => string;',
             '}',
             `\nexport interface ${RESPONSE_TYPE_NAME}<T> {`,
             '    error?: ClientError;',
-            `    response?: ${RESPONSE_DATA_TYPE_NAME}<T>;`,
+            `    response?: ${CLIENT_RESPONSE_DATA_TYPE_NAME}<T>;`,
             '}',
             `\nexport interface ${REQUEST_OPTIONS_NAME} {`,
             '    ignoreCache?: boolean;',

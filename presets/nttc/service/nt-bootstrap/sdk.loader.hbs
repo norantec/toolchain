@@ -25,6 +25,7 @@ async function bootstrap() {
             Class: ENTRY?.Module,
             scopeIdentifierBlacklist: ENTRY?.scopeIdentifierBlacklist ?? [],
         }).generateDocument(),
+        ...ENTRY?.sdk,
     }).generate() || {};
 
     try {
