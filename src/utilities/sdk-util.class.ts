@@ -143,7 +143,7 @@ export class SDKUtil {
             '}',
             `\nexport interface ${RESPONSE_TYPE_NAME}<T> {`,
             '    error?: ClientError;',
-            '    response?: T;',
+            '    response?: T[];',
             '}',
             `\nexport interface ${REQUEST_OPTIONS_NAME} {`,
             '    ignoreCache?: boolean;',
