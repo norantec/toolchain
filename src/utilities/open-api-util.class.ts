@@ -242,7 +242,9 @@ export class OpenApiUtil {
                             return result;
                         }
 
-                        propertyType = propertyType.replace(/(\[\])+$/, '');
+                        const arrayRegExp = /(\[\])+$/;
+                        const arrayCount = arrayRegExp.exec(propertyType)?.[0]?.length / 2;
+                        propertyType = propertyType.replace(arrayRegExp, '');
 
                         switch (scene) {
                             case 'request': {
@@ -261,6 +263,8 @@ export class OpenApiUtil {
                             }
                         }
 
+                        let finalSchema: SchemaObject | Partial<ReferenceObject>;
+
                         if (propertyType === 'enum') {
                             const enumValues = options?.enumValues;
 
@@ -274,18 +278,29 @@ export class OpenApiUtil {
                                 throw new Error(ErrorCode.INVALID_ENUM_VALUE_TYPE);
                             }
 
-                            result[propertyKey] = {
+                            finalSchema = {
                                 type: types[0],
                                 enum: enumValues,
                             };
                         } else if (Object.keys(OpenApiUtil.internalSchemas).includes(propertyType)) {
-                            result[propertyKey] = OpenApiUtil.internalSchemas[propertyType];
+                            finalSchema = OpenApiUtil.internalSchemas[propertyType];
                         } else {
                             const className = /^class\s(\w+)/.exec(propertyType)?.[1];
-                            result[propertyKey] = {
+                            finalSchema = {
                                 $ref: getSchemaPath(`${className}.${postfix}`),
                             };
                         }
+
+                        if (arrayCount > 0) {
+                            finalSchema = new Array(arrayCount).fill(null).reduce((result) => {
+                                return {
+                                    type: 'array',
+                                    items: result,
+                                };
+                            }, finalSchema);
+                        }
+
+                        result[propertyKey] = finalSchema;
 
                         return result;
                     },

@@ -182,80 +182,55 @@ export class SDKUtil {
     private generateDataTypeMap(schemas: Record<string, SchemaObject | ReferenceObject>) {
         if (!_.isObjectLike(schemas) || StringUtil.isFalsyString(DATA_TYPE_MAP_NAME)) return;
         const generatedComponents = Object.entries(schemas)
-            .reduce((result: string[], [key, schemaItem]) => {
-                const componentLines = this.generateComponent(schemaItem);
-                return result.concat(`'${key}': ${componentLines.shift()}`).concat(...componentLines);
+            .reduce((result: string[], [key, schema]) => {
+                const componentLines = Object.entries((schema as SchemaObject).properties).reduce(
+                    (componentResult: string[], [key, subSchema]) => {
+                        return componentResult.concat(`    ${key}?: ${this.generateSchemaType(subSchema)};`);
+                    },
+                    [] as string[],
+                );
+                return result.concat([`'${key}': {`, ...componentLines, '};']);
             }, [] as string[])
             .map((item) => `    ${item}`);
         return [`export interface ${DATA_TYPE_MAP_NAME} {`, ...generatedComponents, '};'].join('\n');
     }
 
-    private generateComponent(schema: SchemaObject | ReferenceObject): string[] {
+    private generateSchemaType(schema: SchemaObject | ReferenceObject): string {
+        if ((schema as SchemaObject)?.type === 'array') {
+            return `Array<${this.generateSchemaType((schema as SchemaObject).items)}>`;
+        }
+
         if (!StringUtil.isFalsyString((schema as ReferenceObject)?.$ref)) {
-            return [(schema as ReferenceObject).$ref.split('/').pop()];
+            return `${DATA_TYPE_MAP_NAME}['${(schema as ReferenceObject).$ref.split('/').pop()}']`;
         }
 
-        if ((schema as SchemaObject).type === 'object' && _.isObjectLike((schema as SchemaObject)?.properties)) {
-            const fields = Object.entries((schema as SchemaObject).properties).reduce(
-                (result: string[], [key, value]) => {
-                    if (!StringUtil.isFalsyString((value as ReferenceObject)?.$ref)) {
-                        return result.concat(
-                            `${key}?: ${DATA_TYPE_MAP_NAME}['${(value as ReferenceObject).$ref.split('/').pop()}'];`,
-                        );
-                    }
+        switch ((schema as SchemaObject)?.type) {
+            case 'string':
+            case 'number':
+            case 'integer': {
+                const formatSchema = (schema as SchemaObject)?.format;
+                const enumSchema = (schema as SchemaObject)?.enum;
 
-                    switch ((value as SchemaObject)?.type) {
-                        case 'string':
-                        case 'number':
-                        case 'integer': {
-                            const formatSchema = (value as SchemaObject)?.format;
-                            const enumSchema = (value as SchemaObject)?.enum;
-
-                            if (['date', 'date-time'].includes(formatSchema)) {
-                                return result.concat(`${key}?: Date;`);
-                            } else if (Array.isArray(enumSchema) && enumSchema.length > 0) {
-                                return result.concat(
-                                    [
-                                        `${key}?: `,
-                                        enumSchema
-                                            .map((enumSchemaItem) => {
-                                                return (value as SchemaObject)?.type === 'string'
-                                                    ? JSON.stringify(enumSchemaItem)
-                                                    : enumSchemaItem;
-                                            })
-                                            .join(' | '),
-                                        ';',
-                                    ].join(''),
-                                );
-                            } else {
-                                return result.concat(
-                                    `${key}?: ${(value as SchemaObject)?.type === 'string' ? 'string' : 'number'};`,
-                                );
-                            }
-                        }
-                        case 'array': {
-                            const itemsSchema = (value as SchemaObject).items;
-                            const itemsComponent = this.generateComponent(itemsSchema);
-                            const finalItemsComponent = !StringUtil.isFalsyString(itemsComponent)
-                                ? itemsComponent
-                                : JSON.stringify(itemsComponent, null, 4);
-                            result[key] = `Array<${finalItemsComponent}>`;
-                            break;
-                        }
-                        default: {
-                            result[key] = (value as SchemaObject)?.type;
-                            break;
-                        }
-                    }
-
-                    return result;
-                },
-                [] as string[],
-            );
-            return ['{', ...fields.map((field) => `    ${field}`), '};'];
+                if (['date', 'date-time'].includes(formatSchema)) {
+                    return 'Date';
+                } else if (Array.isArray(enumSchema) && enumSchema.length > 0) {
+                    return enumSchema
+                        .map((enumSchemaItem) => {
+                            return (schema as SchemaObject)?.type === 'string'
+                                ? JSON.stringify(enumSchemaItem)
+                                : enumSchemaItem;
+                        })
+                        .join(' | ');
+                } else {
+                    return (schema as SchemaObject)?.type === 'string' ? 'string' : 'number';
+                }
+            }
+            case 'boolean': {
+                return (schema as SchemaObject)?.type;
+            }
+            default:
+                return 'never';
         }
-
-        return ['never;'];
     }
 
     private generateMethodTypeMap(paths: PathsObject) {
