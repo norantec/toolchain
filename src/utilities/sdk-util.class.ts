@@ -95,7 +95,7 @@ const RESPONSE_TYPE_NAME = 'ClientResponse';
 const OPTIONS_NAME = 'Options';
 const REQUEST_OPTIONS_NAME = 'RequestOptions';
 const CLIENT_RESPONSE_DATA_TYPE_NAME = 'ClientResponseData';
-const CLIENT_REQUEST_BODY_TYPE_NAME = 'ClientResponseData';
+const CLIENT_REQUEST_BODY_TYPE_NAME = 'ClientRequestBody';
 
 type TypeCustomizerFn = (dataTypeMapName: string, name: string, genericName: string) => string[];
 
