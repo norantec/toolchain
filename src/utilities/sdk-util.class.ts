@@ -98,6 +98,11 @@ const RESPONSE_DATA_TYPE_NAME = 'ResponseData';
 
 export interface OpenApiGeneratorOptions extends InferType<typeof SCHEMA> {
     document: OpenAPIObject;
+    customizeResponse?: (dataTypeMapName: string) => {
+        fields: Array<[string, string]>;
+        genericName: string;
+        type: 'interface' | 'type';
+    };
 }
 
 export type GenerateResult = Record<string, string>;
@@ -139,13 +144,39 @@ export class SDKUtil {
             '\nexport { ClientError };',
             `\n${dataTypeMapCode}`,
             `\n${methodTypeMapCode}`,
+            ...(() => {
+                let defaultLines = [`\nexport type ${RESPONSE_DATA_TYPE_NAME}<T> = T[];`];
+                if (typeof this.options?.customizeResponse === 'function') {
+                    const customized = this.options.customizeResponse(DATA_TYPE_MAP_NAME);
+
+                    switch (customized?.type) {
+                        case 'type': {
+                            if (StringUtil.isFalsyString(customized?.fields?.[0]?.[0])) {
+                                throw new Error('Field 0.0 must be a string');
+                            }
+
+                            if (StringUtil.isFalsyString(customized?.genericName)) {
+                                throw new Error('Generic name must be a string');
+                            }
+
+                            defaultLines = [
+                                `\nexport type ${RESPONSE_DATA_TYPE_NAME}<${customized.genericName}> = ${customized.fields[0][0]};`,
+                            ];
+
+                            break;
+                        }
+                        case 'interface': {
+                            // TODO:
+                            break;
+                        }
+                        default:
+                            throw new Error('customizeResponse type is not valid');
+                    }
+                }
+                return defaultLines;
+            })(),
             `\nexport interface ${OPTIONS_NAME} extends Partial<AxiosRequestConfig> {`,
             '    getAuthorizationCredential?: () => string;',
-            '}',
-            `\nexport interface ${RESPONSE_DATA_TYPE_NAME}<T> {`,
-            '    data: T[];',
-            `    pagination: ${DATA_TYPE_MAP_NAME}['PaginationDTO.Response']; | null`,
-            '    token: string | null',
             '}',
             `\nexport interface ${RESPONSE_TYPE_NAME}<T> {`,
             '    error?: ClientError;',
@@ -154,7 +185,7 @@ export class SDKUtil {
             `\nexport interface ${REQUEST_OPTIONS_NAME} {`,
             '    ignoreCache?: boolean;',
             '}',
-            '\nexport class Client {',
+            '\nexport class Client<R = an> {',
             `    public constructor(private readonly options: ${OPTIONS_NAME} = {}) {}`,
             `\n    protected readonly REQUEST_METHOD_MAP = new Map<keyof ${METHOD_TYPE_MAP_NAME}, (...params: any[]) => Promise<unknown>>();`,
             `\n    protected readonly RESPONSE_CACHE_MAP = new Map<string, ${RESPONSE_TYPE_NAME}<unknown>>();`,
