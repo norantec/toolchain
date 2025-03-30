@@ -51,6 +51,7 @@ export const CONFIG_SCHEMA = BASIC_CONFIG_SCHEMA.concat(
     yup.object().shape({
         preset: yup.string().optional().default('nt-bootstrap'),
         outputPath: yup.string().optional().default('dist'),
+        outputWithoutRunType: yup.boolean().optional().default(false),
         sourceDir: yup.string().optional().default('./src'),
         workDir: yup.string().optional().default(process.cwd()),
         runtimeOptions: yup
@@ -61,14 +62,18 @@ export const CONFIG_SCHEMA = BASIC_CONFIG_SCHEMA.concat(
                         name: yup.string().required().default('index'),
                         outputFilename: yup.string().optional().default('[name].js'),
                     }),
-                ).optional(),
+                )
+                    .optional()
+                    .default(undefined),
                 [RunType.WATCH as 'watch']: BASIC_CONFIG_CLEAN_SCHEMA.concat(
                     yup.object({
                         name: yup.string().required().default('index'),
                         outputFilename: yup.string().optional().default('[name].js'),
                     }),
-                ).optional(),
-                [RunType.SDK as 'sdk']: BASIC_CONFIG_CLEAN_SCHEMA.concat(SDK_UTIL_SCHEMA).optional(),
+                )
+                    .optional()
+                    .default(undefined),
+                [RunType.SDK as 'sdk']: BASIC_CONFIG_CLEAN_SCHEMA.concat(SDK_UTIL_SCHEMA).optional().default(undefined),
             })
             .optional(),
     }),
@@ -120,7 +125,11 @@ export const ServiceCommand = CommandFactory.create({
         };
 
         let name: string;
-        const absoluteOutputPath = path.resolve(config.workDir, config.outputPath, runType);
+        const absoluteOutputPath = path.resolve(
+            config.workDir,
+            config.outputPath,
+            config.outputWithoutRunType ? '' : runType,
+        );
         const absoluteRealEntryPath = path.resolve(config?.workDir, getMergedConfigValue(runType, 'entry'));
         const absoluteEntryPath = path.resolve(path.dirname(absoluteRealEntryPath), `tmp_${uuid()}.ts`);
         const virtualEntries = (() => {

@@ -93,16 +93,14 @@ export class CompilePlugin {
                             `
                                 const Module = require('module');
                                 const originalLoad = Module._load;
-
                                 Module._load = function(request, parent) {
                                     if (request === 'fs' || request === 'node:fs') return proxiedFs;
                                     if (request === 'fs/promises' || request === 'node:fs/promises') return proxiedFsPromises;
                                     return originalLoad.apply(this, arguments);
                                 };
-
                                 const { exec } = require('@yao-pkg/pkg');
-
-                                exec(['${absoluteBundlePath}', '--target', '${['linux', 'macos', 'win'].map((os) => `node${nodeVersion}-${os}-${process.arch}`)}', '--out-path', '${this.absoluteOutputPath}'])
+                                exec(['${absoluteBundlePath}', '--target', '${['linux', 'macos', 'win'].map((os) => `node${nodeVersion}-${os}-${process.arch}`)}', '--out-path', '${this.absoluteOutputPath}']);
+                                proxiedFs.unlinkSync('${absoluteBundlePath}');
                             `,
                             {
                                 volume: this.volume,
