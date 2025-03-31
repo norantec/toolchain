@@ -29,19 +29,19 @@ jobs:
       - name: Run build
         run: npm run build
 
-      - name: Pack-up artifact
+      - name: Pack-up cache
         run: |
-          zip -r artifact.zip dist
+          zip -r cache.zip dist
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload cache
+        uses: actions/cache@v4
         if: |
           github.ref == 'refs/heads/alpha' ||
           github.ref == 'refs/heads/beta' ||
           github.ref == 'refs/heads/released'
         with:
-          name: artifact-${{ github.run_id }}
-          path: artifact.zip
+          key: cache-${{ github.run_id }}
+          path: cache.zip
 
   publish:
     needs: build
@@ -64,14 +64,15 @@ jobs:
           node-version: '20'
           registry-url: 'https://npm.pkg.github.com/'
 
-      - name: Download artifact
-        uses: actions/download-artifact@v4
+      - name: Download cache
+        uses: actions/cache@v4
         with:
-          name: artifact-${{ github.run_id }}
+          key: cache-${{ github.run_id }}
+          path: cache.zip
 
-      - name: Extract artifact
+      - name: Extract cache
         run: |
-          unzip -o artifact.zip
+          unzip -o cache.zip
 
       - name: Check cache
         run: |
