@@ -2,7 +2,6 @@
 import 'reflect-metadata';
 import { Controller, UseGuards } from '@nestjs/common';
 import { METADATA_NAMES } from '../constants/metadata-names.constant';
-import { AuthGuard } from '@nestjs/passport';
 import { SystemHeadGuard } from '../guards/system-head.guard';
 import * as _ from 'lodash';
 import { StringUtil } from './string-util.class';
@@ -61,7 +60,6 @@ export class ApiControllerUtil {
                 UseGuards(
                     SystemHeadGuard,
                     ...(Array.isArray(createOptions?.headGuards) ? createOptions?.headGuards : []),
-                    ...(controllerAllowedAdapters === false ? [] : [AuthGuard('auth')]),
                     ...(Array.isArray(createOptions?.tailGuards) ? createOptions?.tailGuards : []),
                 )(target);
             };
