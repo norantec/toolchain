@@ -61,7 +61,7 @@ export function Method(adminMode: AdminMode = 'both', allowedAuthAdapters?: stri
         Post(scopeIdentifiers)(target, propertyKey, descriptor);
 
         if (finalAllowedAuthAdapters !== false) {
-            UseGuards(AuthGuard('auth'))(target);
+            UseGuards(AuthGuard('auth'))(target, propertyKey, descriptor);
         }
     };
 }
