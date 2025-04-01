@@ -164,25 +164,26 @@ export class SDKUtil {
                     return result.concat([
                         `export namespace ${enumName} {`,
                         ...Object.entries(enumSceneMap)
-                            .map(([enumScene, enumMethodMap]) => {
-                                if (!_.isPlainObject(enumMethodMap) || Object.keys(enumMethodMap).length === 0)
-                                    return [];
-                                return [
+                            .reduce((dtoNamespaceLines, [enumScene, enumMethodMap]) => {
+                                if (!_.isPlainObject(enumMethodMap) || Object.keys(enumMethodMap).length === 0) {
+                                    return dtoNamespaceLines;
+                                }
+                                return dtoNamespaceLines.concat([
                                     `export namespace ${enumScene} {`,
                                     ...Object.entries(enumMethodMap)
-                                        .map(([methodName, enumKeys]) => {
-                                            return [
+                                        .reduce((dtoMethodLines, [methodName, enumKeys]) => {
+                                            return dtoMethodLines.concat([
                                                 `export enum ${methodName} {`,
                                                 ...enumKeys.map(([enumKey, serializedEnumValue]) => {
-                                                    return `    ${enumKey?.startsWith?.('0') ? `'${enumKey}'` : enumKey} = ${JSON.parse(serializedEnumValue)},`;
+                                                    return `    ${enumKey?.startsWith?.('0') ? `'${enumKey}'` : enumKey} = ${serializedEnumValue},`;
                                                 }),
                                                 '}',
-                                            ];
-                                        })
+                                            ]);
+                                        }, [] as string[])
                                         .map((line) => `    ${line}`),
                                     '}',
-                                ];
-                            })
+                                ]);
+                            }, [] as string[])
                             .map((line) => `    ${line}`),
                         '}',
                     ]);
@@ -205,7 +206,7 @@ export class SDKUtil {
             '\nexport { ClientError };',
             `\n${dataTypeMapCode}`,
             `\n${methodTypeMapCode}`,
-            `${this.generateEnumCode()}`,
+            `${this.generateEnumCode().join('\n')}`,
             ...this.generateTypeCode(this.options?.customizeRequestBodyType, CLIENT_REQUEST_BODY_TYPE_NAME),
             ...this.generateTypeCode(this.options?.customizeResponseDataType, CLIENT_RESPONSE_DATA_TYPE_NAME),
             `\nexport interface ${OPTIONS_NAME} extends Partial<AxiosRequestConfig> {`,
