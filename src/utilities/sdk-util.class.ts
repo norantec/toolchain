@@ -147,6 +147,51 @@ export class SDKUtil {
         return [`\nexport type ${dataTypeName}<T> = T;`];
     }
 
+    private generateEnumCode(): string[] {
+        if (
+            !_.isPlainObject(this.options?.document?.enums) ||
+            Object.keys(this.options?.document?.enums).length === 0
+        ) {
+            return [];
+        }
+        return [
+            'export namespace enums {',
+            ...Object.entries(this.options.document.enums)
+                .reduce((result: string[], [enumName, enumSceneMap]) => {
+                    if (!_.isPlainObject(enumSceneMap) || Object.keys(enumSceneMap).length === 0) {
+                        return result;
+                    }
+                    return result.concat([
+                        `export namespace ${enumName} {`,
+                        ...Object.entries(enumSceneMap)
+                            .map(([enumScene, enumMethodMap]) => {
+                                if (!_.isPlainObject(enumMethodMap) || Object.keys(enumMethodMap).length === 0)
+                                    return [];
+                                return [
+                                    `export namespace ${enumScene} {`,
+                                    ...Object.entries(enumMethodMap)
+                                        .map(([methodName, enumKeys]) => {
+                                            return [
+                                                `export enum ${methodName} {`,
+                                                ...enumKeys.map(([enumKey, serializedEnumValue]) => {
+                                                    return `    ${enumKey?.startsWith?.('0') ? `'${enumKey}'` : enumKey} = ${JSON.parse(serializedEnumValue)},`;
+                                                }),
+                                                '}',
+                                            ];
+                                        })
+                                        .map((line) => `    ${line}`),
+                                    '}',
+                                ];
+                            })
+                            .map((line) => `    ${line}`),
+                        '}',
+                    ]);
+                }, [] as string[])
+                .map((line) => `    ${line}`),
+            '}',
+        ];
+    }
+
     private generateIndexCode() {
         const dataTypeMapCode = this.generateDataTypeMap(this.options?.document?.basic?.components?.schemas);
         const methodTypeMapCode = this.generateMethodTypeMap(this.options?.document?.basic?.paths);
@@ -154,12 +199,13 @@ export class SDKUtil {
         const responseDataTypeAnnotation = `${RESPONSE_TYPE_NAME}<${CLIENT_RESPONSE_DATA_TYPE_NAME}<${METHOD_TYPE_MAP_NAME}[T]['responseData']>>`;
         return [
             "import { PartialDeep } from 'type-fest';",
-            "import { AxiosError as ClientError, AxiosResponse, AxiosRequestConfig } from 'axios';",
+            "import { AxiosError as ClientError, AxiosRequestConfig } from 'axios';",
             "import axios from 'axios';",
             "import * as hash from 'object-hash';",
             '\nexport { ClientError };',
             `\n${dataTypeMapCode}`,
             `\n${methodTypeMapCode}`,
+            `\n${this.generateEnumCode()}`,
             ...this.generateTypeCode(this.options?.customizeRequestBodyType, CLIENT_REQUEST_BODY_TYPE_NAME),
             ...this.generateTypeCode(this.options?.customizeResponseDataType, CLIENT_RESPONSE_DATA_TYPE_NAME),
             `\nexport interface ${OPTIONS_NAME} extends Partial<AxiosRequestConfig> {`,

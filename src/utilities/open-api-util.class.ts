@@ -30,7 +30,7 @@ export enum ErrorCode {
 
 export interface OpenAPIDocument {
     basic: OpenAPIObject;
-    enums: Record<string, Record<string, Record<string, Array<[string, string]>>>>;
+    enums: Record<string, Record<'Request' | 'Response', Record<string, Array<[string, string]>>>>;
 }
 
 export class OpenApiUtil {
