@@ -1,5 +1,4 @@
 import * as _ from 'lodash';
-import { OpenAPIObject } from '@nestjs/swagger';
 import { InferType } from 'yup';
 import {
     PathsObject,
@@ -13,6 +12,7 @@ import * as Handlebars from 'handlebars';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { StringUtil } from './string-util.class';
+import { OpenAPIDocument } from './open-api-util.class';
 
 const templateFiles = {
     'package.json': JSON.stringify(
@@ -100,7 +100,7 @@ const CLIENT_REQUEST_BODY_TYPE_NAME = 'ClientRequestBody';
 type TypeCustomizerFn = (dataTypeMapName: string, name: string, genericName: string) => string[];
 
 export interface OpenApiGeneratorOptions extends InferType<typeof SCHEMA> {
-    document: OpenAPIObject;
+    document: OpenAPIDocument;
     customizeRequestBodyType?: TypeCustomizerFn;
     customizeResponseDataType?: TypeCustomizerFn;
 }
@@ -148,8 +148,8 @@ export class SDKUtil {
     }
 
     private generateIndexCode() {
-        const dataTypeMapCode = this.generateDataTypeMap(this.options?.document?.components?.schemas);
-        const methodTypeMapCode = this.generateMethodTypeMap(this.options?.document?.paths);
+        const dataTypeMapCode = this.generateDataTypeMap(this.options?.document?.basic?.components?.schemas);
+        const methodTypeMapCode = this.generateMethodTypeMap(this.options?.document?.basic?.paths);
         const requestBodyTypeAnnotation = `${CLIENT_REQUEST_BODY_TYPE_NAME}<${METHOD_TYPE_MAP_NAME}[T]['requestBody']>`;
         const responseDataTypeAnnotation = `${RESPONSE_TYPE_NAME}<${CLIENT_RESPONSE_DATA_TYPE_NAME}<${METHOD_TYPE_MAP_NAME}[T]['responseData']>>`;
         return [

@@ -42,7 +42,7 @@
         "@nestjs/platform-express": "^10.0.0",
         "@nestjs/sequelize": "^10.0.0",
         "@nestjs/swagger": "^8.0.7",
-        "@open-norantec/utilities": "^1.0.0-alpha.7",
+        "@open-norantec/utilities": "^1.0.0-alpha.8",
         "@yao-pkg/pkg": "^6.2.0",
         "ajv": "^8.17.1",
         "axios": "^1.7.9",

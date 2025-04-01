@@ -1,7 +1,10 @@
 import { ExposeOptions, Expose } from 'class-transformer';
 import { GROUP } from '../constants/group.constant';
+import { Enum } from '@open-norantec/utilities/dist/enum-util.class';
 
 export interface MappingOptions extends ExposeOptions {
+    enum?: Enum;
+    /** @deprecated */
     enumValues?: any[];
     hideOpenApiProperty?: boolean;
 }

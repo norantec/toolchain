@@ -15,6 +15,7 @@ import { GROUP } from '../constants/group.constant';
 import { Constructor } from 'type-fest';
 import { StringUtil } from './string-util.class';
 import { ModelUtil } from './model-util.class';
+import { EnumUtil } from '@open-norantec/utilities';
 
 interface OpenApiUtilOptions {
     Class: Constructor<any>;
@@ -25,6 +26,11 @@ interface OpenApiUtilOptions {
 export enum ErrorCode {
     INVALID_INFERRED_TYPE = 'INVALID_INFERRED_TYPE',
     INVALID_ENUM_VALUE_TYPE = 'INVALID_ENUM_VALUE_TYPE',
+}
+
+export interface OpenAPIDocument {
+    basic: OpenAPIObject;
+    enums: Record<string, Record<string, Record<string, Array<[string, string]>>>>;
 }
 
 export class OpenApiUtil {
@@ -59,7 +65,7 @@ export class OpenApiUtil {
         title: 'API Documentation',
         version: '1.0.0',
     };
-    private readonly document: OpenAPIObject = {
+    private readonly basicDocument: OpenAPIObject = {
         openapi: '3.0.0',
         info: this.info,
         paths: {},
@@ -67,6 +73,7 @@ export class OpenApiUtil {
             schemas: {},
         },
     };
+    private readonly enums: OpenAPIDocument['enums'] = {};
     private readonly scopeIdentifierBlacklist = new Set<string>();
 
     public constructor(private readonly options: OpenApiUtilOptions) {
@@ -82,9 +89,9 @@ export class OpenApiUtil {
         }
     }
 
-    public generateDocument() {
+    public generateDocument(): OpenAPIDocument {
         Object.entries(this.generateComponentSchemas()).forEach(([key, schema]) => {
-            this.document.components.schemas[key] = schema;
+            this.basicDocument.components.schemas[key] = schema;
         });
 
         const controllerClassList = NestUtil.getControllerClasses(this.options?.Class);
@@ -136,14 +143,14 @@ export class OpenApiUtil {
                     const actualPathname = `${controllerPrefix}/${scopeIdentifier}`;
 
                     if (requestSchema) {
-                        _.set(this.document, `paths.["${actualPathname}"].post.requestBody.content`, {
+                        _.set(this.basicDocument, `paths.["${actualPathname}"].post.requestBody.content`, {
                             'application/json': {
                                 schema: requestSchema,
                             },
                         });
                     }
 
-                    _.set(this.document, `paths.["${actualPathname}"].post.responses`, {
+                    _.set(this.basicDocument, `paths.["${actualPathname}"].post.responses`, {
                         200: {
                             description: 'Success',
                             content: {
@@ -157,7 +164,10 @@ export class OpenApiUtil {
             });
         });
 
-        return this.document;
+        return {
+            basic: this.basicDocument,
+            enums: this.enums,
+        };
     }
 
     private generateSchema(input: string, scene: 'request' | 'response'): SchemaObject & Partial<ReferenceObject> {
@@ -266,13 +276,14 @@ export class OpenApiUtil {
                         let finalSchema: SchemaObject | Partial<ReferenceObject>;
 
                         if (propertyType === 'enum') {
-                            const enumValues = options?.enumValues;
+                            const enumValue = options?.enum;
 
-                            if (!Array.isArray(enumValues) || enumValues.length === 0) {
+                            if (!_.isPlainObject(enumValue) || Object.keys(enumValue).length === 0) {
                                 throw new Error(ErrorCode.INVALID_ENUM_VALUE_TYPE);
                             }
 
-                            const types = _.uniq(enumValues.map((enumValue) => typeof enumValue));
+                            const enumEntries = EnumUtil.getEntries(enumValue);
+                            const types = _.uniq(enumEntries.map(([, value]) => typeof value));
 
                             if (types.length > 1) {
                                 throw new Error(ErrorCode.INVALID_ENUM_VALUE_TYPE);
@@ -280,8 +291,14 @@ export class OpenApiUtil {
 
                             finalSchema = {
                                 type: types[0],
-                                enum: enumValues,
+                                enum: enumEntries.map(([, value]) => value),
                             };
+
+                            _.set(
+                                this.enums,
+                                `${Class.name}.${postfix}.${propertyKey}`,
+                                enumEntries.map(([key, value]) => [key, JSON.stringify(value)]),
+                            );
                         } else if (Object.keys(OpenApiUtil.internalSchemas).includes(propertyType)) {
                             finalSchema = OpenApiUtil.internalSchemas[propertyType];
                         } else {
