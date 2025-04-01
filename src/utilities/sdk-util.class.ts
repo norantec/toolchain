@@ -155,7 +155,7 @@ export class SDKUtil {
             return [];
         }
         return [
-            'export namespace enums {',
+            '\nexport namespace enums {',
             ...Object.entries(this.options.document.enums)
                 .reduce((result: string[], [enumName, enumSceneMap]) => {
                     if (!_.isPlainObject(enumSceneMap) || Object.keys(enumSceneMap).length === 0) {
@@ -205,7 +205,7 @@ export class SDKUtil {
             '\nexport { ClientError };',
             `\n${dataTypeMapCode}`,
             `\n${methodTypeMapCode}`,
-            `\n${this.generateEnumCode()}`,
+            `${this.generateEnumCode()}`,
             ...this.generateTypeCode(this.options?.customizeRequestBodyType, CLIENT_REQUEST_BODY_TYPE_NAME),
             ...this.generateTypeCode(this.options?.customizeResponseDataType, CLIENT_RESPONSE_DATA_TYPE_NAME),
             `\nexport interface ${OPTIONS_NAME} extends Partial<AxiosRequestConfig> {`,
@@ -252,22 +252,28 @@ export class SDKUtil {
     private generateDataTypeMap(schemas: Record<string, SchemaObject | ReferenceObject>) {
         if (!_.isObjectLike(schemas) || StringUtil.isFalsyString(DATA_TYPE_MAP_NAME)) return;
         const generatedComponents = Object.entries(schemas)
-            .reduce((result: string[], [key, schema]) => {
+            .reduce((result: string[], [componentName, schema]) => {
                 const componentLines = Object.entries((schema as SchemaObject).properties).reduce(
-                    (componentResult: string[], [key, subSchema]) => {
-                        return componentResult.concat(`    ${key}?: ${this.generateSchemaType(subSchema)};`);
+                    (componentResult: string[], [identifier, subSchema]) => {
+                        return componentResult.concat(
+                            `    ${identifier}?: ${this.generateSchemaType(componentName, identifier, subSchema)};`,
+                        );
                     },
                     [] as string[],
                 );
-                return result.concat([`'${key}': {`, ...componentLines, '};']);
+                return result.concat([`'${componentName}': {`, ...componentLines, '};']);
             }, [] as string[])
             .map((item) => `    ${item}`);
         return [`export interface ${DATA_TYPE_MAP_NAME} {`, ...generatedComponents, '};'].join('\n');
     }
 
-    private generateSchemaType(schema: SchemaObject | ReferenceObject): string {
+    private generateSchemaType(
+        componentName: string,
+        identifier: string,
+        schema: SchemaObject | ReferenceObject,
+    ): string {
         if ((schema as SchemaObject)?.type === 'array') {
-            return `Array<${this.generateSchemaType((schema as SchemaObject).items)}>`;
+            return `Array<${this.generateSchemaType(componentName, identifier, (schema as SchemaObject).items)}>`;
         }
 
         if (!StringUtil.isFalsyString((schema as ReferenceObject)?.$ref)) {
@@ -284,13 +290,7 @@ export class SDKUtil {
                 if (['date', 'date-time'].includes(formatSchema)) {
                     return 'Date';
                 } else if (Array.isArray(enumSchema) && enumSchema.length > 0) {
-                    return enumSchema
-                        .map((enumSchemaItem) => {
-                            return (schema as SchemaObject)?.type === 'string'
-                                ? JSON.stringify(enumSchemaItem)
-                                : enumSchemaItem;
-                        })
-                        .join(' | ');
+                    return `enums.${componentName}.${identifier}`;
                 } else {
                     return (schema as SchemaObject)?.type === 'string' ? 'string' : 'number';
                 }
