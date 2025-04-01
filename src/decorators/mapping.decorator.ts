@@ -4,7 +4,9 @@ import { Enum } from '@open-norantec/utilities/dist/enum-util.class';
 
 export interface MappingOptions extends ExposeOptions {
     enum?: Enum;
-    /** @deprecated */
+    /**
+     * @deprecated use `enums` instead
+     */
     enumValues?: any[];
     hideOpenApiProperty?: boolean;
 }
