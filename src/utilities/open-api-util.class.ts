@@ -30,7 +30,7 @@ export enum ErrorCode {
 
 export interface OpenAPIDocument {
     basic: OpenAPIObject;
-    enums: Record<string, Record<'Request' | 'Response', Record<string, Array<[string, string]>>>>;
+    enums: Record<string, Record<string, Array<[string, string]>>>;
 }
 
 export class OpenApiUtil {
@@ -296,7 +296,7 @@ export class OpenApiUtil {
 
                             _.set(
                                 this.enums,
-                                `${Class.name}.${postfix}.${propertyKey}`,
+                                `${Class.name}.${propertyKey}`,
                                 enumEntries.map(([key, value]) => [key, JSON.stringify(value)]),
                             );
                         } else if (Object.keys(OpenApiUtil.internalSchemas).includes(propertyType)) {

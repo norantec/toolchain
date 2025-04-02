@@ -157,30 +157,19 @@ export class SDKUtil {
         return [
             '\nexport namespace enums {',
             ...Object.entries(this.options.document.enums)
-                .reduce((result: string[], [enumName, enumSceneMap]) => {
-                    if (!_.isPlainObject(enumSceneMap) || Object.keys(enumSceneMap).length === 0) {
+                .reduce((result: string[], [enumName, enumMethodMap]) => {
+                    if (!_.isPlainObject(enumMethodMap) || Object.keys(enumMethodMap).length === 0) {
                         return result;
                     }
                     return result.concat([
                         `export namespace ${enumName} {`,
-                        ...Object.entries(enumSceneMap)
-                            .reduce((dtoNamespaceLines, [enumScene, enumMethodMap]) => {
-                                if (!_.isPlainObject(enumMethodMap) || Object.keys(enumMethodMap).length === 0) {
-                                    return dtoNamespaceLines;
-                                }
-                                return dtoNamespaceLines.concat([
-                                    `export namespace ${enumScene} {`,
-                                    ...Object.entries(enumMethodMap)
-                                        .reduce((dtoMethodLines, [methodName, enumKeys]) => {
-                                            return dtoMethodLines.concat([
-                                                `export enum ${methodName} {`,
-                                                ...enumKeys.map(([enumKey, serializedEnumValue]) => {
-                                                    return `    ${enumKey?.startsWith?.('0') ? `'${enumKey}'` : enumKey} = ${serializedEnumValue},`;
-                                                }),
-                                                '}',
-                                            ]);
-                                        }, [] as string[])
-                                        .map((line) => `    ${line}`),
+                        ...Object.entries(enumMethodMap)
+                            .reduce((dtoMethodLines, [methodName, enumKeys]) => {
+                                return dtoMethodLines.concat([
+                                    `export enum ${methodName} {`,
+                                    ...enumKeys.map(([enumKey, serializedEnumValue]) => {
+                                        return `    ${enumKey?.startsWith?.('0') ? `'${enumKey}'` : enumKey} = ${serializedEnumValue},`;
+                                    }),
                                     '}',
                                 ]);
                             }, [] as string[])
@@ -291,7 +280,7 @@ export class SDKUtil {
                 if (['date', 'date-time'].includes(formatSchema)) {
                     return 'Date';
                 } else if (Array.isArray(enumSchema) && enumSchema.length > 0) {
-                    return `enums.${componentName}.${identifier}`;
+                    return `enums.${componentName.split('.').slice(0, -1).join('.')}.${identifier}`;
                 } else {
                     return (schema as SchemaObject)?.type === 'string' ? 'string' : 'number';
                 }
