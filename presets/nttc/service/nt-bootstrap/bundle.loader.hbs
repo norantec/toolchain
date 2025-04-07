@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import { NestFactory } from '@open-norantec/toolchain/dist/lib/@nestjs/core';
+import cookieParser from '@open-norantec/toolchain/dist/lib/cookie-parser';
 import { StringUtil } from '@open-norantec/toolchain/dist/utilities/string-util.class';
 import { OpenApiUtil } from '@open-norantec/toolchain/dist/utilities/open-api-util.class';
 import { SwaggerModule } from '@nestjs/swagger';
@@ -22,7 +23,16 @@ async function bootstrap() {
     });
     const openApiDocument = openApiUtil.generateDocument();
     const app = await NestFactory.create(ENTRY?.Module);
+
     app.enableCors();
+    app.use(cookieParser());
+
+    if (Array.isArray(ENTRY?.uses)) {
+        ENTRY.uses.forEach((middleware) => {
+            app.use(middleware);
+        });
+    }
+
     const resolver = (Class) => app.resolve(Class);
     const listenPort = await ENTRY?.getListenPort?.(resolver);
     const loggerService = await app.resolve(LoggerService);
