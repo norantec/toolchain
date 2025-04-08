@@ -82,6 +82,7 @@ export class OpenApiUtil {
             ...options?.info,
         };
         this.scopeIdentifierBlacklist.add('file.upload');
+        this.scopeIdentifierBlacklist.add('remoteRepository.onUpdate');
         if (Array.isArray(this.options?.scopeIdentifierBlacklist)) {
             this.options.scopeIdentifierBlacklist.forEach((blacklistedScopeIdentifier) => {
                 this.scopeIdentifierBlacklist.add(blacklistedScopeIdentifier);
