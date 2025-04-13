@@ -202,7 +202,7 @@ export class SDKUtil {
             '\ntype MethodResponseData = {',
             '    [K in MethodTypeMapKeys]: {',
             '        url: K;',
-            '    } & { response: MethodTypeMap[K][\'responseData\']; };',
+            "    } & { response: MethodTypeMap[K]['responseData']; };",
             '}[MethodTypeMapKeys];',
             `\nexport interface ${OPTIONS_NAME} extends Partial<AxiosRequestConfig> {`,
             '    getAuthorizationCredential?: () => string;',
