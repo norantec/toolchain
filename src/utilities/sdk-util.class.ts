@@ -228,7 +228,7 @@ export class SDKUtil {
             `\n    public async request<T extends keyof ${METHOD_TYPE_MAP_NAME}>(url: T, requestBody?: ${requestBodyTypeAnnotation}, options?: ${REQUEST_OPTIONS_NAME}): Promise<${responseDataTypeAnnotation}> {`,
             '        const requestHash = hash(requestBody ?? null);',
             '        if (this.RESPONSE_CACHE_MAP.has(requestHash) && !options?.ignoreCache) {',
-            '            return this.RESPONSE_CACHE_MAP.get(requestHash);',
+            `            return this.RESPONSE_CACHE_MAP.get(requestHash) as ${responseDataTypeAnnotation};`,
             '        }',
             '        const { getAuthorizationCredential, onResponse, ...axiosOptions } = this?.options;',
             '        const credential = getAuthorizationCredential?.();',
