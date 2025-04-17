@@ -17,12 +17,12 @@ export class SerializableUtil {
         });
     }
 
-    public static plainToInstance<T = Constructor<any>, V = any>(
+    public static plainToInstance<T = Constructor<any>>(
         cls: ClassConstructor<T>,
-        plain: V,
+        plain: Partial<T>,
         options: ClassTransformOptions = {},
     ): T {
-        return p2i<T, V>(cls, plain, {
+        return p2i<T, Partial<T>>(cls, plain, {
             groups: [GROUP.EXPOSE_ALL],
             excludeExtraneousValues: true,
             enableImplicitConversion: true,
