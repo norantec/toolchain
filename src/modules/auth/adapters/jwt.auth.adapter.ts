@@ -10,6 +10,8 @@ export interface Options {
     issuer: string;
     secret: string;
     ignoreExpiration?: boolean;
+    prefixRegex?: RegExp;
+    verifyOptions?: jwt.VerifyOptions;
 }
 
 export class JwtAuthAdapter extends AuthAdapter implements AuthAdapter {
@@ -18,16 +20,14 @@ export class JwtAuthAdapter extends AuthAdapter implements AuthAdapter {
     }
 
     public override getChallengeValue(rawValue: string): string {
-        const result = /^Bearer\s+(.*)$/.exec(rawValue)?.[1];
+        let prefixRegex = this.options?.prefixRegex;
+        if (!(prefixRegex instanceof RegExp)) prefixRegex = /^Bearer\s+(.*)$/;
+        const result = prefixRegex.exec(rawValue)?.[1];
         return StringUtil.isFalsyString(result) ? null : result;
     }
 
     public async validate(challengeValue: string): Promise<AuthResult> {
-        const [apiKeyId, apiKeySecret] = challengeValue.split(':');
-
-        if (StringUtil.isFalsyString(apiKeyId) || StringUtil.isFalsyString(apiKeySecret)) {
-            return null;
-        }
+        if (StringUtil.isFalsyString(challengeValue)) return null;
 
         const payload = jwt.verify(challengeValue, this.options.secret);
         let result: string | Error;
