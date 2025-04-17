@@ -311,6 +311,10 @@ export class SDKUtil {
             let responseDataSchema: SchemaObject | ReferenceObject = (value?.post?.responses?.['200'] as ResponseObject)
                 ?.content?.['application/json']?.schema as SchemaObject;
 
+            if ((responseDataSchema as SchemaObject)?.type !== 'array') return result;
+
+            responseDataSchema = responseDataSchema?.items;
+
             while ((responseDataSchema as SchemaObject)?.type === 'array') {
                 responseArrayWrapperCount += 1;
                 responseDataSchema = (responseDataSchema as SchemaObject).items;
