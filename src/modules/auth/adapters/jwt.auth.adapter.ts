@@ -5,11 +5,7 @@ import { AuthType } from '../../../enums/auth-type.enum';
 import { StringUtil } from '../../../utilities/string-util.class';
 
 export interface Options {
-    audience: string;
-    expirationDays: number;
-    issuer: string;
     secret: string;
-    ignoreExpiration?: boolean;
     prefixRegex?: RegExp;
     verifyOptions?: jwt.VerifyOptions;
 }
