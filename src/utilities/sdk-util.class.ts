@@ -307,14 +307,19 @@ export class SDKUtil {
         }
 
         const methodTypeMapLines = Object.entries(paths).reduce((result: string[], [key, value]) => {
-            const responseDataTypeRef = (
-                (
-                    (value?.post?.responses?.['200'] as ResponseObject)?.content?.['application/json']
-                        ?.schema as SchemaObject
-                )?.items as ReferenceObject
-            )?.$ref;
+            let responseArrayWrapperCount = 0;
+            let responseDataSchema: SchemaObject | ReferenceObject = (value?.post?.responses?.['200'] as ResponseObject)
+                ?.content?.['application/json']?.schema as SchemaObject;
 
-            if (!_.isObjectLike(value?.post) || StringUtil.isFalsyString(responseDataTypeRef)) {
+            while ((responseDataSchema as SchemaObject)?.type === 'array') {
+                responseArrayWrapperCount += 1;
+                responseDataSchema = (responseDataSchema as SchemaObject).items;
+            }
+
+            if (
+                !_.isObjectLike(value?.post) ||
+                StringUtil.isFalsyString((responseDataSchema as ReferenceObject)?.$ref)
+            ) {
                 return result;
             }
 
@@ -327,6 +332,8 @@ export class SDKUtil {
                 requestBodySchema = (requestBodySchema as SchemaObject).items;
             }
 
+            if (StringUtil.isFalsyString((requestBodySchema as ReferenceObject)?.$ref)) return result;
+
             return result.concat([
                 `'${key.split('/').slice(-2).join('/')}': {`,
                 ...(() => {
@@ -338,7 +345,7 @@ export class SDKUtil {
                     }
                     return [`    requestBody?: {};`];
                 })(),
-                `    responseData?: PartialDeep<${DATA_TYPE_MAP_NAME}['${responseDataTypeRef.split('/').pop()}']>;`,
+                `    responseData?: PartialDeep<${DATA_TYPE_MAP_NAME}['${(responseDataSchema as ReferenceObject).$ref.split('/').pop()}']>${new Array(responseArrayWrapperCount).fill('[]').join('')};`,
                 '};',
             ]);
         }, [] as string[]);
