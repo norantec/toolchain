@@ -24,7 +24,12 @@ async function bootstrap() {
     const openApiDocument = openApiUtil.generateDocument();
     const app = await NestFactory.create(ENTRY?.Module);
 
-    app.enableCors();
+    app.enableCors({
+        origin: '*',
+        methods: '*',
+        allowedHeaders: '*',
+        credentials: false,
+    });
     app.use(cookieParser());
 
     if (Array.isArray(ENTRY?.uses)) {
