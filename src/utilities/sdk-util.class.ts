@@ -239,6 +239,7 @@ export class SDKUtil {
             `        const result: ${responseDataTypeAnnotation} = await fetch((finalCustomOptions?.prefix ?? '') + url, {`,
             '            ...requestOptions,',
             '            body: JSON.stringify(requestBody),',
+            "            method: 'POST',",
             '            headers: {',
             '                ...requestOptions?.headers,',
             "                Authorization: (typeof credential === 'string' && credential.length > 0) ? credential : this?.options?.headers?.Authorization,",
