@@ -1,4 +1,3 @@
-import * as yup from 'yup';
 import { CommandFactory } from '../../factories/command.factory';
 import * as winston from 'winston';
 import { BumpAdapter } from './bump-adapter-factory.class';
@@ -10,6 +9,7 @@ import * as commander from 'commander';
 import { BumpType } from '../../enums/bump-type.enum';
 import { JSONUtil } from '@open-norantec/utilities/dist/json-util.class';
 import * as handlebars from 'handlebars';
+import { z } from 'zod';
 
 function getFormalReleaseVersion(version: string) {
     const parsed = semver.parse(version);
@@ -38,7 +38,7 @@ async function bump(type: BumpType, packageVersion: string, versions: string[], 
     }
 
     if (!semver.valid(latestVersion)) {
-        newVersion = currentVersion;
+        newVersion = currentVersion!;
     } else if (semver.prerelease(latestVersion) === null) {
         const legalNewVersionList = [
             semver.inc(latestVersion, 'patch'),
@@ -53,7 +53,7 @@ async function bump(type: BumpType, packageVersion: string, versions: string[], 
             return;
         }
 
-        newVersion = currentVersion;
+        newVersion = currentVersion!;
     } else {
         newVersion = latestVersion;
     }
@@ -61,14 +61,14 @@ async function bump(type: BumpType, packageVersion: string, versions: string[], 
     switch (type) {
         case BumpType.RELEASE: {
             if (semver.prerelease(newVersion) !== null) {
-                newVersion = semver.inc(newVersion, 'patch');
+                newVersion = semver.inc(newVersion, 'patch')!;
             }
             break;
         }
         case BumpType.ALPHA:
         case BumpType.BETA: {
             if (semver.prerelease(newVersion) !== null) {
-                newVersion = semver.inc(newVersion, 'prerelease', type);
+                newVersion = semver.inc(newVersion, 'prerelease', type)!;
             } else {
                 newVersion = `${newVersion}-${type}.0`;
             }
@@ -80,9 +80,9 @@ async function bump(type: BumpType, packageVersion: string, versions: string[], 
 }
 
 export const BumpCommand = CommandFactory.create({
-    schema: yup.object().shape({
-        type: yup.string().required().oneOf(Object.values(BumpType)),
-        config: yup.string().required(),
+    schema: z.object({
+        type: z.nativeEnum(BumpType),
+        config: z.string(),
     }),
     context: {},
     register: ({ callback }) => {
@@ -95,14 +95,15 @@ export const BumpCommand = CommandFactory.create({
 
         return command;
     },
-    run: async ({ logger, options: { type, config: configPath } }) => {
-        const config = fs.readJsonSync(path.resolve(configPath));
+    run: async ({ logger, options }) => {
+        const { type, config: configPath } = options ?? {};
+        const config = fs.readJsonSync(path.resolve(configPath!));
 
         if (StringUtil.isFalsyString(config?.adapter)) {
             throw new Error('Adapter not specified');
         }
 
-        const requireAdapter = (adapterPath: string): BumpAdapter => {
+        const requireAdapter = (adapterPath: string): BumpAdapter | null => {
             const requiredAdapterModule = require(adapterPath);
             if (typeof requiredAdapterModule?.default === 'function')
                 return requiredAdapterModule?.default as BumpAdapter;
@@ -114,16 +115,16 @@ export const BumpCommand = CommandFactory.create({
 
             if (fs.existsSync(adapterPath) && fs.statSync(adapterPath).isFile()) {
                 const result = requireAdapter(adapterPath);
-                return result;
+                return result!;
             }
 
             adapterPath = path.resolve(adapterName);
 
             if (fs.existsSync(adapterPath) && fs.statSync(adapterPath).isFile()) {
-                return requireAdapter(adapterPath);
+                return requireAdapter(adapterPath)!;
             }
 
-            return null;
+            return null!;
         };
 
         const adapter = loadAdapter(config.adapter);
@@ -144,7 +145,7 @@ export const BumpCommand = CommandFactory.create({
                 handlebars.compile(JSON.stringify(config?.options ?? {}), { noEscape: true })({ env: process?.env }),
             ),
         );
-        const newVersion = await bump(type, packageVersion, versions, logger);
+        const newVersion = await bump(type!, packageVersion, versions, logger);
 
         if (StringUtil.isFalsyString(newVersion)) {
             logger.error('Failed to bump package version');

@@ -76,7 +76,7 @@
         "webpack": "^5.96.1",
         "webpack-virtual-modules": "^0.6.2",
         "winston": "^3.8.2",
-        "yup": "^1.5.0"
+        "zod": "^3.25.64"
     },
     "devDependencies": {
         "@stylistic/eslint-plugin": "^2.12.1",

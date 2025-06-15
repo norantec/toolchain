@@ -21,7 +21,7 @@ export class ApiControllerUtil {
     public static create(createOptions?: ApiControllerUtilCreateOptions) {
         const ApiController = (options?: ApiControllerOptions): ClassDecorator => {
             return (target) => {
-                const finalPrefix = `/api/v${options?.version >= 1 ? options?.version : 1}`;
+                const finalPrefix = `/api/v${(options?.version ?? 0) >= 1 ? options?.version : 1}`;
                 const methodNames = Reflect.getMetadata(METADATA_NAMES.METHODS, target);
                 const controllerAllowedAdapters = Method.normalizeAllowedAdapters(options?.allowedAuthAdapters);
 
@@ -59,8 +59,8 @@ export class ApiControllerUtil {
                 Controller(finalPrefix)(target);
                 UseGuards(
                     SystemHeadGuard,
-                    ...(Array.isArray(createOptions?.headGuards) ? createOptions?.headGuards : []),
-                    ...(Array.isArray(createOptions?.tailGuards) ? createOptions?.tailGuards : []),
+                    ...(Array.isArray(createOptions?.headGuards) ? createOptions!.headGuards : []),
+                    ...(Array.isArray(createOptions?.tailGuards) ? createOptions!.tailGuards : []),
                 )(target);
             };
         };

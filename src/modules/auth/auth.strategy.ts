@@ -46,7 +46,7 @@ export class AuthStrategy extends PassportStrategy(HeaderAPIKeyStrategy, 'auth')
                     if (_.isError(challengeValue) || StringUtil.isFalsyString(challengeValue)) continue;
 
                     try {
-                        const result = await adapter.validate(challengeValue, scopeIdentifier);
+                        const result = await adapter.validate(challengeValue!, scopeIdentifier);
 
                         if (!result) {
                             return done(null, false);

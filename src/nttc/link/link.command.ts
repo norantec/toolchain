@@ -1,13 +1,13 @@
 import { CommandFactory } from '../../factories/command.factory';
-import * as yup from 'yup';
 import * as commander from 'commander';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { StringUtil } from '../../utilities/string-util.class';
+import { z } from 'zod';
 
 export const LinkCommand = CommandFactory.create({
-    schema: yup.object().shape({
-        dest: yup.array(yup.string()).required(),
+    schema: z.object({
+        dest: z.array(z.string()),
     }),
     register: ({ callback }) => {
         return new commander.Command('link')
@@ -15,7 +15,7 @@ export const LinkCommand = CommandFactory.create({
             .action(callback);
     },
     run: ({ options }) => {
-        const { dest } = options;
+        const { dest } = options ?? {};
 
         if (!Array.isArray(dest) || dest.length === 0) {
             process.exit(1);

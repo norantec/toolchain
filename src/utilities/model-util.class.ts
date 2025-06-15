@@ -8,7 +8,7 @@ export class ModelUtil {
         if (!model) {
             return;
         }
-        container.push([StringUtil.isFalsyString(key) ? model.name : key, model]);
+        container.push([StringUtil.isFalsyString(key) ? model.name : key!, model]);
     }
 
     public static get(key: string) {

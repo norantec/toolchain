@@ -31,7 +31,7 @@ export class CompilePlugin {
 
                     try {
                         const nodeVersion = process.version.split('.')[0].replace(/^v/g, '');
-                        const absoluteBundlePath = path.resolve(this.absoluteOutputPath, relativePath);
+                        const absoluteBundlePath = path.resolve(this.absoluteOutputPath, relativePath!);
 
                         const matchBundlePath = (pathname: originalFs.PathLike) => {
                             return typeof pathname === 'string' && path.resolve(pathname) === absoluteBundlePath;
@@ -88,7 +88,7 @@ export class CompilePlugin {
                         };
 
                         this.volume.mkdirSync(path.dirname(absoluteBundlePath), { recursive: true });
-                        this.volume.writeFileSync(absoluteBundlePath, assets[relativePath]?.buffer?.());
+                        this.volume.writeFileSync(absoluteBundlePath, assets[relativePath!]?.buffer?.());
                         VMUtil.runScriptCode(
                             `
                                 const Module = require('module');
@@ -109,7 +109,7 @@ export class CompilePlugin {
                             },
                         );
 
-                        _.unset(assets, relativePath);
+                        _.unset(assets, relativePath!);
                     } catch (error) {
                         this.logger.error('Error compiling to binary:', error);
                         process.exit(1);

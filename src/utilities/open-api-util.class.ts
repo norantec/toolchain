@@ -92,7 +92,7 @@ export class OpenApiUtil {
 
     public generateDocument(): OpenAPIDocument {
         Object.entries(this.generateComponentSchemas()).forEach(([key, schema]) => {
-            this.basicDocument.components.schemas[key] = schema;
+            this.basicDocument.components!.schemas![key] = schema;
         });
 
         const controllerClassList = NestUtil.getControllerClasses(this.options?.Class);
@@ -254,7 +254,7 @@ export class OpenApiUtil {
                         }
 
                         const arrayRegExp = /(\[\])+$/;
-                        const arrayCount = arrayRegExp.exec(propertyType)?.[0]?.length / 2;
+                        const arrayCount = (arrayRegExp.exec(propertyType)?.[0]?.length ?? 0) / 2;
                         propertyType = propertyType.replace(arrayRegExp, '');
 
                         switch (scene) {
@@ -279,11 +279,11 @@ export class OpenApiUtil {
                         if (propertyType === 'enum') {
                             const enumValue = options?.enum;
 
-                            if (!_.isPlainObject(enumValue) || Object.keys(enumValue).length === 0) {
+                            if (!_.isPlainObject(enumValue) || Object.keys(enumValue!).length === 0) {
                                 throw new Error(ErrorCode.INVALID_ENUM_VALUE_TYPE);
                             }
 
-                            const enumEntries = EnumUtil.getEntries(enumValue);
+                            const enumEntries = EnumUtil.getEntries(enumValue!);
                             const types = _.uniq(enumEntries.map(([, value]) => typeof value));
 
                             if (types.length > 1) {

@@ -43,7 +43,7 @@ export class AutoRunPlugin {
                 return;
             }
 
-            const outputPath = pathResolve(compilation.options.output.path, bundledScriptFile);
+            const outputPath = pathResolve(compilation.options.output.path!, bundledScriptFile!);
 
             logger?.info?.(`Prepared to run file: ${outputPath}`);
 

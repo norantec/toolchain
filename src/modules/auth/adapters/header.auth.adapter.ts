@@ -16,7 +16,7 @@ export class HeaderAuthAdapter extends AuthAdapter implements AuthAdapter {
         super();
     }
 
-    public override getChallengeValue(rawValue: string): string {
+    public override getChallengeValue(rawValue: string): string | null {
         let prefixRegex = this.options?.prefixRegex;
 
         if (!(prefixRegex instanceof RegExp)) {
@@ -25,10 +25,10 @@ export class HeaderAuthAdapter extends AuthAdapter implements AuthAdapter {
 
         const result = prefixRegex.exec(rawValue)?.[1];
 
-        return StringUtil.isFalsyString(result) ? null : result;
+        return StringUtil.isFalsyString(result) ? null : result!;
     }
 
-    public async validate(challengeValue: string, scopeIdentifier: string): Promise<AuthResult> {
+    public async validate(challengeValue: string, scopeIdentifier: string): Promise<AuthResult | null> {
         const [id, secret] = challengeValue.split(':');
 
         if (StringUtil.isFalsyString(id) || typeof this?.options?.validator !== 'function') {

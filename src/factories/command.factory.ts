@@ -1,7 +1,7 @@
 import * as winston from 'winston';
 import * as commander from 'commander';
-import * as yup from 'yup';
 import { RequiredDeep } from 'type-fest';
+import { z } from 'zod';
 
 class CommandState<T> {
     public constructor(public context: T) {}
@@ -15,7 +15,7 @@ export interface CreateCommandReturn<T> {
 export type CommandGenerator<T> = (logger: winston.Logger) => CreateCommandReturn<T>;
 
 export class CommandFactory {
-    public static create<T extends yup.ObjectSchema<any>, C>({
+    public static create<T extends z.Schema<any>, C>({
         schema,
         context,
         subCommandGenerators: inputSubCommandGenerators,
@@ -28,11 +28,11 @@ export class CommandFactory {
         register: (data: {
             logger: winston.Logger;
             context?: C;
-            callback: (options?: RequiredDeep<yup.InferType<T>>) => void | Promise<void>;
+            callback: (options?: RequiredDeep<z.infer<T>>) => void | Promise<void>;
         }) => commander.Command | Promise<commander.Command>;
         run?: (data: {
             logger: winston.Logger;
-            options?: RequiredDeep<yup.InferType<T>>;
+            options?: RequiredDeep<z.infer<T>>;
             context?: C;
         }) => void | Promise<void>;
     }): CommandGenerator<C> {
@@ -51,9 +51,9 @@ export class CommandFactory {
                         logger,
                         context: commandState.context,
                         callback: (options) => {
-                            run.call(this, {
+                            run?.call?.(this, {
                                 logger,
-                                options: schema.cast(options),
+                                options: schema.parse(options),
                                 context: commandState.context,
                             });
                         },

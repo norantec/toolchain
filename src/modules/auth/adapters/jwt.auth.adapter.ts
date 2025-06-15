@@ -15,14 +15,14 @@ export class JwtAuthAdapter extends AuthAdapter implements AuthAdapter {
         super();
     }
 
-    public override getChallengeValue(rawValue: string): string {
+    public override getChallengeValue(rawValue: string): string | null {
         let prefixRegex = this.options?.prefixRegex;
         if (!(prefixRegex instanceof RegExp)) prefixRegex = /^Bearer\s+(.*)$/;
         const result = prefixRegex.exec(rawValue)?.[1];
-        return StringUtil.isFalsyString(result) ? null : result;
+        return StringUtil.isFalsyString(result) ? null : result!;
     }
 
-    public async validate(challengeValue: string): Promise<AuthResult> {
+    public async validate(challengeValue: string): Promise<AuthResult | null> {
         if (StringUtil.isFalsyString(challengeValue)) return null;
 
         const payload = jwt.verify(challengeValue, this.options.secret);
@@ -33,8 +33,8 @@ export class JwtAuthAdapter extends AuthAdapter implements AuthAdapter {
             result = payload;
         } else {
             const currentPayload = payload as jwt.JwtPayload;
-            tokenExpirationTime = new Date(currentPayload.exp);
-            result = currentPayload.sub;
+            tokenExpirationTime = new Date(currentPayload.exp!);
+            result = currentPayload.sub!;
         }
 
         if (StringUtil.isFalsyString(result)) return null;
@@ -42,7 +42,7 @@ export class JwtAuthAdapter extends AuthAdapter implements AuthAdapter {
         return {
             type: AuthType.JWT,
             identity: result as string,
-            tokenExpirationTime,
+            tokenExpirationTime: tokenExpirationTime!,
             challengeValue,
         };
     }

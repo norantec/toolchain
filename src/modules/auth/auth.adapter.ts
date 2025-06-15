@@ -2,10 +2,10 @@ import { AuthResult } from '../../interfaces/auth-result.interface';
 import { StringUtil } from '../../utilities/string-util.class';
 
 export abstract class AuthAdapter {
-    public getChallengeValue(rawValue: string) {
+    public getChallengeValue(rawValue: string): string | null {
         if (StringUtil.isFalsyString(rawValue)) return '';
         return rawValue;
     }
 
-    public abstract validate(challengeValue: string, scopeIdentifier: string): Promise<AuthResult | null>;
+    public abstract validate(challengeValue: string, scopeIdentifier?: string): Promise<AuthResult | null>;
 }

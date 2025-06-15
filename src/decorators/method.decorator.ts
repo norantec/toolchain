@@ -66,7 +66,7 @@ export function Method(adminMode: AdminMode = 'both', allowedAuthAdapters?: stri
     };
 }
 
-Method.normalizeAllowedAdapters = (allowedAuthAdapters: string[] | boolean) => {
+Method.normalizeAllowedAdapters = (allowedAuthAdapters: string[] | boolean | undefined) => {
     let finalAllowedAuthAdapters: string[] | boolean;
 
     if (Array.isArray(allowedAuthAdapters)) {

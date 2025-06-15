@@ -1,24 +1,24 @@
-import * as yup from 'yup';
 import { BumpAdapterFactory } from '../bump-adapter-factory.class';
 import * as semver from 'semver';
 import { StringUtil } from '../../../utilities/string-util.class';
 import * as axios from 'axios';
+import { z } from 'zod';
 
 export default BumpAdapterFactory.create({
-    schema: yup.object().shape({
-        token: yup.string().optional(),
-        registry: yup.string().required().default('https://registry.npmjs.org'),
+    schema: z.object({
+        token: z.string().optional(),
+        registry: z.string().default('https://registry.npmjs.org'),
     }),
     getVersions: async (logger, packageName, options) => {
         try {
             logger.verbose(`Requesting versions for ${packageName}`);
-            const URL = `${options.registry}/${packageName}`;
+            const URL = `${options!.registry}/${packageName}`;
             logger.verbose(`Using URL: ${URL}`);
             let versions = await axios.default
                 .get(URL, {
                     headers: {
-                        ...(!StringUtil.isFalsyString(options.token)
-                            ? { Authorization: `Bearer ${options.token}` }
+                        ...(!StringUtil.isFalsyString(options!.token)
+                            ? { Authorization: `Bearer ${options!.token}` }
                             : {}),
                     },
                     responseType: 'json',

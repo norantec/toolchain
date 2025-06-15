@@ -1,20 +1,20 @@
-import * as yup from 'yup';
 import { BumpAdapterFactory } from '../bump-adapter-factory.class';
 import { Octokit } from 'octokit';
 import * as semver from 'semver';
 import { StringUtil } from '../../../utilities/string-util.class';
+import { z } from 'zod';
 
 export default BumpAdapterFactory.create({
-    schema: yup.object().shape({
-        token: yup.string().required(),
-        owner: yup.string().required(),
-        isOrg: yup.boolean().optional().default(false),
+    schema: z.object({
+        token: z.string(),
+        owner: z.string(),
+        isOrg: z.union([z.boolean().optional().default(false), z.undefined()]),
     }),
     getVersions: async (logger, packageName, options) => {
         try {
             logger.verbose('Creating Octokit instance');
             const octokit = new Octokit({
-                auth: options.token,
+                auth: options!.token,
                 log: {
                     debug: () => {},
                     info: () => {},
@@ -24,10 +24,10 @@ export default BumpAdapterFactory.create({
             });
             logger.verbose('Octokit instance created');
             logger.verbose(`Requesting versions for ${packageName}`);
-            const route = `GET /${options.isOrg ? 'orgs' : 'users'}/{owner}/packages/npm/{package_name}/versions`;
+            const route = `GET /${options!.isOrg ? 'orgs' : 'users'}/{owner}/packages/npm/{package_name}/versions`;
             logger.verbose(`Using route: ${route}`);
             const response = await octokit.request(route, {
-                owner: options.owner,
+                owner: options!.owner,
                 package_name: packageName.split('/').pop(),
             });
             logger.verbose('Response received');

@@ -1,5 +1,4 @@
 import * as _ from 'lodash';
-import { InferType } from 'yup';
 import {
     PathsObject,
     ReferenceObject,
@@ -7,12 +6,12 @@ import {
     ResponseObject,
     SchemaObject,
 } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
-import * as yup from 'yup';
 import * as Handlebars from 'handlebars';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { StringUtil } from './string-util.class';
 import { OpenAPIDocument } from './open-api-util.class';
+import { z } from 'zod';
 
 const templateFiles = {
     'package.json': JSON.stringify(
@@ -38,6 +37,7 @@ const templateFiles = {
                 'type-fest': '4.35.0',
             },
             devDependencies: {
+                '@types/lodash': '^4.17.17',
                 '@types/node': '^20.3.1',
                 '@types/object-hash': '^3.0.6',
                 typescript: '5.1.3',
@@ -82,11 +82,11 @@ const templateFiles = {
     ),
 };
 
-export const SCHEMA = yup.object({
-    authorEmail: yup.string().optional(),
-    authorName: yup.string().optional(),
-    packageName: yup.string().required(),
-    registry: yup.string().optional().default('https://registry.npmjs.org'),
+export const SCHEMA = z.object({
+    authorEmail: z.string().optional(),
+    authorName: z.string().optional(),
+    packageName: z.string(),
+    registry: z.string().optional().default('https://registry.npmjs.org'),
 });
 
 const DATA_TYPE_MAP_NAME = 'DataTypeMap';
@@ -98,7 +98,7 @@ const CLIENT_REQUEST_BODY_TYPE_NAME = 'ClientRequestBody';
 
 type TypeCustomizerFn = (dataTypeMapName: string, name: string, genericName: string) => string[];
 
-export interface OpenApiGeneratorOptions extends InferType<typeof SCHEMA> {
+export interface OpenApiGeneratorOptions extends z.infer<typeof SCHEMA> {
     document: OpenAPIDocument;
     customizeRequestBodyType?: TypeCustomizerFn;
     customizeResponseDataType?: TypeCustomizerFn;
@@ -132,7 +132,7 @@ export class SDKUtil {
         return result;
     }
 
-    private generateTypeCode(customizer: TypeCustomizerFn, dataTypeName: string): string[] {
+    private generateTypeCode(dataTypeName: string, customizer?: TypeCustomizerFn): string[] {
         if (typeof customizer === 'function') {
             const customizedLines = customizer(DATA_TYPE_MAP_NAME, dataTypeName, 'T');
             if (
@@ -182,7 +182,7 @@ export class SDKUtil {
     }
 
     private generateIndexCode() {
-        const dataTypeMapCode = this.generateDataTypeMap(this.options?.document?.basic?.components?.schemas);
+        const dataTypeMapCode = this.generateDataTypeMap(this.options?.document?.basic?.components?.schemas ?? {});
         const methodTypeMapCode = this.generateMethodTypeMap(this.options?.document?.basic?.paths);
         const requestBodyTypeAnnotation = `${CLIENT_REQUEST_BODY_TYPE_NAME}<${METHOD_TYPE_MAP_NAME}[T]['requestBody']>`;
         const responseDataTypeAnnotation = `${RESPONSE_TYPE_NAME}<${CLIENT_RESPONSE_DATA_TYPE_NAME}<${METHOD_TYPE_MAP_NAME}[T]['responseData']>>`;
@@ -193,8 +193,8 @@ export class SDKUtil {
             `\n${dataTypeMapCode}`,
             `\n${methodTypeMapCode}`,
             `${this.generateEnumCode().join('\n')}`,
-            ...this.generateTypeCode(this.options?.customizeRequestBodyType, CLIENT_REQUEST_BODY_TYPE_NAME),
-            ...this.generateTypeCode(this.options?.customizeResponseDataType, CLIENT_RESPONSE_DATA_TYPE_NAME),
+            ...this.generateTypeCode(CLIENT_REQUEST_BODY_TYPE_NAME, this.options?.customizeRequestBodyType),
+            ...this.generateTypeCode(CLIENT_RESPONSE_DATA_TYPE_NAME, this.options?.customizeResponseDataType),
             '\ntype MethodTypeMapKeys = keyof MethodTypeMap;',
             '\ntype MethodResponseData = {',
             '    [K in MethodTypeMapKeys]: {',
@@ -275,7 +275,7 @@ export class SDKUtil {
         if (!_.isObjectLike(schemas) || StringUtil.isFalsyString(DATA_TYPE_MAP_NAME)) return;
         const generatedComponents = Object.entries(schemas)
             .reduce((result: string[], [componentName, schema]) => {
-                const componentLines = Object.entries((schema as SchemaObject).properties).reduce(
+                const componentLines = Object.entries((schema as SchemaObject).properties!).reduce(
                     (componentResult: string[], [identifier, subSchema]) => {
                         return componentResult.concat(
                             `    ${identifier}?: ${this.generateSchemaType(componentName, identifier, subSchema)};`,
@@ -295,7 +295,7 @@ export class SDKUtil {
         schema: SchemaObject | ReferenceObject,
     ): string {
         if ((schema as SchemaObject)?.type === 'array') {
-            return `Array<${this.generateSchemaType(componentName, identifier, (schema as SchemaObject).items)}>`;
+            return `Array<${this.generateSchemaType(componentName, identifier, (schema as SchemaObject).items!)}>`;
         }
 
         if (!StringUtil.isFalsyString((schema as ReferenceObject)?.$ref)) {
@@ -309,7 +309,7 @@ export class SDKUtil {
                 const formatSchema = (schema as SchemaObject)?.format;
                 const enumSchema = (schema as SchemaObject)?.enum;
 
-                if (['date', 'date-time'].includes(formatSchema)) {
+                if (['date', 'date-time'].includes(formatSchema!)) {
                     return 'Date';
                 } else if (Array.isArray(enumSchema) && enumSchema.length > 0) {
                     return `enums.${componentName.split('.').slice(0, -1).join('.')}.${identifier}`;
@@ -318,7 +318,7 @@ export class SDKUtil {
                 }
             }
             case 'boolean': {
-                return (schema as SchemaObject)?.type;
+                return (schema as SchemaObject)?.type ?? undefined!;
             }
             default:
                 return 'never';
@@ -337,11 +337,11 @@ export class SDKUtil {
 
             if ((responseDataSchema as SchemaObject)?.type !== 'array') return result;
 
-            responseDataSchema = responseDataSchema?.items;
+            responseDataSchema = responseDataSchema?.items ?? undefined!;
 
             while ((responseDataSchema as SchemaObject)?.type === 'array') {
                 responseArrayWrapperCount += 1;
-                responseDataSchema = (responseDataSchema as SchemaObject).items;
+                responseDataSchema = (responseDataSchema as SchemaObject).items!;
             }
 
             if (
@@ -352,7 +352,7 @@ export class SDKUtil {
             }
 
             let requestArrayWrapperCount = 0;
-            let requestBodySchema = (value.post.requestBody as RequestBodyObject)?.content?.['application/json']
+            let requestBodySchema = (value.post!.requestBody as RequestBodyObject)?.content?.['application/json']
                 ?.schema;
 
             while ((requestBodySchema as SchemaObject)?.type === 'array') {
