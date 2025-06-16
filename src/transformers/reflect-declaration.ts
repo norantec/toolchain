@@ -1,5 +1,6 @@
 import * as ts from 'typescript';
-import { Project, CompilerOptions } from 'ts-morph';
+import { Project, CompilerOptions, SourceFile, Signature } from 'ts-morph';
+import { StringUtil } from '@open-norantec/utilities/dist/string-util.class';
 
 export default function transformer(program: ts.Program): ts.TransformerFactory<ts.SourceFile> {
     const project = new Project({
@@ -10,20 +11,22 @@ export default function transformer(program: ts.Program): ts.TransformerFactory<
         return (sourceFile) => {
             const filePath = sourceFile.fileName;
             const patchSourceFile = project.addSourceFileAtPathIfExists(filePath);
-            if (!patchSourceFile) return sourceFile;
+
+            if (!(patchSourceFile instanceof SourceFile)) return sourceFile;
 
             const statements: ts.Statement[] = [];
 
             for (const cls of patchSourceFile.getClasses()) {
                 const className = cls.getName();
-                if (!className) continue;
+
+                if (StringUtil.isFalsyString(className)) continue;
 
                 for (const prop of cls.getProperties()) {
                     const name = prop.getName();
                     const type = prop.getType();
 
                     const callSignature = type.getCallSignatures()[0];
-                    if (!callSignature) continue;
+                    if (!(callSignature instanceof Signature)) continue;
 
                     const returnType = callSignature.getReturnType();
 
@@ -39,23 +42,25 @@ export default function transformer(program: ts.Program): ts.TransformerFactory<
                     // 获取返回类型字符串（也可以改为结构体构建 AST）
                     const typeStr = actualReturn.getText();
 
-                    const injectCall = ts.factory.createExpressionStatement(
-                        ts.factory.createCallExpression(
-                            ts.factory.createIdentifier('Reflect.defineMetadata'),
-                            undefined,
-                            [
-                                ts.factory.createStringLiteral('custom:returntype'),
-                                ts.factory.createStringLiteral(typeStr),
-                                ts.factory.createPropertyAccessExpression(
-                                    ts.factory.createIdentifier(className),
-                                    ts.factory.createIdentifier('prototype'),
-                                ),
-                                ts.factory.createStringLiteral(name),
-                            ],
+                    if (StringUtil.isFalsyString(typeStr)) continue;
+
+                    statements.push(
+                        ts.factory.createExpressionStatement(
+                            ts.factory.createCallExpression(
+                                ts.factory.createIdentifier('Reflect.defineMetadata'),
+                                undefined,
+                                [
+                                    ts.factory.createStringLiteral('custom:returntype'),
+                                    ts.factory.createStringLiteral(typeStr),
+                                    ts.factory.createPropertyAccessExpression(
+                                        ts.factory.createIdentifier(className!),
+                                        ts.factory.createIdentifier('prototype'),
+                                    ),
+                                    ts.factory.createStringLiteral(name),
+                                ],
+                            ),
                         ),
                     );
-
-                    statements.push(injectCall);
                 }
             }
 
