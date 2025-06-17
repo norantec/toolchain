@@ -23,7 +23,7 @@ export interface Options {
     onBeforeBootstrap?: () => void | Promise<void>;
 }
 
-export interface SDKGeneratorOptions {
+export interface SDKGeneratorOptions extends SDKOptions {
     Module: Constructor<any>;
 }
 
@@ -59,11 +59,16 @@ export default (options: Options) => {
                                 return result;
                             }
 
+                            const scopeIdentifier = `/${controllerName}/${metadataName.slice(DECORATOR_NAME_PREFIX.length)}`;
+
+                            if (options?.scopeIdentifierBlacklist?.includes?.(scopeIdentifier)) {
+                                return result;
+                            }
+
                             return result.concat(
-                                [
-                                    `'${controllerName}.${metadataName.slice(DECORATOR_NAME_PREFIX.length)}'`,
-                                    `${Reflect.getMetadata(metadataName, Class.prototype)};`,
-                                ].join(': '),
+                                [`'${scopeIdentifier}'`, `${Reflect.getMetadata(metadataName, Class.prototype)};`].join(
+                                    ': ',
+                                ),
                             );
                         }, [] as string[]),
                     );

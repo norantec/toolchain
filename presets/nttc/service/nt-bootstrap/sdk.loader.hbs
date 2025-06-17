@@ -20,7 +20,13 @@ async function bootstrap() {
         fs.mkdirpSync(path.dirname(absoluteOutputFilePath));
     } catch {}
 
-    fs.writeFileSync(absoluteOutputFilePath, ENTRY?.generateSDKClientFileContent?.({ Module: ENTRY?.options?.Module }));
+    fs.writeFileSync(
+        absoluteOutputFilePath,
+        ENTRY?.generateSDKClientFileContent?.({
+            ...ENTRY?.options?.sdk,
+            Module: ENTRY?.options?.Module,
+        }),
+    );
 }
 
 bootstrap();
