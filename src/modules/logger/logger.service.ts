@@ -14,9 +14,7 @@ export class LoggerService {
         @Inject(WINSTON_MODULE_NEST_PROVIDER)
         private readonly logger: WinstonLogger,
     ) {
-        this?.logger?.setContext?.(
-            ((LoggerService?.getTraceId?.() || this?.request?.requestTraceId) as string) || 'Generic',
-        );
+        this?.logger?.setContext?.(((LoggerService?.getTraceId?.() || this?.request?.traceId) as string) || 'Generic');
     }
 
     public log(message: any) {

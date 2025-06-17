@@ -1,9 +1,7 @@
-import { AuthResult } from './auth-result.interface';
+import { Result } from '../abstract-classes/auth-adapter.abstract.class';
 
 export interface RequestExtraContext {
-    allowedAuthAdapterNames?: string[] | boolean;
-    nextToken?: string;
-    requestTraceId?: string;
-    scopeIdentifier?: string;
-    user?: AuthResult;
+    methodName: string;
+    traceId: string;
+    user?: Result;
 }

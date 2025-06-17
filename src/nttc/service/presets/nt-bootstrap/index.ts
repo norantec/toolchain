@@ -81,6 +81,7 @@ export default (options: Options) => {
             return [
                 "import * as hash from 'object-hash';",
                 "import * as _ from 'lodash';",
+                `import { ${HTTP_RESPONSE_BODY_TYPE_NAME} } from '@open-norantec/toolchain/dist/interfaces/http-response-body.interface';`,
                 `\n${methodTypeMapCodeLines.join('\n')}`,
                 `\ntype ${METHOD_TYPE_MAP_KEYS_NAME} = keyof ${METHOD_TYPE_MAP_NAME};`,
                 `\ntype ${RESPONSE_CALLBACK_DATA_NAME} = {`,
@@ -95,10 +96,6 @@ export default (options: Options) => {
                 '    timeout?: number;',
                 '    getAuthorizationCredential?: () => string;',
                 `    onResponse?: (response: ${RESPONSE_CALLBACK_DATA_NAME}) => void | Promise<void>;`,
-                '}',
-                `\nexport interface ${HTTP_RESPONSE_BODY_TYPE_NAME}<T> {`,
-                '    data: T;',
-                '    token: string;',
                 '}',
                 `\nexport interface ${RESULT_TYPE_NAME}<T> {`,
                 '    status: number;',
