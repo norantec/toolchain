@@ -1,4 +1,5 @@
 export const HEADERS = {
+    AUTHORIZATION: 'Authorization',
     LOCALE: 'X-NRTC-LOCALE',
     SCOPE: 'X-NRTC-SCOPE',
     SIGNATURE: 'X-NRTC-SIGNATURE',
