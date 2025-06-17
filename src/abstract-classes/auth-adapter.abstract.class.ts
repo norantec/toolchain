@@ -18,5 +18,5 @@ export abstract class AuthAdapter {
         protected readonly ref: ModuleRef,
     ) {}
     public abstract match(): boolean;
-    public abstract authenticate(): Promise<Result | null>;
+    public abstract authenticate(): Promise<AuthenticateReturn | null>;
 }
