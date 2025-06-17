@@ -21,11 +21,7 @@ export class Controller {
         input: unknown,
         headers: ReturnType<typeof HeaderUtil.parse>,
     ) => Promise<{ request: z.infer<IS>; response: z.infer<OS> }>) => {
-        const handler: ReturnType<typeof Controller.prototype.registerMethod<IS, OS>> = async (
-            methodName,
-            rawInput,
-            headers,
-        ) => {
+        return async (methodName, rawInput, headers) => {
             const context: ControllerContext = {
                 methodName,
                 userIdentifier: '',
@@ -36,7 +32,6 @@ export class Controller {
                 response: outputSchema.parse(await callback(input, headers, context)),
             };
         };
-        return handler;
     };
 
     @Post('*')
