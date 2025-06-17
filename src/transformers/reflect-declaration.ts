@@ -2,6 +2,8 @@ import * as ts from 'typescript';
 import { Project, CompilerOptions, SourceFile, Signature } from 'ts-morph';
 import { StringUtil } from '@open-norantec/utilities/dist/string-util.class';
 
+export const DECORATOR_NAME_PREFIX = 'Φnt:method:';
+
 export default function transformer(program: ts.Program): ts.TransformerFactory<ts.SourceFile> {
     const project = new Project({
         compilerOptions: program.getCompilerOptions() as CompilerOptions,
@@ -29,9 +31,8 @@ export default function transformer(program: ts.Program): ts.TransformerFactory<
                     if (!(callSignature instanceof Signature)) continue;
 
                     const returnType = callSignature.getReturnType();
-
-                    // unwrap Promise<...>
                     let actualReturn = returnType;
+
                     if (returnType.getSymbol()?.getName?.() === 'Promise') {
                         const args = returnType.getTypeArguments();
                         if (args.length > 0) {
@@ -50,13 +51,12 @@ export default function transformer(program: ts.Program): ts.TransformerFactory<
                                 ts.factory.createIdentifier('Reflect.defineMetadata'),
                                 undefined,
                                 [
-                                    ts.factory.createStringLiteral('custom:returntype'),
+                                    ts.factory.createStringLiteral(`${DECORATOR_NAME_PREFIX}${name}`),
                                     ts.factory.createStringLiteral(typeStr),
                                     ts.factory.createPropertyAccessExpression(
                                         ts.factory.createIdentifier(className!),
                                         ts.factory.createIdentifier('prototype'),
                                     ),
-                                    ts.factory.createStringLiteral(name),
                                 ],
                             ),
                         ),

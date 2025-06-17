@@ -1,46 +1,26 @@
 import 'reflect-metadata';
-import { OpenApiUtil } from '@open-norantec/toolchain/dist/utilities/open-api-util.class';
-import { SDKUtil } from '@open-norantec/toolchain/dist/utilities/sdk-util.class';
-import { ModelUtil } from '@open-norantec/toolchain/dist/utilities/model-util.class';
 import ENTRY from '{{absoluteEntry}}';
 import * as fs from '@open-norantec/toolchain/dist/lib/fs-extra';
 import * as path from 'path';
 
 async function bootstrap() {
-    if (Array.isArray(ENTRY?.models)) {
-        ENTRY?.models?.forEach?.((model) => {
-            ModelUtil.register(model);
-        });
-    }
+    const absoluteOutputFilePath = path.resolve('{{config.workDir}}', '{{config.outputFilePath}}');
+    await ENTRY?.options?.onBeforeBootstrap?.();
 
-    await ENTRY?.onBeforeBootstrap?.();
-
-    const fileMap = new SDKUtil({
-        packageName: '{{config.packageName}}',
-        registry: '{{config.registry}}',
-        authorEmail: '{{config.authorEmail}}',
-        authorName: '{{config.authorName}}',
-        registry: '{{config.registry}}',
-        document: new OpenApiUtil({
-            Class: ENTRY?.Module,
-            scopeIdentifierBlacklist: ENTRY?.scopeIdentifierBlacklist ?? [],
-        }).generateDocument(),
-        ...ENTRY?.sdk,
-    }).generate() || {};
+    console.log('LENCONDA:FUCK:0', ENTRY);
 
     try {
-        fs.removeSync('{{absoluteOutputPath}}');
-    } catch (e) {}
+        fs.removeSync(absoluteOutputFilePath);
+    } catch {}
 
     try {
-        fs.mkdirpSync('{{absoluteOutputPath}}');
-    } catch (e) {}
+        if (!fs.statSync(path.dirname(absoluteOutputFilePath)).isDirectory()) {
+            fs.removeSync(path.dirname(absoluteOutputFilePath));
+        }
+        fs.mkdirpSync(path.dirname(absoluteOutputFilePath));
+    } catch {}
 
-    Object.entries(fileMap).forEach(([relativePath, content]) => {
-        const absolutePath = path.resolve('{{absoluteOutputPath}}', relativePath);
-        fs.mkdirpSync(path.dirname(absolutePath));
-        fs.writeFileSync(absolutePath, content, 'utf-8');
-    });
+    fs.writeFileSync(absoluteOutputFilePath, ENTRY?.generateSDKClientFileContent?.({ Module: ENTRY?.options?.Module }));
 }
 
 bootstrap();

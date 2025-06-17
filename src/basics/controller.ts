@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { Body, Post, Req } from '@nestjs/common';
+import { Body, NotFoundException, Post, Req } from '@nestjs/common';
 import { HeaderUtil } from '@open-norantec/utilities';
 import { Request } from 'express';
 import { z } from 'zod';
@@ -39,6 +39,8 @@ export class Controller {
         const methodName = request.url.split('/').pop()!;
         if (typeof this[methodName] === 'function') {
             return await this[methodName](methodName, input, HeaderUtil.parse(request.headers ?? {}));
+        } else {
+            throw new NotFoundException();
         }
     }
 }

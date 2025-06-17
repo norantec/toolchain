@@ -20,7 +20,6 @@ import { AutoRunPlugin } from '../../webpack/plugins/auto-run-plugin';
 import * as chokidar from 'chokidar';
 import * as ignore from 'ignore';
 import { RunOncePlugin } from '../../webpack/plugins/run-once-plugin';
-import { SCHEMA as SDK_UTIL_SCHEMA } from '../../utilities/sdk-util.class';
 import { z } from 'zod';
 
 export enum RunType {
@@ -50,7 +49,6 @@ type BasicConfig = z.infer<typeof BASIC_CONFIG_SCHEMA>;
 export const CONFIG_SCHEMA = BASIC_CONFIG_SCHEMA.extend({
     preset: z.union([z.string().optional().default('nt-bootstrap'), z.undefined()]),
     outputPath: z.union([z.string().optional().default('dist'), z.undefined()]),
-    outputWithoutRunType: z.union([z.boolean().optional().default(false), z.undefined()]),
     sourceDir: z.union([z.string().optional().default('./src'), z.undefined()]),
     workDir: z.union([z.string().optional().default(process.cwd()), z.undefined()]),
     runtimeOptions: z
@@ -64,7 +62,9 @@ export const CONFIG_SCHEMA = BASIC_CONFIG_SCHEMA.extend({
                 name: z.union([z.string().optional().default('index'), z.undefined()]),
                 outputFilename: z.union([z.string().optional().default('[name].js'), z.undefined()]),
             }).optional(),
-            [RunType.SDK as 'sdk']: BASIC_CONFIG_CLEAN_SCHEMA.merge(SDK_UTIL_SCHEMA).optional(),
+            [RunType.SDK as 'sdk']: BASIC_CONFIG_CLEAN_SCHEMA.extend({
+                outputFilePath: z.union([z.string().optional().default('./.sdk/src/index.ts'), z.undefined()]),
+            }).optional(),
         })
         .optional(),
 });
@@ -120,7 +120,15 @@ export const ServiceCommand = CommandFactory.create({
         const absoluteOutputPath = path.resolve(
             config.workDir!,
             config.outputPath!,
-            config.outputWithoutRunType ? '' : runType,
+            (() => {
+                switch (runType) {
+                    case RunType.SDK: {
+                        return '';
+                    }
+                    default:
+                        return runType;
+                }
+            })(),
         );
         const absoluteRealEntryPath = path.resolve(
             config?.workDir ?? undefined!,
