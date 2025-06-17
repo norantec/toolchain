@@ -2,7 +2,7 @@ import { ModuleRef } from '@nestjs/core';
 import { Constructor } from 'type-fest';
 import { Request } from 'express';
 
-interface AuthenticateReturn {
+export interface AuthenticateReturn {
     identifier: string;
     forbidden?: boolean;
     nextToken?: string;
