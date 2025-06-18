@@ -5,6 +5,7 @@ import { Constructor } from 'type-fest';
 import { NestUtil } from '../../../../utilities/nest-util.class';
 import { StringUtil } from '@open-norantec/utilities/dist/string-util.class';
 import { DECORATOR_NAME_PREFIX } from '../../../../transformers/reflect-declaration';
+import { HIDE_IN_CLIENT } from '../../../../decorators/hide-in-client.decorator';
 
 export type Resolver = <T>(Class: Constructor<T>) => Promise<T>;
 export type TypeCustomizerFn = (dataTypeMapName: string, name: string, genericName: string) => string[];
@@ -52,14 +53,18 @@ export default (options: Options) => {
                     const metadataNames: string[] = Reflect.getMetadataKeys(Class.prototype);
                     return result.concat(
                         metadataNames.reduce((result, metadataName) => {
+                            const methodName = metadataName.slice(DECORATOR_NAME_PREFIX.length);
+
                             if (
                                 StringUtil.isFalsyString(metadataName) ||
-                                !metadataName.startsWith(DECORATOR_NAME_PREFIX)
+                                !metadataName.startsWith(DECORATOR_NAME_PREFIX) ||
+                                _.attempt(() => Reflect.getMetadata(HIDE_IN_CLIENT, Class.prototype, methodName)) ===
+                                    true
                             ) {
                                 return result;
                             }
 
-                            const scopeIdentifier = `/${controllerName}/${metadataName.slice(DECORATOR_NAME_PREFIX.length)}`;
+                            const scopeIdentifier = `/${controllerName}/${methodName}`;
 
                             if (options?.scopeIdentifierBlacklist?.includes?.(scopeIdentifier)) {
                                 return result;

@@ -1,11 +1,10 @@
 import 'reflect-metadata';
 import { Body, NotFoundException, Post, Req } from '@nestjs/common';
 import { HeaderUtil } from '@open-norantec/utilities/dist/header-util.class';
-import { z } from 'zod';
+import { z, ZodAny } from 'zod';
 import { RequestWithExtraContext } from '../types/request-with-extra-context.type';
 import { HttpResponseBody } from '../interfaces/http-response-body.interface';
 import { StringUtil } from '../utilities/string-util.class';
-import { RequestExtraContext } from '../interfaces/request-extra-context.interface';
 
 export class Controller {
     protected registerMethod = <IS extends z.Schema<any>, OS extends z.Schema<any>>(
@@ -14,7 +13,7 @@ export class Controller {
         callback: (
             input: z.infer<IS>,
             headers: ReturnType<typeof HeaderUtil.parse>,
-            context: RequestExtraContext,
+            request: RequestWithExtraContext,
         ) => Promise<z.infer<OS>>,
     ): ((
         request: RequestWithExtraContext,
@@ -22,16 +21,11 @@ export class Controller {
         headers: ReturnType<typeof HeaderUtil.parse>,
     ) => Promise<{ request: z.infer<IS>; response: z.infer<OS> }>) => {
         return async (request, rawInput, headers) => {
-            const input = inputSchema.parse(rawInput);
+            const input = inputSchema instanceof ZodAny ? rawInput : inputSchema.parse(rawInput);
+            const responseData = await callback(input, headers, request);
             return {
                 request: input,
-                response: outputSchema.parse(
-                    await callback(input, headers, {
-                        methodName: request?.methodName,
-                        traceId: request?.traceId,
-                        user: request?.user,
-                    }),
-                ),
+                response: outputSchema instanceof ZodAny ? responseData : outputSchema.parse(responseData),
             };
         };
     };
