@@ -6,7 +6,7 @@ import { LoggerService } from '@open-norantec/toolchain/dist/modules/logger/logg
 import ENTRY from '{{absoluteEntry}}';
 
 async function bootstrap() {
-    const entryOptioins = ENTRY?.options;
+    const entryOptions = ENTRY?.options;
 
     await entryOptions?.onBeforeBootstrap?.();
 
