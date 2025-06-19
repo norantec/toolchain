@@ -7,6 +7,8 @@ import { Response } from 'express';
 import { HEADERS } from '../constants/headers.constant';
 import { ModuleRef } from '@nestjs/core';
 import { AUTH_ADAPTERS } from '../decorators/auth-adapters.decorator';
+import { Constructor } from 'type-fest';
+import { AuthAdapter } from '../abstract-classes/auth-adapter.abstract.class';
 
 export class SystemHeadGuard implements CanActivate {
     public constructor(protected readonly ref: ModuleRef) {}
@@ -21,10 +23,18 @@ export class SystemHeadGuard implements CanActivate {
         request.methodName = request.url.split('/').pop()!;
         response.setHeader(HEADERS.TRACE_ID, traceId);
 
-        const authAdapters = Reflect.getMetadata(AUTH_ADAPTERS, ControllerClass.prototype, request.methodName);
+        const authAdapters: Constructor<AuthAdapter>[] = Reflect.getMetadata(
+            AUTH_ADAPTERS,
+            ControllerClass.prototype,
+            request.methodName,
+        );
 
         if (Array.isArray(authAdapters) && authAdapters.length > 0) {
-            // TODO: Auth
+            for (const AuthAdapterClass of authAdapters) {
+                const adapter = new AuthAdapterClass(request, this.ref);
+                if (!adapter.match()) continue;
+                if (!(await adapter.authenticate())) return false;
+            }
         }
 
         return true;
