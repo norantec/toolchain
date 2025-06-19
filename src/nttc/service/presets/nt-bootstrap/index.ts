@@ -6,25 +6,22 @@ import { NestUtil } from '../../../../utilities/nest-util.class';
 import { StringUtil } from '@open-norantec/utilities/dist/string-util.class';
 import { DECORATOR_NAME_PREFIX } from '../../../../transformers/reflect-declaration';
 import { HIDE_IN_CLIENT } from '../../../../decorators/hide-in-client.decorator';
+import { INestApplication } from '@nestjs/common';
 
 export type Resolver = <T>(Class: Constructor<T>) => Promise<T>;
 export type TypeCustomizerFn = (dataTypeMapName: string, name: string, genericName: string) => string[];
 
-export interface SDKOptions {
-    scopeIdentifierBlacklist?: string[];
-}
-
 export interface Options {
     Module: Constructor<any>;
     cors?: CorsOptions | CorsOptionsDelegate<any> | false;
-    sdk?: SDKOptions;
     uses?: any[];
     getListenPort: (resolver: Resolver) => number | Promise<number>;
     callback?: (resolver: Resolver) => void | Promise<void>;
     onBeforeBootstrap?: () => void | Promise<void>;
+    onBeforeListen?: (app: INestApplication<any>) => void | Promise<void>;
 }
 
-export interface SDKGeneratorOptions extends SDKOptions {
+export interface SDKGeneratorOptions {
     Module: Constructor<any>;
 }
 
@@ -65,10 +62,6 @@ export default (options: Options) => {
                             }
 
                             const scopeIdentifier = `/${controllerName}/${methodName}`;
-
-                            if (options?.scopeIdentifierBlacklist?.includes?.(scopeIdentifier)) {
-                                return result;
-                            }
 
                             return result.concat(
                                 [`'${scopeIdentifier}'`, `${Reflect.getMetadata(metadataName, Class.prototype)};`].join(

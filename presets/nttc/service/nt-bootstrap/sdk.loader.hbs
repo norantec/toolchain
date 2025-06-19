@@ -23,7 +23,6 @@ async function bootstrap() {
     fs.writeFileSync(
         absoluteOutputFilePath,
         ENTRY?.generateSDKClientFileContent?.({
-            ...ENTRY?.options?.sdk,
             Module: ENTRY?.options?.Module,
         }),
     );

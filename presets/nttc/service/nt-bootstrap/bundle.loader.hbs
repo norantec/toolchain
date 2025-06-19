@@ -1,18 +1,12 @@
 import 'reflect-metadata';
 import { NestFactory } from '@open-norantec/toolchain/dist/lib/@nestjs/core';
 import cookieParser from '@open-norantec/toolchain/dist/lib/cookie-parser';
-import { StringUtil } from '@open-norantec/toolchain/dist/utilities/string-util.class';
 import { ModelUtil } from '@open-norantec/toolchain/dist/utilities/model-util.class';
 import { LoggerService } from '@open-norantec/toolchain/dist/modules/logger/logger.service';
+import { BasicExceptionsFilter } from '@open-norantec/toolchain/dist/filters/basic-exceptions.filter';
 import ENTRY from '{{absoluteEntry}}';
 
 async function bootstrap() {
-    if (Array.isArray(ENTRY?.models)) {
-        ENTRY?.models?.forEach?.((model) => {
-            ModelUtil.register(model);
-        });
-    }
-
     await ENTRY?.onBeforeBootstrap?.();
 
     const app = await NestFactory.create(ENTRY?.Module);
@@ -40,6 +34,8 @@ async function bootstrap() {
     const loggerService = await app.resolve(LoggerService);
     const finalListenPort = listenPort > 0 ? listenPort : 8080;
 
+    app.useGlobalFilters(new BasicExceptionsFilter());
+    await ENTRY?.onBeforeListen?.(app);
     await app.listen(finalListenPort, () => {
         loggerService.log(`Listening on port: ${finalListenPort}`);
         ENTRY?.callback?.(resolver);
