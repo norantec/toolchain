@@ -33,7 +33,13 @@ export class SystemHeadGuard implements CanActivate {
             for (const AuthAdapterClass of authAdapters) {
                 const adapter = new AuthAdapterClass(request, this.ref);
                 if (!adapter.match()) continue;
-                if (!(await adapter.authenticate())) return false;
+                const authenticateResult = await adapter.authenticate();
+                if (!authenticateResult) return false;
+                request.user = {
+                    AuthenticatorClass: AuthAdapterClass,
+                    ...authenticateResult,
+                };
+                break;
             }
         }
 
