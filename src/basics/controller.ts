@@ -6,6 +6,12 @@ import { RequestWithExtraContext } from '../types/request-with-extra-context.typ
 import { HttpResponseBody } from '../interfaces/http-response-body.interface';
 import { StringUtil } from '../utilities/string-util.class';
 
+export type MethodHandler<IS extends z.Schema<any>, OS extends z.Schema<any>> = (
+    request: RequestWithExtraContext,
+    input: unknown,
+    headers: ReturnType<typeof HeaderUtil.parse>,
+) => Promise<{ request: z.infer<IS>; response: z.infer<OS> }>;
+
 export class Controller {
     protected registerMethod = <IS extends z.Schema<any>, OS extends z.Schema<any>>(
         inputSchema: IS,
@@ -15,11 +21,7 @@ export class Controller {
             headers: ReturnType<typeof HeaderUtil.parse>,
             request: RequestWithExtraContext,
         ) => Promise<z.infer<OS>>,
-    ): ((
-        request: RequestWithExtraContext,
-        input: unknown,
-        headers: ReturnType<typeof HeaderUtil.parse>,
-    ) => Promise<{ request: z.infer<IS>; response: z.infer<OS> }>) => {
+    ): MethodHandler<IS, OS> => {
         return async (request, rawInput, headers) => {
             const input = inputSchema instanceof ZodAny ? rawInput : inputSchema.parse(rawInput);
             const responseData = await callback(input, headers, request);
@@ -35,9 +37,12 @@ export class Controller {
         @Req() request: RequestWithExtraContext,
         @Body() input: unknown,
     ): Promise<HttpResponseBody<any>> {
-        if (typeof this[request?.methodName] === 'function') {
+        const methodHandler: MethodHandler<z.Schema<any>, z.Schema<any>> = this[request?.methodName];
+        if (typeof methodHandler === 'function') {
             return {
-                data: await this[request?.methodName](request, input, HeaderUtil.parse(request.headers ?? {})),
+                data: await methodHandler(request, input, HeaderUtil.parse(request.headers ?? {})).then(
+                    (response) => response?.response,
+                ),
                 token: StringUtil.isFalsyString(request?.user?.nextToken) ? null : request.user!.nextToken!,
             };
         } else {

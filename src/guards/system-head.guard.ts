@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { CanActivate } from '@nestjs/common';
+import { CanActivate, Injectable } from '@nestjs/common';
 import { ExecutionContext } from '@nestjs/common';
 import { RequestWithExtraContext } from '../types/request-with-extra-context.type';
 import { v4 as uuidv4 } from 'uuid';
@@ -10,6 +10,7 @@ import { AUTH_ADAPTERS } from '../decorators/auth-adapters.decorator';
 import { Constructor } from 'type-fest';
 import { AuthAdapter } from '../abstract-classes/auth-adapter.abstract.class';
 
+@Injectable()
 export class SystemHeadGuard implements CanActivate {
     public constructor(protected readonly ref: ModuleRef) {}
 
