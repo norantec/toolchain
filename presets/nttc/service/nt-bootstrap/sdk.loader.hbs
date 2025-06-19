@@ -7,8 +7,6 @@ async function bootstrap() {
     const absoluteOutputFilePath = path.resolve('{{config.workDir}}', '{{config.outputFilePath}}');
     await ENTRY?.options?.onBeforeBootstrap?.();
 
-    console.log('LENCONDA:FUCK:0', ENTRY);
-
     try {
         fs.removeSync(absoluteOutputFilePath);
     } catch {}
