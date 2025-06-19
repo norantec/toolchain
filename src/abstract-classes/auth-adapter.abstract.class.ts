@@ -3,6 +3,7 @@ import { Constructor } from 'type-fest';
 import { Request } from 'express';
 
 export interface AuthenticateReturn {
+    challengeValue: string;
     identifier: string;
     forbidden?: boolean;
     nextToken?: string;
