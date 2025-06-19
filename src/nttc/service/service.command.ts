@@ -21,7 +21,7 @@ import * as chokidar from 'chokidar';
 import * as ignore from 'ignore';
 import { RunOncePlugin } from '../../webpack/plugins/run-once-plugin';
 import { z } from 'zod';
-import TerserPlugin from 'terser-webpack-plugin';
+import TerserPlugin = require('terser-webpack-plugin');
 
 export enum RunType {
     WATCH = 'watch',

@@ -3,63 +3,64 @@ import { NestFactory } from '@open-norantec/toolchain/dist/lib/@nestjs/core';
 import cookieParser from '@open-norantec/toolchain/dist/lib/cookie-parser';
 import { ModelUtil } from '@open-norantec/toolchain/dist/utilities/model-util.class';
 import { LoggerService } from '@open-norantec/toolchain/dist/modules/logger/logger.service';
-import { BasicExceptionsFilter } from '@open-norantec/toolchain/dist/filters/basic-exceptions.filter';
 import ENTRY from '{{absoluteEntry}}';
 
 async function bootstrap() {
-    await ENTRY?.onBeforeBootstrap?.();
+    const entryOptioins = ENTRY?.options;
 
-    const app = await NestFactory.create(ENTRY?.Module, {
-        ...ENTRY?.factoryOptions,
+    await entryOptions?.onBeforeBootstrap?.();
+
+    const app = await NestFactory.create(entryOptions?.Module, {
+        ...entryOptions?.factoryOptions,
     });
 
-    if (ENTRY?.cors !== false) {
+    if (entryOptions?.cors !== false) {
         app.enableCors({
             origin: '*',
             methods: '*',
             allowedHeaders: '*',
             credentials: false,
-            ...(ENTRY?.cors ?? {}),
+            ...(entryOptions?.cors ?? {}),
         });
     }
 
     app.use(cookieParser());
 
-    if (Array.isArray(ENTRY?.globalFilters) && ENTRY?.globalFilters?.length > 0) {
-        app.useGlobalFilters(ENTRY?.globalFilters);
+    if (Array.isArray(entryOptions?.globalFilters) && entryOptions?.globalFilters?.length > 0) {
+        app.useGlobalFilters(entryOptions?.globalFilters);
     }
 
-    if (Array.isArray(ENTRY?.globalGuards) && ENTRY?.globalGuards?.length > 0) {
-        app.useGlobalFilters(ENTRY?.globalGuards);
+    if (Array.isArray(entryOptions?.globalGuards) && entryOptions?.globalGuards?.length > 0) {
+        app.useGlobalFilters(entryOptions?.globalGuards);
     }
 
-    if (Array.isArray(ENTRY?.globalInterceptors) && ENTRY?.globalInterceptors?.length > 0) {
-        app.useGlobalFilters(ENTRY?.globalInterceptors);
+    if (Array.isArray(entryOptions?.globalInterceptors) && entryOptions?.globalInterceptors?.length > 0) {
+        app.useGlobalFilters(entryOptions?.globalInterceptors);
     }
 
-    if (Array.isArray(ENTRY?.globalPipes) && ENTRY?.globalPipes?.length > 0) {
-        app.useGlobalFilters(ENTRY?.globalPipes);
+    if (Array.isArray(entryOptions?.globalPipes) && entryOptions?.globalPipes?.length > 0) {
+        app.useGlobalFilters(entryOptions?.globalPipes);
     }
 
-    if (!!ENTRY?.websocketAdapter) {
-        app.useWebsocketAdapter(ENTRY?.useWebsocketAdapter);
+    if (!!entryOptions?.websocketAdapter) {
+        app.useWebsocketAdapter(entryOptions?.useWebsocketAdapter);
     }
 
-    if (Array.isArray(ENTRY?.uses)) {
-        ENTRY.uses.forEach((middleware) => {
+    if (Array.isArray(entryOptions?.uses)) {
+        entryOptions.uses.forEach((middleware) => {
             app.use(middleware);
         });
     }
 
     const resolver = (Class) => app.resolve(Class);
-    const listenPort = await ENTRY?.getListenPort?.(resolver);
+    const listenPort = await entryOptions?.getListenPort?.(resolver);
     const loggerService = await app.resolve(LoggerService);
     const finalListenPort = listenPort > 0 ? listenPort : 8080;
 
-    await ENTRY?.onBeforeListen?.(app);
+    await entryOptions?.onBeforeListen?.(app);
     await app.listen(finalListenPort, () => {
         loggerService.log(`Listening on port: ${finalListenPort}`);
-        ENTRY?.callback?.(resolver);
+        entryOptions?.callback?.(resolver);
     });
 }
 
