@@ -207,6 +207,7 @@ export const ServiceCommand = CommandFactory.create({
         }
 
         const compiler = webpack({
+            devtool: 'source-map',
             cache: false,
             optimization: {
                 minimize: false,
@@ -232,6 +233,7 @@ export const ServiceCommand = CommandFactory.create({
                 }
             })(),
             output: {
+                devtoolModuleFilenameTemplate: '[absolute-resource-path]',
                 filename: (() => {
                     switch (runType) {
                         case RunType.SDK:
