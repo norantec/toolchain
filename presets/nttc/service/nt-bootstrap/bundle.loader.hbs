@@ -9,7 +9,9 @@ import ENTRY from '{{absoluteEntry}}';
 async function bootstrap() {
     await ENTRY?.onBeforeBootstrap?.();
 
-    const app = await NestFactory.create(ENTRY?.Module);
+    const app = await NestFactory.create(ENTRY?.Module, {
+        ...ENTRY?.factoryOptions,
+    });
 
     if (ENTRY?.cors !== false) {
         app.enableCors({
@@ -23,6 +25,26 @@ async function bootstrap() {
 
     app.use(cookieParser());
 
+    if (Array.isArray(ENTRY?.globalFilters) && ENTRY?.globalFilters?.length > 0) {
+        app.useGlobalFilters(ENTRY?.globalFilters);
+    }
+
+    if (Array.isArray(ENTRY?.globalGuards) && ENTRY?.globalGuards?.length > 0) {
+        app.useGlobalFilters(ENTRY?.globalGuards);
+    }
+
+    if (Array.isArray(ENTRY?.globalInterceptors) && ENTRY?.globalInterceptors?.length > 0) {
+        app.useGlobalFilters(ENTRY?.globalInterceptors);
+    }
+
+    if (Array.isArray(ENTRY?.globalPipes) && ENTRY?.globalPipes?.length > 0) {
+        app.useGlobalFilters(ENTRY?.globalPipes);
+    }
+
+    if (!!ENTRY?.websocketAdapter) {
+        app.useWebsocketAdapter(ENTRY?.useWebsocketAdapter);
+    }
+
     if (Array.isArray(ENTRY?.uses)) {
         ENTRY.uses.forEach((middleware) => {
             app.use(middleware);
@@ -34,7 +56,6 @@ async function bootstrap() {
     const loggerService = await app.resolve(LoggerService);
     const finalListenPort = listenPort > 0 ? listenPort : 8080;
 
-    app.useGlobalFilters(new BasicExceptionsFilter());
     await ENTRY?.onBeforeListen?.(app);
     await app.listen(finalListenPort, () => {
         loggerService.log(`Listening on port: ${finalListenPort}`);

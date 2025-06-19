@@ -21,6 +21,7 @@ import * as chokidar from 'chokidar';
 import * as ignore from 'ignore';
 import { RunOncePlugin } from '../../webpack/plugins/run-once-plugin';
 import { z } from 'zod';
+import TerserPlugin from 'terser-webpack-plugin';
 
 export enum RunType {
     WATCH = 'watch',
@@ -153,16 +154,14 @@ export const ServiceCommand = CommandFactory.create({
                 filePath = require.resolve(
                     path.resolve(__dirname, '../../../presets/nttc/service', config.preset!, `${runType}.loader.hbs`),
                 );
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            } catch (e) {}
+            } catch {}
 
             if (StringUtil.isFalsyString(filePath!)) {
                 try {
                     filePath = require.resolve(path.join(config?.preset ?? undefined!, `${runType}.loader.hbs`), {
                         paths: [process.cwd()],
                     });
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                } catch (e) {}
+                } catch {}
             }
 
             if (StringUtil.isFalsyString(filePath!)) {
@@ -179,8 +178,7 @@ export const ServiceCommand = CommandFactory.create({
                     absoluteOutputPath,
                     config: _.merge({}, _.omit(config, ['runtimeOptions']), getSpecifiedConfig(runType)),
                 });
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            } catch (e) {}
+            } catch {}
 
             if (StringUtil.isFalsyString(content!)) {
                 throw new Error(`Cannot load '${config?.preset}'`);
@@ -212,6 +210,14 @@ export const ServiceCommand = CommandFactory.create({
             cache: false,
             optimization: {
                 minimize: false,
+                minimizer: [
+                    new TerserPlugin({
+                        terserOptions: {
+                            keep_classnames: true,
+                            keep_fnames: true,
+                        },
+                    }),
+                ],
             },
             entry: {
                 [name!]: absoluteEntryPath,

@@ -6,7 +6,14 @@ import { NestUtil } from '../../../../utilities/nest-util.class';
 import { StringUtil } from '@open-norantec/utilities/dist/string-util.class';
 import { DECORATOR_NAME_PREFIX } from '../../../../transformers/reflect-declaration';
 import { HIDE_IN_CLIENT } from '../../../../decorators/hide-in-client.decorator';
-import { INestApplication } from '@nestjs/common';
+import {
+    CanActivate,
+    ExceptionFilter,
+    NestApplicationOptions,
+    NestInterceptor,
+    PipeTransform,
+    WebSocketAdapter,
+} from '@nestjs/common';
 
 export type Resolver = <T>(Class: Constructor<T>) => Promise<T>;
 export type TypeCustomizerFn = (dataTypeMapName: string, name: string, genericName: string) => string[];
@@ -14,11 +21,16 @@ export type TypeCustomizerFn = (dataTypeMapName: string, name: string, genericNa
 export interface Options {
     Module: Constructor<any>;
     cors?: CorsOptions | CorsOptionsDelegate<any> | false;
+    factoryOptions?: NestApplicationOptions;
+    globalFilters?: ExceptionFilter[];
+    globalGuards?: CanActivate[];
+    globalInterceptors?: NestInterceptor[];
+    globalPipes?: PipeTransform<any>[];
     uses?: any[];
+    websocketAdapter?: WebSocketAdapter;
     getListenPort: (resolver: Resolver) => number | Promise<number>;
     callback?: (resolver: Resolver) => void | Promise<void>;
     onBeforeBootstrap?: () => void | Promise<void>;
-    onBeforeListen?: (app: INestApplication<any>) => void | Promise<void>;
 }
 
 export interface SDKGeneratorOptions {
