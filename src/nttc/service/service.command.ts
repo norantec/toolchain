@@ -207,7 +207,6 @@ export const ServiceCommand = CommandFactory.create({
         }
 
         const compiler = webpack({
-            devtool: 'source-map',
             cache: false,
             optimization: {
                 minimize: false,
