@@ -65,7 +65,9 @@ export default (options: Options) => {
                     ) {
                         return result;
                     }
-                    const metadataNames: string[] = Reflect.getMetadataKeys(Class.prototype);
+                    const metadataNames: string[] = Reflect.getMetadataKeys(Class.prototype).filter(
+                        (metadataName) => !StringUtil.isFalsyString(metadataName),
+                    );
                     return result.concat(
                         metadataNames.reduce((result, metadataName) => {
                             const methodName = metadataName.slice(DECORATOR_NAME_PREFIX.length);

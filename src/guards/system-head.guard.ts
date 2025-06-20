@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { CanActivate, Injectable } from '@nestjs/common';
+import { CanActivate, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ExecutionContext } from '@nestjs/common';
 import { RequestWithExtraContext } from '../types/request-with-extra-context.type';
 import { v4 as uuidv4 } from 'uuid';
@@ -42,7 +42,7 @@ export class SystemHeadGuard implements CanActivate {
                 };
                 return true;
             }
-            return false;
+            throw new UnauthorizedException();
         }
 
         return true;
