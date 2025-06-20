@@ -13,7 +13,7 @@ export type MethodHandler<IS extends z.Schema<any>, OS extends z.Schema<any>> = 
     headers: ReturnType<typeof HeaderUtil.parse>,
 ) => Promise<{ request: z.infer<IS>; response: z.infer<OS> }>;
 
-export class Controller {
+export class SchemaController {
     protected registerMethod = <IS extends z.Schema<any>, OS extends z.Schema<any>>(
         inputSchema: IS,
         outputSchema: OS,

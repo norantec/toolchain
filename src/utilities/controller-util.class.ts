@@ -17,6 +17,8 @@ export interface ControllerUtilCreateOptions {
     useGuards?: Constructor<any>[];
 }
 
+export const IS_CONTROLLER = Symbol();
+
 export class ControllerUtil {
     public static create(createOptions?: ControllerUtilCreateOptions) {
         const Controller = (options?: Options): ClassDecorator => {
@@ -28,6 +30,7 @@ export class ControllerUtil {
                     : options!.prefix!;
                 finalPrefix += `/${_.camelCase(target.name.replace(/Controller$/g, ''))}`;
                 if (!finalPrefix.startsWith('/')) finalPrefix = `/${finalPrefix}`;
+                Reflect.defineMetadata(IS_CONTROLLER, true, target.prototype);
                 NestController(finalPrefix)(target);
                 UseGuards(
                     SystemHeadGuard,
