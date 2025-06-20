@@ -14,6 +14,7 @@ import {
     PipeTransform,
     WebSocketAdapter,
 } from '@nestjs/common';
+import { IS_CONTROLLER } from '../../../../utilities/controller-util.class';
 
 export type Resolver = <T>(Class: Constructor<T>) => Promise<T>;
 export type TypeCustomizerFn = (dataTypeMapName: string, name: string, genericName: string) => string[];
@@ -58,7 +59,12 @@ export default (options: Options) => {
                 .reduce((result, Class) => {
                     if (StringUtil.isFalsyString(Class?.name)) return result;
                     const controllerName = _.camelCase(Class.name.replace(/Controller$/g, ''));
-                    if (StringUtil.isFalsyString(controllerName)) return result;
+                    if (
+                        StringUtil.isFalsyString(controllerName) ||
+                        Reflect.getMetadata(IS_CONTROLLER, Class.prototype) !== true
+                    ) {
+                        return result;
+                    }
                     const metadataNames: string[] = Reflect.getMetadataKeys(Class.prototype);
                     return result.concat(
                         metadataNames.reduce((result, metadataName) => {
