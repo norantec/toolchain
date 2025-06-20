@@ -40,8 +40,9 @@ export class SystemHeadGuard implements CanActivate {
                     AuthenticatorClass: AuthAdapterClass,
                     ...authenticateResult,
                 };
-                break;
+                return true;
             }
+            return false;
         }
 
         return true;
