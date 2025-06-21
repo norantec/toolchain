@@ -1,6 +1,5 @@
 import 'reflect-metadata';
-import { NestFactory } from '@open-norantec/toolchain/dist/lib/@nestjs/core';
-import cookieParser from '@open-norantec/toolchain/dist/lib/cookie-parser';
+import { NestFactory } from '@nestjs/core';
 import { ModelUtil } from '@open-norantec/toolchain/dist/utilities/model-util.class';
 import { LoggerService } from '@open-norantec/toolchain/dist/modules/logger/logger.service';
 import ENTRY from '{{absoluteEntry}}';
@@ -23,8 +22,6 @@ async function bootstrap() {
             ...(entryOptions?.cors ?? {}),
         });
     }
-
-    app.use(cookieParser());
 
     if (Array.isArray(entryOptions?.globalFilters) && entryOptions?.globalFilters?.length > 0) {
         app.useGlobalFilters(entryOptions?.globalFilters);
