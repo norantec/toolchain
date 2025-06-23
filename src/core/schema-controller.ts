@@ -7,6 +7,12 @@ import { HttpResponseBody } from '../interfaces/http-response-body.interface';
 import { StringUtil } from '../utilities/string-util.class';
 import * as _ from 'lodash';
 
+export interface MethodContext<IS extends z.Schema<any>> {
+    headers: ReturnType<typeof HeaderUtil.parse>;
+    input: z.infer<IS>;
+    request: RequestWithExtraContext;
+}
+
 export type MethodHandler<IS extends z.Schema<any>, OS extends z.Schema<any>> = (
     request: RequestWithExtraContext,
     input: unknown,
@@ -17,11 +23,7 @@ export class SchemaController {
     protected registerMethod = <IS extends z.Schema<any>, OS extends z.Schema<any>>(
         inputSchema: IS,
         outputSchema: OS,
-        callback: (
-            input: z.infer<IS>,
-            headers: ReturnType<typeof HeaderUtil.parse>,
-            request: RequestWithExtraContext,
-        ) => Promise<z.infer<OS>>,
+        callback: (context: MethodContext<IS>) => Promise<z.infer<OS>>,
     ): MethodHandler<IS, OS> => {
         return async (request, rawInput, headers) => {
             const input = inputSchema instanceof ZodAny ? rawInput : _.attempt(() => inputSchema.parse(rawInput));
@@ -35,7 +37,7 @@ export class SchemaController {
                 throw input;
             }
 
-            const responseData = await callback(input, headers, request);
+            const responseData = await callback({ input, headers, request });
 
             return {
                 request: input,
