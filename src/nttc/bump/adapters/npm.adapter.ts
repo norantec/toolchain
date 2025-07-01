@@ -1,8 +1,8 @@
 import { BumpAdapterFactory } from '../bump-adapter-factory.class';
 import * as semver from 'semver';
-import { StringUtil } from '../../../utilities/string-util.class';
 import * as axios from 'axios';
 import { z } from 'zod';
+import { StringUtil } from '@open-norantec/utilities/dist/string-util.class';
 
 export default BumpAdapterFactory.create({
     schema: z.object({

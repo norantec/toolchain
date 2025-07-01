@@ -1,13 +1,12 @@
 import { Command } from 'commander';
 import * as winston from 'winston';
-import { ServiceCommand } from './service/service.command';
 import { BumpCommand } from './bump/bump.command';
 import { LinkCommand } from './link/link.command';
 
 (async () => {
     const program = new Command('nttc');
 
-    for (const commandGenerator of [ServiceCommand, BumpCommand, LinkCommand]) {
+    for (const commandGenerator of [BumpCommand, LinkCommand]) {
         const logger = winston.createLogger({
             level: 'verbose',
             format: winston.format.combine(

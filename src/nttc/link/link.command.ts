@@ -1,8 +1,8 @@
+import { StringUtil } from '@open-norantec/utilities/dist/string-util.class';
 import { CommandFactory } from '../../factories/command.factory';
 import * as commander from 'commander';
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { StringUtil } from '../../utilities/string-util.class';
 import { z } from 'zod';
 
 export const LinkCommand = CommandFactory.create({

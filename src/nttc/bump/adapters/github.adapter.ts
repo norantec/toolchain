@@ -1,7 +1,7 @@
+import { StringUtil } from '@open-norantec/utilities/dist/string-util.class';
 import { BumpAdapterFactory } from '../bump-adapter-factory.class';
 import { Octokit } from 'octokit';
 import * as semver from 'semver';
-import { StringUtil } from '../../../utilities/string-util.class';
 import { z } from 'zod';
 
 export default BumpAdapterFactory.create({

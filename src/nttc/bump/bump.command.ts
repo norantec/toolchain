@@ -4,12 +4,12 @@ import { BumpAdapter } from './bump-adapter-factory.class';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as semver from 'semver';
-import { StringUtil } from '../../utilities/string-util.class';
 import * as commander from 'commander';
 import { BumpType } from '../../enums/bump-type.enum';
 import { JSONUtil } from '@open-norantec/utilities/dist/json-util.class';
 import * as handlebars from 'handlebars';
 import { z } from 'zod';
+import { StringUtil } from '@open-norantec/utilities/dist/string-util.class';
 
 function getFormalReleaseVersion(version: string) {
     const parsed = semver.parse(version);
